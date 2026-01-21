@@ -1,0 +1,29 @@
+Clave,Especialidad,División,Enero,Febrero,Marzo ,Abril,Mayo ,Junio,Julio,Agosto,Sepetiembre,Octubre,Noviembre,Diciembre,Año
+1100,Angiología y Cirugía Vascular,Cirugía Pediátrica,15,18,7,0,0,0,2,0,0,1,0,0,2024
+1500,Cirugía Cardiotorácica,Cirugía Pediátrica,0,0,2,18,15,24,5,12,15,19,7,10,2024
+2100,Ginecología,Ginecología,222,230,256,186,156,151,179,169,151,159,202,151,2024
+2101,Biología de la Reproducción Humana,Ginecología,0,0,0,0,0,0,0,1,0,0,2,2,2024
+2103,Urología Ginecológica,Ginecología,0,0,0,0,0,2,3,6,0,2,1,2,2024
+2400,Obstetricia,Obstetricia,379,335,347,416,345,371,401,426,436,416,350,357,2024
+2401,Medicina Materno Fetal,Obstetricia,0,0,0,0,1,0,0,0,0,1,2,7,2024
+3000,Oftalmología,Cirugía Pediátrica,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3100,Otorrinolaringología,Cirugía Pediátrica,0,0,0,1,0,0,0,0,0,0,0,0,2024
+3200,Pediatría,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3201,Cardiología Pediátrica,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3202,Endocrinología Pediátrica,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3203,Gastroenterología Pediátrica,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3204,Hematología Pediátrica,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3205,Infectología Pediátrica,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3206,Neumología Pediátrica,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3207,Neurología Pediátrica,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3208,Oncología Pediátrica,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3500,Psiquiatría,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3800,Traumatología y ortopedia,Cirugía Pediátrica,21,26,23,12,25,39,43,34,33,36,23,20,2024
+4100,Urología,Cirugía Pediátrica,19,12,13,9,26,20,15,9,15,17,7,2,2024
+4402,Neurocirugía Pediátrica,Cirugía Pediátrica,4,8,10,5,5,10,4,14,9,7,15,8,2024
+4400,Cirugía Pediátrica,Cirugía Pediátrica,118,121,125,146,99,122,128,126,131,151,133,137,2024
+4401,Nefrología Pediátrica,Pediatría,0,0,0,0,0,0,1,0,0,0,0,0,2024
+4600,Cirugía Plástica y Reconstructiva,Cirugía Pediátrica,8,15,23,11,17,23,25,30,22,10,5,3,2024
+5103,Ginecología Oncológica,Ginecología,0,0,0,53,53,67,49,51,43,57,17,23,2024
+6000,Alojamiento Conjunto,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+6100,Cunero Patológico,Neonatología,0,0,0,0,0,0,0,0,0,0,0,0,2024

@@ -1,0 +1,30 @@
+Clave,Especialidad,División,Enero,Febrero,Marzo ,Abril,Mayo ,Junio,Julio,Agosto,Sepetiembre,Octubre,Noviembre,Diciembre,Año
+1100,Angiología y Cirugía Vascular,Cirugía Pediátrica,0,0,0,0,0,0,0,0,0,0,0,0,2024
+1500,Cirugía Cardiotorácica,Cirugía Pediátrica,0,0,0,0,22,58,12,29,24,0,45,10,2024
+2100,Ginecología,Ginecología,534,624,676,624,572,533,451,495,371,435,393,294,2024
+2101,Biología de la Reproducción Humana,Ginecología,0,0,0,0,0,0,0,0,0,0,0,0,2024
+2103,Urología Ginecológica,Ginecología,0,0,0,0,0,1,28,26,35,27,9,23,2024
+2400,Obstetricia,Obstetricia,1701,1521,1410,1608,1689,1671,1819,1912,1812,1818,1796,1596,2024
+2401,Medicina Materno Fetal,Obstetricia,0,0,0,0,0,52,53,26,37,63,65,75,2024
+3000,Oftalmología,Cirugía Pediátrica,2,1,1,0,1,1,9,3,3,1,1,6,2024
+3100,Otorrinolaringología,Cirugía Pediátrica,8,4,0,4,9,0,0,0,1,0,0,0,2024
+3200,Pediatría,Pediatría,447,443,399,440,414,513,470,550,483,491,634,530,2024
+3201,Cardiología Pediátrica,Pediatría,83,113,91,48,82,108,52,24,150,99,46,71,2024
+3202,Endocrinología Pediátrica,Pediatría,8,0,0,12,23,4,0,7,1,6,2,15,2024
+3203,Gastroenterología Pediátrica,Pediatría,49,109,137,49,48,62,16,49,78,73,61,77,2024
+3204,Hematología Pediátrica,Pediatría,312,339,473,290,276,382,318,264,246,224,237,289,2024
+3205,Infectología Pediátrica,Pediatría,34,4,0,0,29,27,0,6,0,0,10,1,2024
+3206,Neumología Pediátrica,Pediatría,204,182,88,94,138,85,77,52,48,88,99,192,2024
+3207,Neurología Pediátrica,Pediatría,65,65,52,88,118,111,112,111,72,79,109,93,2024
+3208,Oncología Pediátrica,Pediatría,21,0,0,0,6,66,57,84,112,68,69,110,2024
+3500,Psiquiatría,Pediatría,0,0,0,0,0,0,0,0,0,0,0,0,2024
+3800,Traumatología y ortopedia,Cirugía Pediátrica,41,53,54,27,33,76,55,108,84,49,60,42,2024
+4100,Urología,Cirugía Pediátrica,8,0,12,12,4,14,35,48,36,0,27,12,2024
+4402,Neurocirugía Pediátrica,Cirugía Pediátrica,36,52,44,5,15,30,23,44,25,70,73,61,2024
+4400,Cirugía Pediátrica,Cirugía Pediátrica,194,323,305,383,295,285,274,338,207,373,446,207,2024
+4401,Nefrología Pediátrica,Pediatría,97,115,130,102,131,212,151,145,156,101,109,94,2024
+4600,Cirugía Plástica y Reconstructiva,Cirugía Pediátrica,3,19,21,15,29,20,11,1,48,16,2,3,2024
+5103,Ginecología Oncológica,Ginecología,0,0,0,0,10,156,142,194,187,195,153,148,2024
+6000,Alojamiento Conjunto,Pediatría,595,526,503,554,562,578,551,635,627,632,637,618,2024
+6100,Cunero Patológico,Neonatología,1637,1475,1328,1477,1266,1537,1608,1581,1407,1539,1524,1381,2024
+6100,Cunero Patológico,Neonatología,1637,1475,1328,1477,1266,1537,1608,1581,1407,1539,1524,1381,2025
