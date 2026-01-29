@@ -400,6 +400,20 @@ public function difiereDe($otro) {
     return false;
 }
 
+    //Ordenar por sexo Gabriel Alvarez
+    public static function obtenerEstadisticaSexoEvento()
+    {
+        $conexion = new Conexion();
+        // Agrupamos por sexo y por el campo 'definicion' (donde suele guardarse Centinela/Adverso)
+        // O por el campo 'evento' según cómo tengas guardados los datos.
+        $sql = "SELECT sexo, definicion as tipo_evento, COUNT(*) as total 
+                FROM vencer 
+                WHERE sexo IS NOT NULL AND sexo != ''
+                GROUP BY sexo, definicion";
+        $consulta = $conexion->consultar($sql);
+        $conexion->cerrar();
+        return $consulta;
+    }
 
 
 }
