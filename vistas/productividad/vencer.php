@@ -14,11 +14,30 @@ $registros = Vencer::listar();
 $dataSexo = ['Hombres' => 0, 'Mujeres' => 0, 'No Definido' => 0];
 $dataEventos = [];
 
+echo "<script>var datosVencer = " . json_encode($registros, JSON_UNESCAPED_UNICODE) . ";</script>";
+
+//Ordenar por año
+$anioSeleccionado = $_GET['anio'] ?? 'todos';
+$registros = Vencer::listar();
+$dataSexo = ['Hombres' => 0, 'Mujeres' => 0, 'No Definido' => 0];
+$dataEventos = [];
+
 if ($registros && is_array($registros)) {
       foreach ($registros as $r) {
-        // En PHP los índices empiezan en 0. 
-        // Si Folio es [0], Evento es [1] y Sexo es [5]
+
+      //Ordenar por año 
+          $fechaRaw = $r[4] ?? $r['fecha'] ?? null;
+          $fechaRaw = $r[4] ?? $r['fecha'] ?? null;
+          if ($fechaRaw) {
+              $anioRegistro = date('Y', strtotime($fechaRaw));
+              
+              // Si hay un filtro activo y no coincide, saltamos este registro
+              if ($anioSeleccionado !== 'todos' && $anioRegistro !== $anioSeleccionado) {
+                  continue; 
+              }
+          }
         
+        //Ordenar por sexo
         $sexoRaw = $r[5] ?? $r['sexo'] ?? 'N/E'; 
         $sexo = strtoupper(trim($sexoRaw));
 
@@ -32,9 +51,16 @@ if ($registros && is_array($registros)) {
 
         $evento = $r[1] ?? $r['evento'] ?? 'No especificado';
         $dataEventos[$evento] = ($dataEventos[$evento] ?? 0) + 1;
+
     }
 }
+
 ?>
+
+<script>
+    var datosVencer = <?php echo json_encode($registros, JSON_UNESCAPED_UNICODE); ?>;
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!DOCTYPE html>
@@ -795,6 +821,9 @@ if ($registros && is_array($registros)) {
           <div class="modal-content">
             <div class="modal-header" style="background-color: #7a123a; color: white;">
               <h5 class="modal-title" id="modalGraficosLabel">📊 Análisis Estadístico VENCER</h5>
+              <!-- -->    
+
+<!-- -->
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body" style="background-color: #f8f9fa;">
@@ -803,6 +832,16 @@ if ($registros && is_array($registros)) {
                   <div class="card border-0 shadow-sm">
                     <div class="card-body">
                       <h6 class="text-center fw-bold">Distribución por Sexo</h6>
+<!-- Filtros por año -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                              <label for="filtroAnio" class="form-label fw-bold">📅 Seleccionar Año:</label>
+                              <select class="form-select form-select-sm" id="filtroAnio" name="anio" onchange="cambiarAnio(this.value)">
+                                  <option value="todos">Todos los años</option>
+                              </select>
+                            </div>
+                        </div> 
+ <!-- -->
                       <div style="height: 300px;">
                         <canvas id="chartSexo"></canvas>
                       </div>
@@ -833,7 +872,7 @@ if ($registros && is_array($registros)) {
                   📄 Descargar Reporte Completo (PDF)
                 </button>
         <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+             
             </div>
           </div>
         </div>
@@ -1480,101 +1519,226 @@ if ($registros && is_array($registros)) {
 
 
 
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <script src="../../js/scripts.js" defer></script>
-  <script src="../../js/bootstrap.bundle.min.js" defer></script>
-
-
-  
-  <script>
-$(document).ready(function() {
-    const modalEl = document.getElementById('modalGraficos');
-    
-    // Escuchamos el evento 'shown.bs.modal' (cuando el modal ya es visible)
-    //Gabriel Alvarez 
-    modalEl.addEventListener('shown.bs.modal', function () {
-        console.log("Modal abierto, iniciando gráficos...");
-
-        // 1. Gráfico de Sexo
-        const ctxSexo = document.getElementById('chartSexo').getContext('2d');
-        new Chart(ctxSexo, {
-            type: 'pie',
-            data: {
-                labels: ['Hombres', 'Mujeres', 'No Definido'],
-                datasets: [{
-                    data: [
-                        <?= (int)$dataSexo['Hombres'] ?>, 
-                        <?= (int)$dataSexo['Mujeres'] ?>, 
-                        <?= (int)$dataSexo['No Definido'] ?>
-                    ],
-                    backgroundColor: ['#0d6efd', '#dc3545', '#adb5bd']
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        // 2. Gráfico de Eventos
-        const ctxEventos = document.getElementById('chartEventos').getContext('2d');
-        new Chart(ctxEventos, {
-            type: 'bar',
-            data: {
-                labels: <?= json_encode(array_keys($dataEventos)) ?>,
-                datasets: [{
-                    label: 'Registros',
-                    data: <?= json_encode(array_values($dataEventos)) ?>,
-                    backgroundColor: '#d55500'
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }, { once: true }); // 'once: true' evita que el gráfico se recree cada vez que abras el modal
-});
-
-        // Función para descargar un gráfico individual como imagen PNG
-function descargarImagen(canvasId, nombreArchivo) {
-    const canvas = document.getElementById(canvasId);
-    const link = document.createElement('a');
-    link.download = nombreArchivo + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-}
-
-// Función para crear un PDF con TODOS los gráficos del modal
-function generarReportePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4'); // Hoja A4 vertical
-    
-    // Título del Reporte
-    doc.setFontSize(18);
-    doc.setTextColor(122, 18, 58); // Tu color guinda #7a123a
-    doc.text("REPORTE ESTADÍSTICO VENCER", 105, 20, { align: "center" });
-    
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text("UMAE 48 - Generado el: " + new Date().toLocaleDateString(), 105, 30, { align: "center" });
-
-    // Capturar Gráfico 1 (Sexo)
-    const chartSexo = document.getElementById('chartSexo');
-    const imgSexo = chartSexo.toDataURL("image/png");
-    doc.text("1. Distribución por Sexo", 20, 50);
-    doc.addImage(imgSexo, 'PNG', 35, 55, 140, 80); // (imagen, tipo, x, y, ancho, alto)
-
-    // Capturar Gráfico 2 (Eventos)
-    const chartEventos = document.getElementById('chartEventos');
-    const imgEventos = chartEventos.toDataURL("image/png");
-    doc.text("2. Tipos de Eventos", 20, 150);
-    doc.addImage(imgEventos, 'PNG', 35, 155, 140, 80);
-
-    // Guardar el PDF
-    doc.save("Reporte_Estadistico_Vencer.pdf");
-}
+<script>
+    var datosVencer = <?php echo json_encode($registros, JSON_UNESCAPED_UNICODE); ?>;
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+    var datosVencer = <?php echo json_encode($registros, JSON_UNESCAPED_UNICODE); ?>;
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // VARIABLES GLOBALES
+    var chartSexo = null;
+    var chartEventos = null;
+    
+    // VARIABLES DE COLUMNAS (Inicializan en null para saber si las encontramos)
+    var colSexo = null;
+    var colEvento = null;
+    var colAnio = null;
+
+    // --- 1. DETECTAR COLUMNAS (PRIORIDAD: NOMBRE) ---
+    function detectarColumnas() {
+        if (!datosVencer || datosVencer.length === 0) return;
+
+        let fila = datosVencer[0]; // Usamos la primera fila como mapa
+
+        console.log("🕵️ Buscando columnas en:", fila);
+
+        // A. BUSQUEDA POR NOMBRE EXACTO (Lo que tú me dijiste)
+        for (let key in fila) {
+            let nombreColumna = key.toLowerCase(); // Convertimos a minúsculas para comparar
+            
+            // Buscar AÑO
+            if (nombreColumna === 'anio' || nombreColumna === 'año' || nombreColumna === 'year') {
+                colAnio = key;
+                console.log("✅ AÑO encontrado por nombre:", colAnio);
+            }
+
+            // Buscar SEXO
+            if (nombreColumna === 'sexo' || nombreColumna === 'genero') {
+                colSexo = key;
+                console.log("✅ SEXO encontrado por nombre:", colSexo);
+            }
+
+            // Buscar EVENTO
+            if (nombreColumna === 'evento' || nombreColumna === 'tipo') {
+                colEvento = key;
+                console.log("✅ EVENTO encontrado por nombre:", colEvento);
+            }
+        }
+
+        // B. BUSQUEDA POR CONTENIDO (Plan B si los nombres no coinciden)
+        // Solo buscamos si no encontramos alguna arriba
+        if (!colSexo || !colAnio || !colEvento) {
+            console.log("⚠️ Faltan columnas por nombre, escaneando contenido...");
+            
+            for (let key in fila) {
+                let valor = String(fila[key]).toUpperCase().trim();
+
+                // Si falta Sexo y el valor parece sexo...
+                if (!colSexo && (valor === 'MASCULINO' || valor === 'FEMENINO' || valor === 'M' || valor === 'F')) {
+                    colSexo = key;
+                }
+                // Si falta Evento y parece evento...
+                if (!colEvento && (valor.includes('ADVERSO') || valor.includes('CUASI'))) {
+                    colEvento = key;
+                }
+                // Si falta Año y parece año...
+                if (!colAnio && valor.length === 4 && valor.startsWith('20')) {
+                    colAnio = key;
+                }
+            }
+        }
+
+        // C. FALLBACK FINAL (Si todo falla, usamos los índices que vimos en tu consola anterior)
+        if (!colSexo) colSexo = 5;      // Índice probable
+        if (!colEvento) colEvento = 1;  // Índice probable
+        if (!colAnio) colAnio = 'anio'; // Forzamos lo que dijiste
+        
+        console.log(`🎯 RESULTADO FINAL: Año=[${colAnio}], Sexo=[${colSexo}], Evento=[${colEvento}]`);
+    }
+
+    // --- 2. CARGAR SELECTOR ---
+    function cargarAnios() {
+        const selector = document.getElementById('filtroAnio');
+        if (!selector) return;
+
+        const anios = new Set();
+        datosVencer.forEach(r => {
+            // Usamos la columna detectada
+            let val = r[colAnio]; 
+            if (val) anios.add(String(val).trim());
+        });
+
+        selector.innerHTML = '<option value="todos">📅 Todos</option>';
+        Array.from(anios).sort().reverse().forEach(a => {
+            let op = document.createElement('option');
+            op.value = a;
+            op.textContent = a;
+            selector.appendChild(op);
+        });
+    }
+
+    // --- 3. DIBUJAR GRÁFICOS ---
+    function actualizarGraficos() {
+        const selector = document.getElementById('filtroAnio');
+        const anioSel = selector ? selector.value : 'todos';
+        
+        // FILTRAR
+        const datos = datosVencer.filter(r => {
+            if (anioSel === 'todos') return true;
+            return String(r[colAnio]).trim() == anioSel;
+        });
+
+        // CONTAR
+        let conteoSexo = { 'Hombres': 0, 'Mujeres': 0, 'NE': 0 };
+        let mapaEventos = {};
+
+        datos.forEach(r => {
+            // SEXO (Limpieza profunda)
+            let rawSexo = String(r[colSexo] || '').toUpperCase().trim();
+            
+            if (rawSexo === 'MASCULINO' || rawSexo === 'HOMBRE' || rawSexo === 'M' || rawSexo.includes('MASC')) {
+                conteoSexo['Hombres']++;
+            } 
+            else if (rawSexo === 'FEMENINO' || rawSexo === 'MUJER' || rawSexo === 'F' || rawSexo.includes('FEM')) {
+                conteoSexo['Mujeres']++;
+            } 
+            else {
+                conteoSexo['NE']++;
+            }
+
+            // EVENTOS
+            let rawEvento = r[colEvento];
+            let etiqueta = rawEvento ? String(rawEvento).trim() : "Sin Dato";
+            mapaEventos[etiqueta] = (mapaEventos[etiqueta] || 0) + 1;
+        });
+
+        // DIBUJAR SEXO
+        const ctxS = document.getElementById('chartSexo');
+        if (ctxS) {
+            if (chartSexo) chartSexo.destroy();
+            chartSexo = new Chart(ctxS.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: ['Hombres', 'Mujeres', 'N/E'],
+                    datasets: [{
+                        data: Object.values(conteoSexo),
+                        backgroundColor: ['#0d6efd', '#dc3545', '#adb5bd']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // DIBUJAR EVENTOS
+        const ctxE = document.getElementById('chartEventos');
+        if (ctxE) {
+            if (chartEventos) chartEventos.destroy();
+            chartEventos = new Chart(ctxE.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(mapaEventos),
+                    datasets: [{
+                        label: 'Eventos',
+                        data: Object.values(mapaEventos),
+                        backgroundColor: '#7a123a'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    }
+
+    // --- 4. PDF ---
+    function generarPDF() {
+        const elemento = document.getElementById('modalGraficos');
+        const btnClose = elemento.querySelector('.btn-close');
+        if(btnClose) btnClose.style.display = 'none'; // Ocultar X para la foto
+
+        const opt = { 
+            margin: 0.2, 
+            filename: 'Reporte_Vencer.pdf', 
+            image: { type: 'jpeg', quality: 0.98 }, 
+            html2canvas: { scale: 2 }, 
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' } 
+        };
+
+        if(typeof html2pdf !== 'undefined') {
+            html2pdf().set(opt).from(elemento).save().then(() => {
+                 if(btnClose) btnClose.style.display = 'block'; // Mostrar X
+            });
+        }
+    }
+
+    // --- INICIALIZACIÓN ---
+    detectarColumnas(); // <--- AQUÍ SE APLICA TU CORRECCIÓN
+    cargarAnios();
+
+    const filtro = document.getElementById('filtroAnio');
+    if (filtro) filtro.addEventListener('change', actualizarGraficos);
+
+    const modal = document.getElementById('modalGraficos');
+    if (modal) {
+        modal.addEventListener('shown.bs.modal', function() {
+            setTimeout(actualizarGraficos, 200);
+        });
+    }
+
+    const btnPDF = document.getElementById('btnDescargarPDF');
+    if (btnPDF) btnPDF.addEventListener('click', generarPDF);
+});
+</script>
 
 </body>
 
