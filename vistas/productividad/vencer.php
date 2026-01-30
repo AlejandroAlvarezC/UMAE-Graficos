@@ -860,17 +860,26 @@ if ($registros && is_array($registros)) {
                 </div>
               </div>
             </div>
-                <button onclick="descargarImagen('chartSexo', 'Distribucion_Sexo')" class="btn btn-sm btn-outline-primary">
-                  🖼️ Imagen
-                </button>
+            <div class="row mt-4 mb-3">
+                <div class="col-12 d-flex justify-content<-center align-items-center gap-3 flex-wrap">
+                    
+                    <button onclick="exportarCanvasConFondo('chartSexo', 'Grafico_Sexo.png')" 
+                            class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
+                        <i class="fas fa-image"></i> Imagen Sexo
+                    </button>
+                    
+                    <button onclick="exportarCanvasConFondo('chartEventos', 'Grafico_Eventos.png')" 
+                            class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
+                        <i class="fas fa-image"></i> Imagen Eventos
+                    </button>
 
-                <button onclick="descargarImagen('chartEventos', 'Tipos_Eventos')" class="btn btn-sm btn-outline-primary">
-                  🖼️ Imagen
-                </button>
+                    <button id="btnDescargarPDF" 
+                            class="btn btn-danger d-flex align-items-center gap-2 shadow-sm">
+                        <i class="fas fa-file-pdf"></i> Descargar Reporte PDF
+                    </button>
 
-                <button onclick="generarReportePDF()" class="btn btn-danger">
-                  📄 Descargar Reporte Completo (PDF)
-                </button>
+                </div>
+            </div>
         <div class="modal-footer">
              
             </div>
@@ -1735,9 +1744,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const btnPDF = document.getElementById('btnDescargarPDF');
-    if (btnPDF) btnPDF.addEventListener('click', generarPDF);
-});
+    //const btnPDF = document.getElementById('btnDescargarPDF');
+   // if (btnPDF) btnPDF.addEventListener('click', generarPDF);
+
+  // Función para descargar gráficos con fondo blanco
+window.exportarCanvasConFondo = function(canvasId, nombreArchivo) {
+    const canvasOriginal = document.getElementById(canvasId);
+    if (!canvasOriginal) {
+        alert("Error: No se encuentra el gráfico.");
+        return;
+    }
+
+    // Crear canvas temporal
+    const canvasTemp = document.createElement('canvas');
+    canvasTemp.width = canvasOriginal.width;
+    canvasTemp.height = canvasOriginal.height;
+    const ctx = canvasTemp.getContext('2d');
+
+    // Pintar fondo blanco (para evitar transparencia)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasTemp.width, canvasTemp.height);
+    
+    // Copiar el gráfico original
+    ctx.drawImage(canvasOriginal, 0, 0);
+
+    // Descargar
+    const link = document.createElement('a');
+    link.href = canvasTemp.toDataURL('image/png');
+    link.download = nombreArchivo;
+    link.click();
+};
+
+
+}
+
+);
 </script>
 
 </body>
