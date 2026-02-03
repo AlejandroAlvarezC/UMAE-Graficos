@@ -807,8 +807,6 @@ if ($registros && is_array($registros)) {
               <button class="btn btn-urgencia" type="submit">🟩 Descargar Excel</button>
             </form>
 
-            <!--<a id="btnDescargarGraficoPDF" class="btn btn-success">📈 Descargar PDF</a>
-                    <a id="btnDescargarImagenesCanvasUrgencias" class="btn btn-success">🖼️ Descargar Imagen</a>-->
             <button id="btnGrafico" class="btn btn-urgencia" data-bs-toggle="modal" data-bs-target="#modalGraficos">
               📊 Ver Gráficos
             </button>
@@ -816,77 +814,176 @@ if ($registros && is_array($registros)) {
         </div>
       </div>
       <!-- Modal de Gráficos -->
-      <div class="modal fade" id="modalGraficos" tabindex="-1" aria-labelledby="modalGraficosLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-          <div class="modal-content">
+<div class="modal fade" id="modalGraficos" tabindex="-1" aria-labelledby="modalGraficosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            
             <div class="modal-header" style="background-color: #7a123a; color: white;">
-              <h5 class="modal-title" id="modalGraficosLabel">📊 Análisis Estadístico VENCER</h5>
-              <!-- -->    
-
-<!-- -->
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <h5 class="modal-title" id="modalGraficosLabel">📊 Análisis Estadístico VENCER</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
+
             <div class="modal-body" style="background-color: #f8f9fa;">
-              <div class="row g-4">
-                <div class="col-md-6">
-                  <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                      <h6 class="text-center fw-bold">Distribución por Sexo</h6>
-<!-- Filtros por año -->
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                              <label for="filtroAnio" class="form-label fw-bold">📅 Seleccionar Año:</label>
-                              <select class="form-select form-select-sm" id="filtroAnio" name="anio" onchange="cambiarAnio(this.value)">
-                                  <option value="todos">Todos los años</option>
-                              </select>
+
+                  <div class="row mb-3 justify-content-center">
+                      <div class="col-md-auto d-flex align-items-center gap-2">
+                          <!--<label for="filtroAnio" class="form-label fw-bold m-0">📅 Año:</label> -->
+                          
+                          <select class="form-select form-select-sm d-inline-block w-auto" id="filtroAnio">
+                              <option value="todos">Cargando...</option>
+                          </select>
+
+                          <span class="badge rounded-pill bg-dark border border-light shadow-sm py-2 px-3">
+                              Total de Eventos: <span id="lblTotalEventos" class="fw-bold text-warning" style="font-size: 1rem;">0</span>
+                          </span>
+                      </div>
+                  </div>
+
+                <ul class="nav nav-tabs nav-fill mb-3" id="graficosTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="general-tab" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab" aria-selected="true">
+                            📊 Generales
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold text-warning" id="cuasi-tab" data-bs-toggle="tab" data-bs-target="#tab-cuasi" type="button" role="tab" aria-selected="false">
+                            ⚠️ Cuasifallas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold text-danger" id="adverso-tab" data-bs-toggle="tab" data-bs-target="#tab-adverso" type="button" role="tab" aria-selected="false">
+                            🚨 Adversos y Centinelas
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="graficosTabContent">
+
+                  <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
+    
+                      <div class="row g-4 mb-4">
+                          <div class="col-md-6">
+                              <div class="card border-0 shadow-sm h-100">
+                                  <div class="card-body">
+                                      <h6 class="text-center fw-bold">Distribución Global por Sexo</h6>
+                                      <div style="height: 300px;"><canvas id="chartSexoGen"></canvas></div>
+                                      <div id="tablaSexoGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="card border-0 shadow-sm h-100">
+                                  <div class="card-body">
+                                      <h6 class="text-center fw-bold">Conteo Total por Tipo de Evento</h6>
+                                      <div style="height: 300px;"><canvas id="chartEventosGen"></canvas></div>
+                                      <div id="tablaEventosGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="row g-4">
+                          <div class="col-md-6">
+                              <div class="card border-0 shadow-sm h-100">
+                                  <div class="card-body">
+                                      <h6 class="text-center fw-bold">Edad Agrupada por Sexo</h6>
+                                      <div style="height: 300px;"><canvas id="chartEdadSexoGen"></canvas></div>
+                                      <div id="tablaEdadSexoGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="card border-0 shadow-sm h-100">
+                                  <div class="card-body">
+                                      <h6 class="text-center fw-bold" style="color: #198754;">Eventos por Turno</h6>
+                                      <div style="height: 300px;"><canvas id="chartTurnoGen"></canvas></div>
+                                      <div id="tablaTurnoGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                        <div class="row g-4 mt-1">
+                                  <div class="col-12">
+                                      <div class="card border-0 shadow-sm h-100">
+                                          <div class="card-body">
+                                              <h6 class="text-center fw-bold text-primary">Top Áreas con Mayor Incidencia</h6>
+                                              <div style="height: 400px;">
+                                                  <canvas id="chartTopServiciosGen"></canvas>
+                                              </div>
+                                              <div id="tablaTopServiciosGen" class="mt-3 table-responsive" style="max-height: 250px;"></div>
+                                          </div>
+                                      </div>
+                                  </div>
+                        </div>
+                  </div>
+
+                    <div class="tab-pane fade" id="tab-cuasi" role="tabpanel">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-warning">Sexo en Cuasifallas</h6>
+                                        <div style="height: 300px;"><canvas id="chartSexoCuasi"></canvas></div>
+                                    </div>
+                                </div>
                             </div>
-                        </div> 
- <!-- -->
-                      <div style="height: 300px;">
-                        <canvas id="chartSexo"></canvas>
-                      </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-warning">Cuasifallas por Servicio</h6>
+                                        <div style="height: 300px;"><canvas id="chartServicioCuasi"></canvas></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                      <h6 class="text-center fw-bold">Tipos de Eventos Registrados</h6>
-                      <div style="height: 300px;">
-                        <canvas id="chartEventos"></canvas>
-                      </div>
+
+                    <div class="tab-pane fade" id="tab-adverso" role="tabpanel">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-danger">Sexo en Eventos Adversos</h6>
+                                        <div style="height: 300px;"><canvas id="chartSexoAdv"></canvas></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-danger">Eventos Adversos por Servicio</h6>
+                                        <div style="height: 300px;"><canvas id="chartServicioAdv"></canvas></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row mt-4 mb-3">
-                <div class="col-12 d-flex justify-content<-center align-items-center gap-3 flex-wrap">
-                    
-                    <button onclick="exportarCanvasConFondo('chartSexo', 'Grafico_Sexo.png')" 
-                            class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
-                        <i class="fas fa-image"></i> Imagen Sexo
-                    </button>
-                    
-                    <button onclick="exportarCanvasConFondo('chartEventos', 'Grafico_Eventos.png')" 
-                            class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
-                        <i class="fas fa-image"></i> Imagen Eventos
-                    </button>
 
-                    <button id="btnDescargarPDF" 
-                            class="btn btn-danger d-flex align-items-center gap-2 shadow-sm">
-                        <i class="fas fa-file-pdf"></i> Descargar Reporte PDF
-                    </button>
+                </div> <div class="row mt-4 pt-3 border-top">
+                    <div class="col-12 d-flex justify-content-center align-items-center gap-3 flex-wrap">
+                        
+                        <button onclick="exportarCanvasConFondo('chartSexoGen', 'Grafico_Sexo.png')" 
+                                class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
+                            <i class="fas fa-image"></i> Imagen Sexo
+                        </button>
+                        
+                        <button onclick="exportarCanvasConFondo('chartEventosGen', 'Grafico_Eventos.png')" 
+                                class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
+                            <i class="fas fa-image"></i> Imagen Eventos
+                        </button>
 
+                        <button id="btnDescargarPDF" 
+                                class="btn btn-danger d-flex align-items-center gap-2 shadow-sm">
+                            <i class="fas fa-file-pdf"></i> Descargar Reporte PDF
+                        </button>
+
+                    </div>
                 </div>
-            </div>
-        <div class="modal-footer">
-             
-            </div>
-          </div>
+
+            </div> <div class="modal-footer"></div>
         </div>
-
-      </div>
+    </div>
+</div>
       <!-- Filtros -->
       <div id="filtrosContainer" class="card card-body shadow-sm mb-4" style="display: none;">
         <div class="row gy-3">
@@ -963,7 +1060,7 @@ if ($registros && is_array($registros)) {
           </div>
 
           <div class="col-md-3">
-            <label for="filterAnio" class="form-label">Año:</label>
+            <label for="filterAnio" class="form-label">Año:</label> 
             <select id="filterAnio" class="form-select select-personalizado" multiple></select>
           </div>
         </div>
@@ -1054,731 +1151,256 @@ if ($registros && is_array($registros)) {
     </div>
   </div>
 
+        <div style="display: none;">
+            <button id="btnDescargarGraficoPDF"></button>
+            <canvas id="graficoUrgencias"></canvas>
+            <canvas id="graficoMensualDivision"></canvas>
+            <canvas id="graficoTotales"></canvas>
+        </div>
+
 
   <footer>
     <p>Derechos reservados &copy; IMSS 2025</p>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-  <script>
-    $(document).ready(function() {
-      const tabla = $('#tabla-vencer').DataTable({
-        pageLength: 10,
-        order: [
-          [0, 'asc']
-        ],
-        language: {
-          url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-        }
-      });
-
-      function limpiarHTML(html) {
-        return $('<div>').html(html).text().trim();
-      }
-
-      function getUniqueColumnValues(colIndex) {
-        const nodes = tabla.column(colIndex).nodes();
-        const values = new Set();
-
-        $(nodes).each(function() {
-          let valor = '';
-
-          if ($(this).find('span.text-short').length) {
-            valor = $(this).find('span.text-short').text().trim();
-          } else {
-            valor = $(this).text().trim();
-          }
-
-          // Reemplaza saltos de línea, tabs, múltiples espacios por espacio simple
-          valor = valor.replace(/[\r\n\t]+/g, ' ').replace(/\s\s+/g, ' ').trim();
-
-          if (valor === '' || valor === '-') valor = 'NULO';
-
-          values.add(valor);
-        });
-
-        return Array.from(values).sort((a, b) => {
-          if (a === 'NULO') return -1;
-          if (b === 'NULO') return 1;
-          return a.localeCompare(b);
-        });
-      }
-
-
-      function llenarFiltros() {
-        for (let col = 0; col <= 16; col++) {
-          const valores = getUniqueColumnValues(col);
-          console.log(`Columna ${col} (${tabla.column(col).header().textContent}):`, valores); // << Aquí
-
-          const colName = tabla.column(col).header().textContent.replace(/\s+/g, '');
-          const select = $(`#filter${colName}`);
-          select.empty();
-
-          select.append(new Option('NULO', 'NULO')); // Agrega NULO primero
-
-          valores
-            .filter(v => v !== 'NULO') // Evita duplicarlo si ya está en valores
-            .forEach(v => {
-              select.append(new Option(v, v));
-            });
-
-        }
-      }
-
-
-      $('.select-personalizado').select2({
-        placeholder: 'Selecciona opciones',
-        allowClear: true,
-        width: '100%'
-      });
-
-      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-        if (settings.nTable.id !== 'tabla-vencer') return true;
-
-        const filtros = [{
-            id: 'filterFolio',
-            col: 0
-          },
-          {
-            id: 'filterEvento',
-            col: 1
-          },
-          {
-            id: 'filterIniciales',
-            col: 2
-          },
-          {
-            id: 'filterNSS',
-            col: 3
-          },
-          {
-            id: 'filterEdad',
-            col: 4
-          },
-          {
-            id: 'filterSexo',
-            col: 5
-          },
-          {
-            id: 'filterDiagnostico',
-            col: 6
-          },
-          {
-            id: 'filterFechaEvento',
-            col: 7
-          },
-          {
-            id: 'filterFechaNotificacion',
-            col: 8
-          },
-          {
-            id: 'filterTurno',
-            col: 9
-          },
-          {
-            id: 'filterServicio',
-            col: 10
-          },
-          {
-            id: 'filterCategoria',
-            col: 11
-          },
-          {
-            id: 'filterProceso',
-            col: 12
-          },
-          {
-            id: 'filterDefinicion',
-            col: 13
-          },
-          {
-            id: 'filterDescripcion',
-            col: 14
-          },
-          {
-            id: 'filterEstatus',
-            col: 15
-          },
-          {
-            id: 'filterAnio',
-            col: 16
-          }
-        ];
-
-        for (const filtro of filtros) {
-          const valores = $(`#${filtro.id}`).val();
-          const valorCelda = tabla.cell(dataIndex, filtro.col).node();
-          const textoPlano = $(valorCelda).text().trim() || 'NULO';
-
-          if (valores && valores.length > 0) {
-            if (valores.length === 1 && valores[0] === 'NULO') continue;
-            if (!valores.includes(textoPlano)) return false;
-          }
-        }
-
-        return true;
-      });
-
-      function actualizarColumnas() {
-        const filtros = [{
-            id: 'filterFolio',
-            col: 0
-          },
-          {
-            id: 'filterEvento',
-            col: 1
-          },
-          {
-            id: 'filterIniciales',
-            col: 2
-          },
-          {
-            id: 'filterNSS',
-            col: 3
-          },
-          {
-            id: 'filterEdad',
-            col: 4
-          },
-          {
-            id: 'filterSexo',
-            col: 5
-          },
-          {
-            id: 'filterDiagnostico',
-            col: 6
-          },
-          {
-            id: 'filterFechaEvento',
-            col: 7
-          },
-          {
-            id: 'filterFechaNotificacion',
-            col: 8
-          },
-          {
-            id: 'filterTurno',
-            col: 9
-          },
-          {
-            id: 'filterServicio',
-            col: 10
-          },
-          {
-            id: 'filterCategoria',
-            col: 11
-          },
-          {
-            id: 'filterProceso',
-            col: 12
-          },
-          {
-            id: 'filterDefinicion',
-            col: 13
-          },
-          {
-            id: 'filterDescripcion',
-            col: 14
-          },
-          {
-            id: 'filterEstatus',
-            col: 15
-          },
-          {
-            id: 'filterAnio',
-            col: 16
-          }
-        ];
-
-        filtros.forEach(filtro => {
-          const valores = $(`#${filtro.id}`).val() || [];
-          if (valores.length === 1 && valores[0] === 'NULO') {
-            tabla.column(filtro.col).visible(false);
-          } else {
-            tabla.column(filtro.col).visible(true);
-          }
-        });
-      }
-
-      $('.select-personalizado').on('change', function() {
-        actualizarColumnas();
-        tabla.draw();
-      });
-
-      llenarFiltros();
-      $('#filtrosContainer').show();
-      actualizarColumnas();
-    });
-  </script>
-
-  <script>
-    document.querySelector('#formDescargarExcelVencer').addEventListener('submit', function(e) {
-      function valoresSeleccionados(idSelect) {
-        const select = document.getElementById(idSelect);
-        if (!select) return '';
-        return Array.from(select.selectedOptions).map(o => o.value).join(',');
-      }
-
-      document.getElementById('inputFolio').value = valoresSeleccionados('filterFolio');
-      document.getElementById('inputEvento').value = valoresSeleccionados('filterEvento');
-      document.getElementById('inputIniciales').value = valoresSeleccionados('filterIniciales');
-      document.getElementById('inputNSS').value = valoresSeleccionados('filterNSS');
-      document.getElementById('inputEdad').value = valoresSeleccionados('filterEdad');
-      document.getElementById('inputSexo').value = valoresSeleccionados('filterSexo');
-      document.getElementById('inputDiagnostico').value = valoresSeleccionados('filterDiagnostico');
-      document.getElementById('inputFechaEvento').value = valoresSeleccionados('filterFechaEvento');
-      document.getElementById('inputFechaNotificacion').value = valoresSeleccionados('filterFechaNotificacion');
-      document.getElementById('inputTurno').value = valoresSeleccionados('filterTurno');
-      document.getElementById('inputServicio').value = valoresSeleccionados('filterServicio');
-      document.getElementById('inputCategoria').value = valoresSeleccionados('filterCategoria');
-      document.getElementById('inputProceso').value = valoresSeleccionados('filterProceso');
-      document.getElementById('inputDefinicion').value = valoresSeleccionados('filterDefinicion');
-      document.getElementById('inputDescripcion').value = valoresSeleccionados('filterDescripcion');
-      document.getElementById('inputEstatus').value = valoresSeleccionados('filterEstatus');
-      document.getElementById('inputAnio').value = valoresSeleccionados('filterAnio');
-    });
-  </script>
-
-
-  <script>
-    document.getElementById('btnDescargarGraficoPDF').addEventListener('click', async () => {
-      const {
-        jsPDF
-      } = window.jspdf;
-
-      const graficosContainer = document.getElementById("graficosContainer");
-      const estabaOculto = graficosContainer && graficosContainer.style.display === "none";
-      if (estabaOculto) graficosContainer.style.display = "block";
-
-      // Esperar para asegurar render completo
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const canvasUrgencias = document.getElementById("graficoUrgencias");
-      const canvasMensualDivision = document.getElementById("graficoMensualDivision");
-      const canvasTotales = document.getElementById("graficoTotales");
-
-      // Crear PDF tamaño legal (216 x 356 mm)
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "legal"
-      });
-
-      // Encabezado
-      pdf.setFontSize(12);
-      pdf.setFont(undefined, "bold");
-      pdf.text("UNIDAD MÉDICA DE ALTA ESPECIALIDAD", 105, 12, {
-        align: "center"
-      });
-      pdf.setFont(undefined, "normal");
-      pdf.text("HOSPITAL DE GINECO - PEDIATRÍA No. 48", 105, 18, {
-        align: "center"
-      });
-      pdf.text("URGENCIAS", 105, 24, {
-        align: "center"
-      });
-
-      // Línea horizontal
-      pdf.setLineWidth(0.5);
-      pdf.line(10, 28, 200, 28);
-
-      // Función para agregar gráficos
-      let yOffset = 39;
-      const addCanvasToPDF = (canvas, titulo, offsetY) => {
-        if (!canvas) return;
-        const imgData = canvas.toDataURL("image/png");
-        pdf.setFontSize(11);
-        pdf.setFont(undefined, "bold");
-        pdf.text(titulo, 10, offsetY);
-        pdf.addImage(imgData, 'PNG', 10, offsetY + 5, 190, 85);
-      };
-
-      if (canvasUrgencias) {
-        addCanvasToPDF(canvasUrgencias, "Gráfico - Mensual por Especialidad", yOffset);
-        yOffset += 100;
-      }
-
-      if (canvasMensualDivision) {
-        addCanvasToPDF(canvasMensualDivision, "Gráfico - Mensual por División", yOffset);
-        yOffset += 100;
-      }
-
-      if (canvasTotales) {
-        addCanvasToPDF(canvasTotales, "Gráfico - Anual por División", yOffset);
-        yOffset += 100;
-      }
-
-      // Pie de página
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const fecha = new Date().toLocaleDateString();
-      pdf.setFontSize(9);
-      pdf.setFont(undefined, "italic");
-      pdf.text(`Fecha: ${fecha}`, 105, pageHeight - 16, {
-        align: "center"
-      });
-      pdf.text("Instituto Mexicano del Seguro Social", 105, pageHeight - 11, {
-        align: "center"
-      });
-      pdf.text("UMAE HGP 48", 105, pageHeight - 6, {
-        align: "center"
-      });
-
-      pdf.save("grafico-tablas-Urgencias.pdf");
-
-      if (estabaOculto) graficosContainer.style.display = "none";
-    });
-  </script>
-
-  <script>
-    document.getElementById('btnDescargarImagenesCanvasUrgencias').addEventListener('click', function() {
-      exportarCanvasConFondo('graficoUrgencias', 'grafico_mensual_especialidad_urgencias.png');
-      exportarCanvasConFondo('graficoMensualDivision', 'grafico_mensual_division_urgencias.png');
-      exportarCanvasConFondo('graficoTotales', 'grafico_anual_division_urgencias.png');
-    });
-
-    function exportarCanvasConFondo(canvasId, nombreArchivo) {
-      const canvasOriginal = document.getElementById(canvasId);
-      if (!canvasOriginal) return alert("No se encontró el canvas: " + canvasId);
-
-      const canvasTemp = document.createElement('canvas');
-      canvasTemp.width = canvasOriginal.width;
-      canvasTemp.height = canvasOriginal.height;
-
-      const ctx = canvasTemp.getContext('2d');
-
-      // Pintar fondo blanco
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvasTemp.width, canvasTemp.height);
-
-      // Dibujar el canvas original encima
-      ctx.drawImage(canvasOriginal, 0, 0);
-
-      // Crear enlace para descargar
-      const enlace = document.createElement('a');
-      enlace.href = canvasTemp.toDataURL('image/png');
-      enlace.download = nombreArchivo;
-      enlace.click();
-    }
-  </script>
-
-  <script>
-    document.querySelectorAll('.card-submenu-toggle').forEach(function(el) {
-      el.addEventListener('click', function(e) {
-        e.preventDefault();
-
-        document.querySelectorAll('.card-submenu-toggle').forEach(function(toggle) {
-          if (toggle !== el) {
-            toggle.classList.remove('active');
-            const submenu = toggle.nextElementSibling;
-            if (submenu && submenu.classList.contains('card-submenu')) {
-              submenu.style.display = 'none';
-            }
-          }
-        });
-
-        el.classList.toggle('active');
-        const submenu = el.nextElementSibling;
-        if (submenu && submenu.classList.contains('card-submenu')) {
-          submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
-        }
-      });
-    });
-
-    document.querySelectorAll('.dropdown-submenu-toggle').forEach(function(el) {
-      el.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation(); // Evita que Bootstrap cierre el menú
-
-        // Cierra submenús hermanos
-        const parentMenu = el.closest('ul');
-        parentMenu.querySelectorAll('.dropdown-submenu-toggle').forEach(function(toggle) {
-          if (toggle !== el) toggle.classList.remove('active');
-        });
-
-        // Alterna el submenú actual
-        el.classList.toggle('active');
-      });
-    });
-  </script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.toggle-text').forEach(button => {
-        button.addEventListener('click', function() {
-          const td = this.closest('td');
-          const short = td.querySelector('.text-short');
-          const full = td.querySelector('.text-full');
-          const isHidden = full.classList.contains('d-none');
-
-          if (isHidden) {
-            short.classList.add('d-none');
-            full.classList.remove('d-none');
-            this.textContent = 'Ver menos';
-          } else {
-            short.classList.remove('d-none');
-            full.classList.add('d-none');
-            this.textContent = 'Ver más';
-          }
-        });
-      });
-    });
-  </script>
-
-
-
-
- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-<script>
-    var datosVencer = <?php echo json_encode($registros, JSON_UNESCAPED_UNICODE); ?>;
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-<script>
-    var datosVencer = <?php echo json_encode($registros, JSON_UNESCAPED_UNICODE); ?>;
-</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // VARIABLES GLOBALES
-    var chartSexo = null;
-    var chartEventos = null;
-    
-    // VARIABLES DE COLUMNAS (Inicializan en null para saber si las encontramos)
-    var colSexo = null;
-    var colEvento = null;
-    var colAnio = null;
+    console.log("🚀 Script VENCER iniciado...");
 
-    // --- 1. DETECTAR COLUMNAS (PRIORIDAD: NOMBRE) ---
-    function detectarColumnas() {
-        if (!datosVencer || datosVencer.length === 0) return;
+    // --- A. TABLA Y FILTROS PRINCIPALES ---
+    const tabla = $('#tabla-vencer').DataTable({
+        pageLength: 10,
+        order: [[0, 'asc']],
+        language: { url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
+    });
 
-        let fila = datosVencer[0]; // Usamos la primera fila como mapa
-
-        console.log("🕵️ Buscando columnas en:", fila);
-
-        // A. BUSQUEDA POR NOMBRE EXACTO (Lo que tú me dijiste)
-        for (let key in fila) {
-            let nombreColumna = key.toLowerCase(); // Convertimos a minúsculas para comparar
-            
-            // Buscar AÑO
-            if (nombreColumna === 'anio' || nombreColumna === 'año' || nombreColumna === 'year') {
-                colAnio = key;
-                console.log("✅ AÑO encontrado por nombre:", colAnio);
-            }
-
-            // Buscar SEXO
-            if (nombreColumna === 'sexo' || nombreColumna === 'genero') {
-                colSexo = key;
-                console.log("✅ SEXO encontrado por nombre:", colSexo);
-            }
-
-            // Buscar EVENTO
-            if (nombreColumna === 'evento' || nombreColumna === 'tipo') {
-                colEvento = key;
-                console.log("✅ EVENTO encontrado por nombre:", colEvento);
-            }
+    // Toggle para textos largos
+    $(document).on('click', '.toggle-text', function() {
+        const full = $(this).parent().find('.text-full');
+        const short = $(this).parent().find('.text-short');
+        if (full.hasClass('d-none')) {
+            full.removeClass('d-none'); short.addClass('d-none'); $(this).text('Ver menos');
+        } else {
+            full.addClass('d-none'); short.removeClass('d-none'); $(this).text('Ver más');
         }
+    });
 
-        // B. BUSQUEDA POR CONTENIDO (Plan B si los nombres no coinciden)
-        // Solo buscamos si no encontramos alguna arriba
-        if (!colSexo || !colAnio || !colEvento) {
-            console.log("⚠️ Faltan columnas por nombre, escaneando contenido...");
-            
-            for (let key in fila) {
-                let valor = String(fila[key]).toUpperCase().trim();
-
-                // Si falta Sexo y el valor parece sexo...
-                if (!colSexo && (valor === 'MASCULINO' || valor === 'FEMENINO' || valor === 'M' || valor === 'F')) {
-                    colSexo = key;
-                }
-                // Si falta Evento y parece evento...
-                if (!colEvento && (valor.includes('ADVERSO') || valor.includes('CUASI'))) {
-                    colEvento = key;
-                }
-                // Si falta Año y parece año...
-                if (!colAnio && valor.length === 4 && valor.startsWith('20')) {
-                    colAnio = key;
-                }
-            }
-        }
-
-        // C. FALLBACK FINAL (Si todo falla, usamos los índices que vimos en tu consola anterior)
-        if (!colSexo) colSexo = 5;      // Índice probable
-        if (!colEvento) colEvento = 1;  // Índice probable
-        if (!colAnio) colAnio = 'anio'; // Forzamos lo que dijiste
+    // FUNCIÓN PARA RELLENAR LOS SELECTS DE FILTROS (Restaurado)
+    function llenarFiltros() {
+        const headers = ['Folio', 'Evento', 'Iniciales', 'NSS', 'Edad', 'Sexo', 'Diagnostico', 'FechaEvento', 'FechaNotificacion', 'Turno', 'Servicio', 'Categoria', 'Proceso', 'Definicion', 'Descripcion', 'Estatus', 'Anio'];
         
-        console.log(`🎯 RESULTADO FINAL: Año=[${colAnio}], Sexo=[${colSexo}], Evento=[${colEvento}]`);
-    }
-
-    // --- 2. CARGAR SELECTOR ---
-    function cargarAnios() {
-        const selector = document.getElementById('filtroAnio');
-        if (!selector) return;
-
-        const anios = new Set();
-        datosVencer.forEach(r => {
-            // Usamos la columna detectada
-            let val = r[colAnio]; 
-            if (val) anios.add(String(val).trim());
-        });
-
-        selector.innerHTML = '<option value="todos">📅 Todos</option>';
-        Array.from(anios).sort().reverse().forEach(a => {
-            let op = document.createElement('option');
-            op.value = a;
-            op.textContent = a;
-            selector.appendChild(op);
-        });
-    }
-
-    // --- 3. DIBUJAR GRÁFICOS ---
-    function actualizarGraficos() {
-        const selector = document.getElementById('filtroAnio');
-        const anioSel = selector ? selector.value : 'todos';
-        
-        // FILTRAR
-        const datos = datosVencer.filter(r => {
-            if (anioSel === 'todos') return true;
-            return String(r[colAnio]).trim() == anioSel;
-        });
-
-        // CONTAR
-        let conteoSexo = { 'Hombres': 0, 'Mujeres': 0, 'NE': 0 };
-        let mapaEventos = {};
-
-        datos.forEach(r => {
-            // SEXO (Limpieza profunda)
-            let rawSexo = String(r[colSexo] || '').toUpperCase().trim();
+        headers.forEach((h, i) => {
+            const select = $(`#filter${h}`);
+            if(!select.length) return;
             
-            if (rawSexo === 'MASCULINO' || rawSexo === 'HOMBRE' || rawSexo === 'M' || rawSexo.includes('MASC')) {
-                conteoSexo['Hombres']++;
-            } 
-            else if (rawSexo === 'FEMENINO' || rawSexo === 'MUJER' || rawSexo === 'F' || rawSexo.includes('FEM')) {
-                conteoSexo['Mujeres']++;
-            } 
-            else {
-                conteoSexo['NE']++;
-            }
+            const values = new Set();
+            // Obtener valores únicos de la columna i
+            tabla.column(i).nodes().to$().each(function() {
+                let v = $(this).text().trim() || 'NULO';
+                // Limpiar basura de espacios o tabs
+                v = v.replace(/[\r\n\t]+/g, ' ').replace(/\s\s+/g, ' ').trim();
+                values.add(v);
+            });
 
-            // EVENTOS
-            let rawEvento = r[colEvento];
-            let etiqueta = rawEvento ? String(rawEvento).trim() : "Sin Dato";
-            mapaEventos[etiqueta] = (mapaEventos[etiqueta] || 0) + 1;
+            select.empty().append(new Option('NULO', 'NULO'));
+            Array.from(values).sort().forEach(v => {
+                if(v !== 'NULO') select.append(new Option(v, v));
+            });
         });
-
-        // DIBUJAR SEXO
-        const ctxS = document.getElementById('chartSexo');
-        if (ctxS) {
-            if (chartSexo) chartSexo.destroy();
-            chartSexo = new Chart(ctxS.getContext('2d'), {
-                type: 'pie',
-                data: {
-                    labels: ['Hombres', 'Mujeres', 'N/E'],
-                    datasets: [{
-                        data: Object.values(conteoSexo),
-                        backgroundColor: ['#0d6efd', '#dc3545', '#adb5bd']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        // DIBUJAR EVENTOS
-        const ctxE = document.getElementById('chartEventos');
-        if (ctxE) {
-            if (chartEventos) chartEventos.destroy();
-            chartEventos = new Chart(ctxE.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(mapaEventos),
-                    datasets: [{
-                        label: 'Eventos',
-                        data: Object.values(mapaEventos),
-                        backgroundColor: '#7a123a'
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
     }
 
-    // --- 4. PDF ---
-    function generarPDF() {
-        const elemento = document.getElementById('modalGraficos');
-        const btnClose = elemento.querySelector('.btn-close');
-        if(btnClose) btnClose.style.display = 'none'; // Ocultar X para la foto
+    $('.select-personalizado').select2({ placeholder: 'Selecciona opciones', allowClear: true, width: '100%' });
 
-        const opt = { 
-            margin: 0.2, 
-            filename: 'Reporte_Vencer.pdf', 
-            image: { type: 'jpeg', quality: 0.98 }, 
-            html2canvas: { scale: 2 }, 
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' } 
+    // MOTOR DE BÚSQUEDA PERSONALIZADO (Restaurado)
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        if (settings.nTable.id !== 'tabla-vencer') return true;
+
+        const headers = ['Folio', 'Evento', 'Iniciales', 'NSS', 'Edad', 'Sexo', 'Diagnostico', 'FechaEvento', 'FechaNotificacion', 'Turno', 'Servicio', 'Categoria', 'Proceso', 'Definicion', 'Descripcion', 'Estatus', 'Anio'];
+        
+        for (let i = 0; i < headers.length; i++) {
+            const selectId = `#filter${headers[i]}`;
+            const selectedVals = $(selectId).val();
+            
+            if (selectedVals && selectedVals.length > 0) {
+                if (selectedVals.length === 1 && selectedVals[0] === 'NULO') continue;
+                
+                let cellText = data[i] || 'NULO';
+                cellText = cellText.replace(/[\r\n\t]+/g, ' ').replace(/\s\s+/g, ' ').trim();
+                
+                if (!selectedVals.includes(cellText)) return false;
+            }
+        }
+        return true;
+    });
+
+    $('.select-personalizado').on('change', function() {
+        tabla.draw();
+        generarGraficos(); // Sincroniza gráficos al filtrar
+    });
+
+    // --- B. LÓGICA DE GRÁFICOS ---
+    var instanceCharts = {};
+
+    function generarGraficos() {
+        const datosFiltrados = tabla.rows({ filter: 'applied' }).data().toArray();
+        
+        // Actualizar etiqueta de Conteo Total
+        const lblTotal = document.getElementById('lblTotalEventos');
+        if(lblTotal) lblTotal.textContent = datosFiltrados.length;
+
+        if (datosFiltrados.length === 0) return;
+
+        let stats = { sexo: {}, evento: {}, turno: {}, servicio: {}, edad: {} };
+
+        datosFiltrados.forEach(row => {
+            const clean = (val) => String(val).replace(/<[^>]*>?/gm, '').trim() || 'NULO';
+
+            let ev = clean(row[1]);
+            let ed = clean(row[4]);
+            let sx = clean(row[5]);
+            let tu = clean(row[9]);
+            let sv = clean(row[10]);
+
+            stats.sexo[sx] = (stats.sexo[sx] || 0) + 1;
+            stats.evento[ev] = (stats.evento[ev] || 0) + 1;
+            stats.turno[tu] = (stats.turno[tu] || 0) + 1;
+            stats.servicio[sv] = (stats.servicio[sv] || 0) + 1;
+            
+            if(!stats.edad[ed]) stats.edad[ed] = { M:0, F:0 };
+            if(sx.toUpperCase().includes('MASC')) stats.edad[ed].M++;
+            else stats.edad[ed].F++;
+        });
+
+        const draw = (id, type, labels, datasets, opts = {}) => {
+            const canvas = document.getElementById(id);
+            if (!canvas) return;
+            if (instanceCharts[id]) instanceCharts[id].destroy();
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            instanceCharts[id] = new Chart(ctx, {
+                type, data: { labels, datasets },
+                options: { responsive: true, maintainAspectRatio: false, animation: false, ...opts }
+            });
         };
 
-        if(typeof html2pdf !== 'undefined') {
-            html2pdf().set(opt).from(elemento).save().then(() => {
-                 if(btnClose) btnClose.style.display = 'block'; // Mostrar X
-            });
-        }
+        draw('chartSexoGen', 'pie', Object.keys(stats.sexo), [{ data: Object.values(stats.sexo), backgroundColor: ['#0d6efd', '#dc3545', '#ffc107', '#6c757d'] }]);
+        draw('chartEventosGen', 'bar', Object.keys(stats.evento), [{ label: 'Total', data: Object.values(stats.evento), backgroundColor: '#7a123a' }]);
+        draw('chartTurnoGen', 'bar', Object.keys(stats.turno), [{ label: 'Turno', data: Object.values(stats.turno), backgroundColor: '#198754' }], { indexAxis: 'y' });
+        const edL = Object.keys(stats.edad).sort();
+        draw('chartEdadSexoGen', 'bar', edL, [
+            { label: 'Hombres', data: edL.map(e => stats.edad[e].M), backgroundColor: '#0d6efd' },
+            { label: 'Mujeres', data: edL.map(e => stats.edad[e].F), backgroundColor: '#dc3545' }
+        ], { scales: { x: { stacked: true }, y: { stacked: true } } });
+        const topS = Object.entries(stats.servicio).sort((a,b) => b[1]-a[1]).slice(0,10);
+        draw('chartTopServiciosGen', 'bar', topS.map(s => s[0]), [{ label: 'Eventos', data: topS.map(s => s[1]), backgroundColor: '#0288d1' }], { indexAxis: 'y' });
+
+        actualizarTablas(stats);
     }
 
-    // --- INICIALIZACIÓN ---
-    detectarColumnas(); // <--- AQUÍ SE APLICA TU CORRECCIÓN
-    cargarAnios();
+    function actualizarTablas(stats) {
+        const renderTable = (id, data, title) => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            let total = Object.values(data).reduce((a, b) => (typeof b === 'number' ? a + b : a + b.M + b.F), 0);
+            let html = `<table class="table table-sm table-bordered text-center mb-0" style="font-size:0.75rem;"><thead class="table-dark"><tr><th>${title}</th><th>Total</th><th>%</th></tr></thead><tbody>`;
+            Object.entries(data).sort((a,b) => (typeof b[1] === 'number' ? b[1]-a[1] : 0)).forEach(([k, v]) => {
+                let val = typeof v === 'number' ? v : (v.M + v.F);
+                let pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                html += `<tr><td class="text-start">${k}</td><td class="fw-bold">${val}</td><td>${pct}%</td></tr>`;
+            });
+            container.innerHTML = html + `</tbody></table>`;
+        };
+        renderTable('tablaSexoGen', stats.sexo, 'Sexo');
+        renderTable('tablaEventosGen', stats.evento, 'Evento');
+        renderTable('tablaTurnoGen', stats.turno, 'Turno');
+        renderTable('tablaTopServiciosGen', stats.servicio, 'Área');
+    }
 
-    const filtro = document.getElementById('filtroAnio');
-    if (filtro) filtro.addEventListener('change', actualizarGraficos);
+    // --- C. GENERACIÓN DE PDF ---
+    const btnPDF = document.getElementById('btnDescargarPDF');
+    if (btnPDF) {
+        btnPDF.addEventListener('click', async function() {
+            const originalBtnText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = "Procesando...";
+            const modalBody = document.querySelector('#modalGraficos .modal-body');
+            const canvases = modalBody.querySelectorAll('canvas');
+            const tempImgs = [];
 
-    const modal = document.getElementById('modalGraficos');
-    if (modal) {
-        modal.addEventListener('shown.bs.modal', function() {
-            setTimeout(actualizarGraficos, 200);
+            canvases.forEach(cvs => {
+                const img = document.createElement('img');
+                img.src = cvs.toDataURL('image/png');
+                img.style.width = '100%';
+                img.style.height = cvs.offsetHeight + 'px';
+                cvs.style.display = 'none';
+                cvs.parentNode.insertBefore(img, cvs);
+                tempImgs.push({ cvs, img });
+            });
+
+            const opt = {
+                margin: 0.2,
+                filename: 'Reporte_Estadistico_Vencer.pdf',
+                image: { type: 'png' },
+                html2canvas: { scale: 2, logging: false, useCORS: true },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+            };
+
+            try {
+                await html2pdf().set(opt).from(modalBody).save();
+            } catch (err) {
+                console.error("❌ Error en PDF:", err);
+            }
+
+            tempImgs.forEach(item => {
+                item.img.remove();
+                item.cvs.style.display = 'block';
+            });
+            this.disabled = false;
+            this.innerHTML = originalBtnText;
         });
     }
 
-    //const btnPDF = document.getElementById('btnDescargarPDF');
-   // if (btnPDF) btnPDF.addEventListener('click', generarPDF);
+    // --- D. LOGICA DE EXCEL (Restaurado) ---
+    document.querySelector('#formDescargarExcelVencer').addEventListener('submit', function(e) {
+        const headers = ['Folio', 'Evento', 'Iniciales', 'NSS', 'Edad', 'Sexo', 'Diagnostico', 'FechaEvento', 'FechaNotificacion', 'Turno', 'Servicio', 'Categoria', 'Proceso', 'Definicion', 'Descripcion', 'Estatus', 'Anio'];
+        headers.forEach(h => {
+            const select = document.getElementById(`filter${h}`);
+            const input = document.getElementById(`input${h}`);
+            if(select && input) {
+                input.value = Array.from(select.selectedOptions).map(o => o.value).join(',');
+            }
+        });
+    });
 
-  // Función para descargar gráficos con fondo blanco
-window.exportarCanvasConFondo = function(canvasId, nombreArchivo) {
-    const canvasOriginal = document.getElementById(canvasId);
-    if (!canvasOriginal) {
-        alert("Error: No se encuentra el gráfico.");
-        return;
+    // --- E. INICIO ---
+    const filterAnioModal = document.getElementById('filtroAnio');
+    if(filterAnioModal) {
+        const anios = [...new Set(tabla.column(16).data().toArray())].filter(x => x && x!=='NULO').sort().reverse();
+        filterAnioModal.innerHTML = '<option value="todos">Todos los años</option>';
+        anios.forEach(a => filterAnioModal.append(new Option(a, a)));
+        
+        filterAnioModal.addEventListener('change', function() {
+            tabla.column(16).search(this.value === 'todos' ? '' : this.value).draw();
+        });
     }
 
-    // Crear canvas temporal
-    const canvasTemp = document.createElement('canvas');
-    canvasTemp.width = canvasOriginal.width;
-    canvasTemp.height = canvasOriginal.height;
-    const ctx = canvasTemp.getContext('2d');
+    llenarFiltros();
+    $('#filtrosContainer').show();
 
-    // Pintar fondo blanco (para evitar transparencia)
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvasTemp.width, canvasTemp.height);
-    
-    // Copiar el gráfico original
-    ctx.drawImage(canvasOriginal, 0, 0);
+    $('#modalGraficos').on('shown.bs.modal', function() {
+        setTimeout(generarGraficos, 200);
+    });
 
-    // Descargar
-    const link = document.createElement('a');
-    link.href = canvasTemp.toDataURL('image/png');
-    link.download = nombreArchivo;
-    link.click();
-};
-
-
-}
-
-);
+    if(!document.getElementById('btnDescargarGraficoPDF')) {
+        const b = document.createElement('button'); b.id='btnDescargarGraficoPDF'; b.style.display='none'; document.body.appendChild(b);
+    }
+});
 </script>
 
 </body>
