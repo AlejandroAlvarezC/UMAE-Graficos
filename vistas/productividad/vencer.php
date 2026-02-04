@@ -819,171 +819,195 @@ if ($registros && is_array($registros)) {
         <div class="modal-content">
             
             <div class="modal-header" style="background-color: #7a123a; color: white;">
-                <h5 class="modal-title" id="modalGraficosLabel">📊 Análisis Estadístico VENCER</h5>
+                <h5 class="modal-title fw-bold"><i class="fas fa-chart-line me-2"></i>Dashboard Estadístico VENCER</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
-            <div class="modal-body" style="background-color: #f8f9fa;">
+            <div class="modal-body bg-light">
 
-                  <div class="row mb-3 justify-content-center">
-                      <div class="col-md-auto d-flex align-items-center gap-2">
-                          <!--<label for="filtroAnio" class="form-label fw-bold m-0">📅 Año:</label> -->
-                          
-                          <select class="form-select form-select-sm d-inline-block w-auto" id="filtroAnio">
-                              <option value="todos">Cargando...</option>
-                          </select>
-
-                          <span class="badge rounded-pill bg-dark border border-light shadow-sm py-2 px-3">
-                              Total de Eventos: <span id="lblTotalEventos" class="fw-bold text-warning" style="font-size: 1rem;">0</span>
-                          </span>
-                      </div>
-                  </div>
-
-                <ul class="nav nav-tabs nav-fill mb-3" id="graficosTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active fw-bold" id="general-tab" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab" aria-selected="true">
-                            📊 Generales
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold text-warning" id="cuasi-tab" data-bs-toggle="tab" data-bs-target="#tab-cuasi" type="button" role="tab" aria-selected="false">
-                            ⚠️ Cuasifallas
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold text-danger" id="adverso-tab" data-bs-toggle="tab" data-bs-target="#tab-adverso" type="button" role="tab" aria-selected="false">
-                            🚨 Adversos y Centinelas
-                        </button>
-                    </li>
-                </ul>
-
-                <div class="tab-content" id="graficosTabContent">
-
-                  <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
-    
-                      <div class="row g-4 mb-4">
-                          <div class="col-md-6">
-                              <div class="card border-0 shadow-sm h-100">
-                                  <div class="card-body">
-                                      <h6 class="text-center fw-bold">Distribución Global por Sexo</h6>
-                                      <div style="height: 300px;"><canvas id="chartSexoGen"></canvas></div>
-                                      <div id="tablaSexoGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                  </div>
-                              </div>
-                          </div>
-                          <div class="col-md-6">
-                              <div class="card border-0 shadow-sm h-100">
-                                  <div class="card-body">
-                                      <h6 class="text-center fw-bold">Conteo Total por Tipo de Evento</h6>
-                                      <div style="height: 300px;"><canvas id="chartEventosGen"></canvas></div>
-                                      <div id="tablaEventosGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-
-                      <div class="row g-4">
-                          <div class="col-md-6">
-                              <div class="card border-0 shadow-sm h-100">
-                                  <div class="card-body">
-                                      <h6 class="text-center fw-bold">Edad Agrupada por Sexo</h6>
-                                      <div style="height: 300px;"><canvas id="chartEdadSexoGen"></canvas></div>
-                                      <div id="tablaEdadSexoGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                  </div>
-                              </div>
-                          </div>
-                          <div class="col-md-6">
-                              <div class="card border-0 shadow-sm h-100">
-                                  <div class="card-body">
-                                      <h6 class="text-center fw-bold" style="color: #198754;">Eventos por Turno</h6>
-                                      <div style="height: 300px;"><canvas id="chartTurnoGen"></canvas></div>
-                                      <div id="tablaTurnoGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                        <div class="row g-4 mt-1">
-                                  <div class="col-12">
-                                      <div class="card border-0 shadow-sm h-100">
-                                          <div class="card-body">
-                                              <h6 class="text-center fw-bold text-primary">Top Áreas con Mayor Incidencia</h6>
-                                              <div style="height: 400px;">
-                                                  <canvas id="chartTopServiciosGen"></canvas>
-                                              </div>
-                                              <div id="tablaTopServiciosGen" class="mt-3 table-responsive" style="max-height: 250px;"></div>
-                                          </div>
-                                      </div>
-                                  </div>
-                        </div>
-                  </div>
-
-                    <div class="tab-pane fade" id="tab-cuasi" role="tabpanel">
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-warning">Sexo en Cuasifallas</h6>
-                                        <div style="height: 300px;"><canvas id="chartSexoCuasi"></canvas></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-warning">Cuasifallas por Servicio</h6>
-                                        <div style="height: 300px;"><canvas id="chartServicioCuasi"></canvas></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="tab-adverso" role="tabpanel">
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-danger">Sexo en Eventos Adversos</h6>
-                                        <div style="height: 300px;"><canvas id="chartSexoAdv"></canvas></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-danger">Eventos Adversos por Servicio</h6>
-                                        <div style="height: 300px;"><canvas id="chartServicioAdv"></canvas></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div> <div class="row mt-4 pt-3 border-top">
-                    <div class="col-12 d-flex justify-content-center align-items-center gap-3 flex-wrap">
-                        
-                        <button onclick="exportarCanvasConFondo('chartSexoGen', 'Grafico_Sexo.png')" 
-                                class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
-                            <i class="fas fa-image"></i> Imagen Sexo
-                        </button>
-                        
-                        <button onclick="exportarCanvasConFondo('chartEventosGen', 'Grafico_Eventos.png')" 
-                                class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
-                            <i class="fas fa-image"></i> Imagen Eventos
-                        </button>
-
-                        <button id="btnDescargarPDF" 
-                                class="btn btn-danger d-flex align-items-center gap-2 shadow-sm">
-                            <i class="fas fa-file-pdf"></i> Descargar Reporte PDF
-                        </button>
-
+                <div class="d-flex justify-content-center align-items-center mb-4 gap-3 bg-white p-3 rounded shadow-sm border">
+                    <label fw-bold>📅 Filtrar por Año:</label>
+                    <select id="filtroAnio" class="form-select w-auto fw-bold shadow-sm" style="border-color: #7a123a; background-color: #fff5f5;">
+                        <option value="todos">Cargando...</option>
+                    </select>
+                    
+                    <div class="vr mx-2"></div> <div class="d-flex align-items-center">
+                        <span class="text-muted small text-uppercase fw-bold me-2">Total Eventos:</span>
+                        <span id="lblTotalEventos" class="fs-4 fw-bold text-danger">0</span>
                     </div>
                 </div>
 
-            </div> <div class="modal-footer"></div>
-        </div>
+                <ul class="nav nav-pills nav-fill mb-4 gap-2 p-1 bg-white rounded shadow-sm" id="graficosTab" role="tablist">
+                    <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-general">📊 Panorama General</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold text-danger" data-bs-toggle="tab" data-bs-target="#tab-adverso">🚨 Eventos Adversos</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold text-warning" data-bs-toggle="tab" data-bs-target="#tab-cuasi">⚠️ Cuasifallas</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold text-dark" data-bs-toggle="tab" data-bs-target="#tab-centinela">👁️ Eventos Centinela</button></li>
+                </ul>
+
+                <div class="tab-content" id="graficosTabContent">
+                    
+                    <div class="tab-pane fade show active" id="tab-general">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-secondary mb-3">DISTRIBUCIÓN POR SEXO</h6>
+                                        <div style="height:250px"><canvas id="chartSexoGen"></canvas></div>
+                                        <div id="tablaSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-secondary mb-3">CLASIFICACIÓN DE EVENTOS</h6>
+                                        <div style="height:250px"><canvas id="chartEventosGen"></canvas></div>
+                                        <div id="tablaEventosGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-secondary mb-3">RANGO DE EDAD (Por Sexo)</h6>
+                                        <div style="height:250px"><canvas id="chartEdadSexoGen"></canvas></div>
+                                        <div id="tablaEdadSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-success mb-3">DISTRIBUCIÓN POR TURNO</h6>
+                                        <div style="height:250px"><canvas id="chartTurnoGen"></canvas></div>
+                                        <div id="tablaTurnoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-primary mb-3">TOP SERVICIOS CON MAYOR INCIDENCIA</h6>
+                                        <div style="height:350px"><canvas id="chartTopServiciosGen"></canvas></div>
+                                        <div id="tablaTopServiciosGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-adverso">
+                        <div class="alert alert-danger py-2 text-center fw-bold mb-3"><i class="fas fa-exclamation-circle me-2"></i>Análisis de Eventos Adversos</div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-danger">1. ÁREAS CON MAYOR INCIDENCIA</h6>
+                                        <div style="height: 300px;"><canvas id="chartServicioAdv"></canvas></div>
+                                        <div id="tablaServicioAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-50" style="background-color: #fff5f5;">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">2. ANÁLISIS ÁREA CRÍTICA: <span id="lblTopAreaAdv" class="text-danger">---</span></h6>
+                                        <div style="height: 300px;"><canvas id="chartDrillDownAdv"></canvas></div>
+                                        <div id="tablaDrillDownAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-danger">3. CAUSAS GLOBALES</h6>
+                                        <div style="height: 300px;"><canvas id="chartDefinicionAdv"></canvas></div>
+                                        <div id="tablaDefinicionAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-cuasi">
+                        <div class="alert alert-warning py-2 text-center fw-bold mb-3 text-dark"><i class="fas fa-shield-alt me-2"></i>Análisis de Cuasifallas</div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-warning">1. ÁREAS CON MAYOR INCIDENCIA</h6>
+                                        <div style="height: 300px;"><canvas id="chartServicioCuasi"></canvas></div>
+                                        <div id="tablaServicioCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-50" style="background-color: #fffsf0;">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">2. ANÁLISIS ÁREA CRÍTICA: <span id="lblTopAreaCuasi" class="text-warning">---</span></h6>
+                                        <div style="height: 300px;"><canvas id="chartDrillDownCuasi"></canvas></div>
+                                        <div id="tablaDrillDownCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-warning">3. CAUSAS GLOBALES</h6>
+                                        <div style="height: 300px;"><canvas id="chartDefinicionCuasi"></canvas></div>
+                                        <div id="tablaDefinicionCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-centinela">
+                        <div class="alert alert-dark py-2 text-center fw-bold mb-3">Análisis de Eventos Centinela</div>
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">ÁREAS CON MAYOR INCIDENCIA</h6>
+                                        <div style="height: 350px;"><canvas id="chartServicioCent"></canvas></div>
+                                        <div id="tablaServicioCent" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">CAUSAS PRINCIPALES (Definición)</h6>
+                                        <div style="height: 350px;"><canvas id="chartDefinicionCent"></canvas></div>
+                                        <div id="tablaDefinicionCent" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <div class="row mt-4 border-top pt-3">
+                    <div class="col text-center">
+                        <button id="btnDescargarExcelStats" class="btn btn-success fw-bold shadow px-4 py-2">
+                            <i class="fas fa-file-excel me-2"></i>Descargar Reporte (Excel)
+                        </button>
+                    </div>
+                </div>
+
+            </div> </div>
     </div>
 </div>
+<!-- Modal graficos hasta aqui -->
       <!-- Filtros -->
       <div id="filtrosContainer" class="card card-body shadow-sm mb-4" style="display: none;">
         <div class="row gy-3">
@@ -1151,14 +1175,6 @@ if ($registros && is_array($registros)) {
     </div>
   </div>
 
-        <div style="display: none;">
-            <button id="btnDescargarGraficoPDF"></button>
-            <canvas id="graficoUrgencias"></canvas>
-            <canvas id="graficoMensualDivision"></canvas>
-            <canvas id="graficoTotales"></canvas>
-        </div>
-
-
   <footer>
     <p>Derechos reservados &copy; IMSS 2025</p>
   </footer>
@@ -1168,238 +1184,323 @@ if ($registros && is_array($registros)) {
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 Script VENCER iniciado...");
+    console.log("🚀 VENCER: Sistema Completo (Filtro Año Reparado)");
 
-    // --- A. TABLA Y FILTROS PRINCIPALES ---
+    // CONFIGURACIÓN DE COLUMNAS (Ajusta si cambia tu tabla)
+    const COL = { EVENTO: 1, EDAD: 4, SEXO: 5, TURNO: 9, SERVICIO: 10, DEFINICION: 13, ANIO: 16 };
+
+    // --- A. TABLA PRINCIPAL ---
     const tabla = $('#tabla-vencer').DataTable({
-        pageLength: 10,
-        order: [[0, 'asc']],
+        pageLength: 10, order: [[0, 'asc']],
         language: { url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
     });
 
-    // Toggle para textos largos
-    $(document).on('click', '.toggle-text', function() {
-        const full = $(this).parent().find('.text-full');
-        const short = $(this).parent().find('.text-short');
-        if (full.hasClass('d-none')) {
-            full.removeClass('d-none'); short.addClass('d-none'); $(this).text('Ver menos');
-        } else {
-            full.addClass('d-none'); short.removeClass('d-none'); $(this).text('Ver más');
-        }
-    });
-
-    // FUNCIÓN PARA RELLENAR LOS SELECTS DE FILTROS (Restaurado)
+    // --- B. FILTROS DE TABLA (Select2) ---
     function llenarFiltros() {
         const headers = ['Folio', 'Evento', 'Iniciales', 'NSS', 'Edad', 'Sexo', 'Diagnostico', 'FechaEvento', 'FechaNotificacion', 'Turno', 'Servicio', 'Categoria', 'Proceso', 'Definicion', 'Descripcion', 'Estatus', 'Anio'];
-        
         headers.forEach((h, i) => {
             const select = $(`#filter${h}`);
             if(!select.length) return;
-            
             const values = new Set();
-            // Obtener valores únicos de la columna i
             tabla.column(i).nodes().to$().each(function() {
-                let v = $(this).text().trim() || 'NULO';
-                // Limpiar basura de espacios o tabs
-                v = v.replace(/[\r\n\t]+/g, ' ').replace(/\s\s+/g, ' ').trim();
+                let v = $(this).text().replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
                 values.add(v);
             });
-
             select.empty().append(new Option('NULO', 'NULO'));
-            Array.from(values).sort().forEach(v => {
-                if(v !== 'NULO') select.append(new Option(v, v));
-            });
+            Array.from(values).sort().forEach(v => { if(v !== 'NULO') select.append(new Option(v, v)); });
         });
     }
-
-    $('.select-personalizado').select2({ placeholder: 'Selecciona opciones', allowClear: true, width: '100%' });
-
-    // MOTOR DE BÚSQUEDA PERSONALIZADO (Restaurado)
+    $('.select-personalizado').select2({ placeholder: 'Filtrar...', allowClear: true, width: '100%' });
+    $('.select-personalizado').on('change', () => tabla.draw());
+    
     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         if (settings.nTable.id !== 'tabla-vencer') return true;
-
         const headers = ['Folio', 'Evento', 'Iniciales', 'NSS', 'Edad', 'Sexo', 'Diagnostico', 'FechaEvento', 'FechaNotificacion', 'Turno', 'Servicio', 'Categoria', 'Proceso', 'Definicion', 'Descripcion', 'Estatus', 'Anio'];
-        
         for (let i = 0; i < headers.length; i++) {
-            const selectId = `#filter${headers[i]}`;
-            const selectedVals = $(selectId).val();
-            
-            if (selectedVals && selectedVals.length > 0) {
-                if (selectedVals.length === 1 && selectedVals[0] === 'NULO') continue;
-                
-                let cellText = data[i] || 'NULO';
-                cellText = cellText.replace(/[\r\n\t]+/g, ' ').replace(/\s\s+/g, ' ').trim();
-                
-                if (!selectedVals.includes(cellText)) return false;
-            }
+            const vals = $(`#filter${headers[i]}`).val();
+            if (vals && vals.length > 0 && !vals.includes(data[i].trim() || 'NULO')) return false;
         }
         return true;
     });
-
-    $('.select-personalizado').on('change', function() {
-        tabla.draw();
-        generarGraficos(); // Sincroniza gráficos al filtrar
-    });
-
-    // --- B. LÓGICA DE GRÁFICOS ---
-    var instanceCharts = {};
-
-    function generarGraficos() {
-        const datosFiltrados = tabla.rows({ filter: 'applied' }).data().toArray();
-        
-        // Actualizar etiqueta de Conteo Total
-        const lblTotal = document.getElementById('lblTotalEventos');
-        if(lblTotal) lblTotal.textContent = datosFiltrados.length;
-
-        if (datosFiltrados.length === 0) return;
-
-        let stats = { sexo: {}, evento: {}, turno: {}, servicio: {}, edad: {} };
-
-        datosFiltrados.forEach(row => {
-            const clean = (val) => String(val).replace(/<[^>]*>?/gm, '').trim() || 'NULO';
-
-            let ev = clean(row[1]);
-            let ed = clean(row[4]);
-            let sx = clean(row[5]);
-            let tu = clean(row[9]);
-            let sv = clean(row[10]);
-
-            stats.sexo[sx] = (stats.sexo[sx] || 0) + 1;
-            stats.evento[ev] = (stats.evento[ev] || 0) + 1;
-            stats.turno[tu] = (stats.turno[tu] || 0) + 1;
-            stats.servicio[sv] = (stats.servicio[sv] || 0) + 1;
-            
-            if(!stats.edad[ed]) stats.edad[ed] = { M:0, F:0 };
-            if(sx.toUpperCase().includes('MASC')) stats.edad[ed].M++;
-            else stats.edad[ed].F++;
-        });
-
-        const draw = (id, type, labels, datasets, opts = {}) => {
-            const canvas = document.getElementById(id);
-            if (!canvas) return;
-            if (instanceCharts[id]) instanceCharts[id].destroy();
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            instanceCharts[id] = new Chart(ctx, {
-                type, data: { labels, datasets },
-                options: { responsive: true, maintainAspectRatio: false, animation: false, ...opts }
-            });
-        };
-
-        draw('chartSexoGen', 'pie', Object.keys(stats.sexo), [{ data: Object.values(stats.sexo), backgroundColor: ['#0d6efd', '#dc3545', '#ffc107', '#6c757d'] }]);
-        draw('chartEventosGen', 'bar', Object.keys(stats.evento), [{ label: 'Total', data: Object.values(stats.evento), backgroundColor: '#7a123a' }]);
-        draw('chartTurnoGen', 'bar', Object.keys(stats.turno), [{ label: 'Turno', data: Object.values(stats.turno), backgroundColor: '#198754' }], { indexAxis: 'y' });
-        const edL = Object.keys(stats.edad).sort();
-        draw('chartEdadSexoGen', 'bar', edL, [
-            { label: 'Hombres', data: edL.map(e => stats.edad[e].M), backgroundColor: '#0d6efd' },
-            { label: 'Mujeres', data: edL.map(e => stats.edad[e].F), backgroundColor: '#dc3545' }
-        ], { scales: { x: { stacked: true }, y: { stacked: true } } });
-        const topS = Object.entries(stats.servicio).sort((a,b) => b[1]-a[1]).slice(0,10);
-        draw('chartTopServiciosGen', 'bar', topS.map(s => s[0]), [{ label: 'Eventos', data: topS.map(s => s[1]), backgroundColor: '#0288d1' }], { indexAxis: 'y' });
-
-        actualizarTablas(stats);
-    }
-
-    function actualizarTablas(stats) {
-        const renderTable = (id, data, title) => {
-            const container = document.getElementById(id);
-            if (!container) return;
-            let total = Object.values(data).reduce((a, b) => (typeof b === 'number' ? a + b : a + b.M + b.F), 0);
-            let html = `<table class="table table-sm table-bordered text-center mb-0" style="font-size:0.75rem;"><thead class="table-dark"><tr><th>${title}</th><th>Total</th><th>%</th></tr></thead><tbody>`;
-            Object.entries(data).sort((a,b) => (typeof b[1] === 'number' ? b[1]-a[1] : 0)).forEach(([k, v]) => {
-                let val = typeof v === 'number' ? v : (v.M + v.F);
-                let pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                html += `<tr><td class="text-start">${k}</td><td class="fw-bold">${val}</td><td>${pct}%</td></tr>`;
-            });
-            container.innerHTML = html + `</tbody></table>`;
-        };
-        renderTable('tablaSexoGen', stats.sexo, 'Sexo');
-        renderTable('tablaEventosGen', stats.evento, 'Evento');
-        renderTable('tablaTurnoGen', stats.turno, 'Turno');
-        renderTable('tablaTopServiciosGen', stats.servicio, 'Área');
-    }
-
-    // --- C. GENERACIÓN DE PDF ---
-    const btnPDF = document.getElementById('btnDescargarPDF');
-    if (btnPDF) {
-        btnPDF.addEventListener('click', async function() {
-            const originalBtnText = this.innerHTML;
-            this.disabled = true;
-            this.innerHTML = "Procesando...";
-            const modalBody = document.querySelector('#modalGraficos .modal-body');
-            const canvases = modalBody.querySelectorAll('canvas');
-            const tempImgs = [];
-
-            canvases.forEach(cvs => {
-                const img = document.createElement('img');
-                img.src = cvs.toDataURL('image/png');
-                img.style.width = '100%';
-                img.style.height = cvs.offsetHeight + 'px';
-                cvs.style.display = 'none';
-                cvs.parentNode.insertBefore(img, cvs);
-                tempImgs.push({ cvs, img });
-            });
-
-            const opt = {
-                margin: 0.2,
-                filename: 'Reporte_Estadistico_Vencer.pdf',
-                image: { type: 'png' },
-                html2canvas: { scale: 2, logging: false, useCORS: true },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
-            };
-
-            try {
-                await html2pdf().set(opt).from(modalBody).save();
-            } catch (err) {
-                console.error("❌ Error en PDF:", err);
-            }
-
-            tempImgs.forEach(item => {
-                item.img.remove();
-                item.cvs.style.display = 'block';
-            });
-            this.disabled = false;
-            this.innerHTML = originalBtnText;
-        });
-    }
-
-    // --- D. LOGICA DE EXCEL (Restaurado) ---
-    document.querySelector('#formDescargarExcelVencer').addEventListener('submit', function(e) {
-        const headers = ['Folio', 'Evento', 'Iniciales', 'NSS', 'Edad', 'Sexo', 'Diagnostico', 'FechaEvento', 'FechaNotificacion', 'Turno', 'Servicio', 'Categoria', 'Proceso', 'Definicion', 'Descripcion', 'Estatus', 'Anio'];
-        headers.forEach(h => {
-            const select = document.getElementById(`filter${h}`);
-            const input = document.getElementById(`input${h}`);
-            if(select && input) {
-                input.value = Array.from(select.selectedOptions).map(o => o.value).join(',');
-            }
-        });
-    });
-
-    // --- E. INICIO ---
-    const filterAnioModal = document.getElementById('filtroAnio');
-    if(filterAnioModal) {
-        const anios = [...new Set(tabla.column(16).data().toArray())].filter(x => x && x!=='NULO').sort().reverse();
-        filterAnioModal.innerHTML = '<option value="todos">Todos los años</option>';
-        anios.forEach(a => filterAnioModal.append(new Option(a, a)));
-        
-        filterAnioModal.addEventListener('change', function() {
-            tabla.column(16).search(this.value === 'todos' ? '' : this.value).draw();
-        });
-    }
-
     llenarFiltros();
     $('#filtrosContainer').show();
 
-    $('#modalGraficos').on('shown.bs.modal', function() {
-        setTimeout(generarGraficos, 200);
+    // --- C. LÓGICA DEL FILTRO DE AÑO (REPARADO) ---
+    // Esta función busca los años en la columna 16 y llena el select
+    function inicializarFiltroAnio() {
+        const fAnio = document.getElementById('filtroAnio');
+        if(fAnio) {
+            // Obtener años únicos de la columna 16
+            const anios = [...new Set(tabla.column(COL.ANIO).data().toArray())]
+                .filter(x => x && x !== 'NULO')
+                .sort()
+                .reverse();
+            
+            // Limpiar "Cargando..." y llenar opciones
+            fAnio.innerHTML = '<option value="todos">📅 Todos los años</option>';
+            anios.forEach(a => fAnio.append(new Option(a, a)));
+            
+            // Evento de cambio
+            fAnio.addEventListener('change', function() {
+                const val = this.value;
+                // Filtrar tabla principal por columna Año
+                tabla.column(COL.ANIO).search(val === 'todos' ? '' : val).draw();
+                // Regenerar gráficos con los datos filtrados
+                generarGraficos();
+            });
+        }
+    }
+    // Ejecutar inmediatamente
+    inicializarFiltroAnio();
+
+
+    // --- D. MOTOR DE GRÁFICOS ---
+    let charts = {};
+
+    function generarGraficos() {
+        setTimeout(() => {
+            const rows = tabla.rows({ search: 'applied' }).data().toArray();
+            const lbl = document.getElementById('lblTotalEventos');
+            if(lbl) lbl.textContent = rows.length;
+            if (rows.length === 0) return;
+
+            // Procesar Datos
+            let s = { 
+                General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{} },
+                Adverso: { Servicio:{}, Definicion:{} },
+                Cuasi: { Servicio:{}, Definicion:{} },
+                Centinela: { Servicio:{}, Definicion:{} }
+            };
+
+            rows.forEach(r => {
+                const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
+                let ev = clean(r[COL.EVENTO]), ed = clean(r[COL.EDAD]), sx = clean(r[COL.SEXO]), tu = clean(r[COL.TURNO]), sv = clean(r[COL.SERVICIO]), def = clean(r[COL.DEFINICION]);
+
+                // General
+                s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1;
+                s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1;
+                s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1;
+                s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
+                if (!s.General.Edad[ed]) s.General.Edad[ed] = { H: 0, M: 0 };
+                (sx.toUpperCase().includes('MASC') || sx.toUpperCase().includes('HOMBRE')) ? s.General.Edad[ed].H++ : s.General.Edad[ed].M++;
+
+                // Específicos
+                let evUpper = ev.toUpperCase();
+                if (evUpper.includes('ADVERSO')) { s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; }
+                else if (evUpper.includes('CUASI')) { s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1; }
+                else if (evUpper.includes('CENTINELA')) { s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; }
+            });
+
+            const draw = (id, type, labels, data, colors, extraOpts={}) => {
+                const cvs = document.getElementById(id); if (!cvs) return;
+                if (charts[id]) charts[id].destroy();
+                charts[id] = new Chart(cvs.getContext('2d'), {
+                    type: type, data: { labels: labels, datasets: [{ label: 'Total', data: data, backgroundColor: colors }] },
+                    options: { responsive: true, maintainAspectRatio: false, animation: false, indexAxis: 'y', ...extraOpts }
+                });
+            };
+
+            const dibujarTabla = (idTabla, dataObj, tituloColumna) => {
+                const el = document.getElementById(idTabla); 
+                if(!el) return;
+                const entries = Object.entries(dataObj).sort((a,b) => {
+                    const valA = (typeof a[1] === 'object') ? (a[1].H + a[1].M) : a[1];
+                    const valB = (typeof b[1] === 'object') ? (b[1].H + b[1].M) : b[1];
+                    return valB - valA;
+                });
+                let html = `<table class="table table-sm table-striped table-bordered text-center small mb-0"><thead class="table-dark"><tr><th>${tituloColumna}</th><th>Total</th></tr></thead><tbody>`;
+                entries.forEach(([k, v]) => {
+                    let val = (typeof v === 'object') ? (v.H + v.M) : v;
+                    html += `<tr><td class="text-start text-break">${k}</td><td class="fw-bold">${val}</td></tr>`;
+                });
+                if(entries.length === 0) html += `<tr><td colspan="2">Sin datos</td></tr>`;
+                el.innerHTML = html + '</tbody></table>';
+            };
+
+            // 1. GENERALES
+            draw('chartSexoGen', 'pie', Object.keys(s.General.Sexo), Object.values(s.General.Sexo), ['#0d6efd','#dc3545','#ffc107'], {indexAxis:'x'});
+            dibujarTabla('tablaSexoGen', s.General.Sexo, 'Sexo');
+            draw('chartEventosGen', 'bar', Object.keys(s.General.Evento), Object.values(s.General.Evento), '#7a123a', {indexAxis:'x'});
+            dibujarTabla('tablaEventosGen', s.General.Evento, 'Evento');
+            draw('chartTurnoGen', 'bar', Object.keys(s.General.Turno), Object.values(s.General.Turno), '#198754');
+            dibujarTabla('tablaTurnoGen', s.General.Turno, 'Turno');
+            const topS = Object.entries(s.General.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            draw('chartTopServiciosGen', 'bar', topS.map(x=>x[0]), topS.map(x=>x[1]), '#0288d1');
+            dibujarTabla('tablaTopServiciosGen', s.General.Servicio, 'Servicio'); 
+            const cvsEd = document.getElementById('chartEdadSexoGen');
+            if(cvsEd) {
+                const edades = Object.keys(s.General.Edad).sort((a,b) => parseInt(a)-parseInt(b));
+                if(charts['chartEdadSexoGen']) charts['chartEdadSexoGen'].destroy();
+                charts['chartEdadSexoGen'] = new Chart(cvsEd, {
+                    type: 'bar', data: { labels: edades, datasets: [{ label: 'H', data: edades.map(e=>s.General.Edad[e].H), backgroundColor: '#0d6efd'}, {label: 'M', data: edades.map(e=>s.General.Edad[e].M), backgroundColor: '#dc3545'}] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: {x:{stacked:true}, y:{stacked:true}} }
+                });
+                dibujarTabla('tablaEdadSexoGen', s.General.Edad, 'Edad');
+            }
+
+            // 2. DRILL DOWN (Adversos y Cuasi)
+            const generarDrillDown = (tipo, colorBarra, ids) => {
+                const dataObj = s[tipo];
+                const tServ = Object.entries(dataObj.Servicio).sort((a,b)=>b[1]-a[1]);
+                
+                draw(ids.servChart, 'bar', tServ.slice(0,10).map(x=>x[0]), tServ.slice(0,10).map(x=>x[1]), colorBarra);
+                dibujarTabla(ids.servTable, dataObj.Servicio, 'Servicio');
+
+                const tDef = Object.entries(dataObj.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                draw(ids.defChart, 'bar', tDef.map(x=>x[0]), tDef.map(x=>x[1]), colorBarra);
+                dibujarTabla(ids.defTable, dataObj.Definicion, 'Causa');
+
+                if (tServ.length > 0) {
+                    const topAreaName = tServ[0][0];
+                    if(document.getElementById(ids.lbl)) document.getElementById(ids.lbl).textContent = topAreaName;
+                    
+                    let drillCounts = {};
+                    rows.forEach(r => {
+                        const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
+                        let evUpper = clean(r[COL.EVENTO]).toUpperCase();
+                        let sv = clean(r[COL.SERVICIO]);
+                        let coincide = (tipo === 'Adverso' && evUpper.includes('ADVERSO')) || (tipo === 'Cuasi' && evUpper.includes('CUASI'));
+                        if (coincide && sv === topAreaName) { drillCounts[clean(r[COL.DEFINICION])] = (drillCounts[clean(r[COL.DEFINICION])] || 0) + 1; }
+                    });
+                    
+                    const tDrill = Object.entries(drillCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                    draw(ids.drillChart, 'bar', tDrill.map(x=>x[0]), tDrill.map(x=>x[1]), '#212529');
+                    dibujarTabla(ids.drillTable, drillCounts, 'Causa Específica');
+                } else {
+                    if(document.getElementById(ids.lbl)) document.getElementById(ids.lbl).textContent = "Sin Datos";
+                    dibujarTabla(ids.drillTable, {}, 'Sin Datos');
+                }
+            };
+
+            generarDrillDown('Adverso', '#dc3545', {
+                servChart: 'chartServicioAdv', servTable: 'tablaServicioAdv',
+                drillChart: 'chartDrillDownAdv', drillTable: 'tablaDrillDownAdv',
+                defChart: 'chartDefinicionAdv', defTable: 'tablaDefinicionAdv',
+                lbl: 'lblTopAreaAdv'
+            });
+
+            generarDrillDown('Cuasi', '#ffc107', {
+                servChart: 'chartServicioCuasi', servTable: 'tablaServicioCuasi',
+                drillChart: 'chartDrillDownCuasi', drillTable: 'tablaDrillDownCuasi',
+                defChart: 'chartDefinicionCuasi', defTable: 'tablaDefinicionCuasi',
+                lbl: 'lblTopAreaCuasi'
+            });
+
+            // 3. CENTINELAS
+            const tCentS = Object.entries(s.Centinela.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            const tCentD = Object.entries(s.Centinela.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            draw('chartServicioCent', 'bar', tCentS.map(x=>x[0]), tCentS.map(x=>x[1]), '#212529');
+            dibujarTabla('tablaServicioCent', s.Centinela.Servicio, 'Servicio');
+
+            draw('chartDefinicionCent', 'bar', tCentD.map(x=>x[0]), tCentD.map(x=>x[1]), '#212529');
+            dibujarTabla('tablaDefinicionCent', s.Centinela.Definicion, 'Causa');
+
+        }, 200);
+    }
+
+    // --- E. EXCEL MASTER ---
+    $(document).on('click', '#btnDescargarExcelStats', async function() {
+        const btn = this; const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ Generando..."; btn.disabled = true;
+
+        try {
+            const rows = tabla.rows({ search: 'applied' }).data().toArray();
+            if (rows.length === 0) throw new Error("No hay datos");
+
+            let s = { General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{} }, Adverso:{Servicio:{}, Definicion:{}}, Cuasi:{Servicio:{}, Definicion:{}}, Centinela:{Servicio:{}, Definicion:{}} };
+            rows.forEach(r => {
+                const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
+                let ev = clean(r[COL.EVENTO]), ed = clean(r[COL.EDAD]), sx = clean(r[COL.SEXO]), tu = clean(r[COL.TURNO]), sv = clean(r[COL.SERVICIO]), def = clean(r[COL.DEFINICION]);
+
+                s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1; s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1;
+                s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1; s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
+                if (!s.General.Edad[ed]) s.General.Edad[ed] = { H: 0, M: 0 };
+                (sx.toUpperCase().includes('MASC') || sx.toUpperCase().includes('HOMBRE')) ? s.General.Edad[ed].H++ : s.General.Edad[ed].M++;
+
+                if(ev.toUpperCase().includes('ADVERSO')) { s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; }
+                else if(ev.toUpperCase().includes('CUASI')) { s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1; }
+                else if(ev.toUpperCase().includes('CENTINELA')) { s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; }
+            });
+
+            const workbook = new ExcelJS.Workbook();
+            const generarImagenFantasma = async (type, labels, data, color, title) => {
+                const canvas = document.createElement('canvas'); canvas.width = 800; canvas.height = 400;
+                const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const tempChart = new Chart(ctx, { type: type, data: { labels: labels, datasets: [{ label: 'Total', data: data, backgroundColor: color }] }, options: { responsive: false, animation: false, indexAxis: (type==='pie'?'x':'y'), plugins: { title: { display: true, text: title, font: {size: 18} }, legend: {display: (type==='pie')} } } });
+                const b64 = canvas.toDataURL('image/png'); tempChart.destroy(); return b64;
+            };
+
+            const addSection = async (sheet, title, dataObj, chartConfig, startRow) => {
+                sheet.getCell(`A${startRow}`).value = title; sheet.getCell(`A${startRow}`).font = { size: 14, bold: true, color: { argb: 'FF7A123A' } };
+                sheet.getCell(`A${startRow+1}`).value = "Concepto"; sheet.getCell(`B${startRow+1}`).value = "Total";
+                sheet.getCell(`A${startRow+1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } }; sheet.getCell(`A${startRow+1}`).font = { color: { argb: 'FFFFFFFF' } };
+                sheet.getCell(`B${startRow+1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } }; sheet.getCell(`B${startRow+1}`).font = { color: { argb: 'FFFFFFFF' } };
+                let currentRow = startRow + 2;
+                let entries = Object.entries(dataObj).sort((a,b) => (typeof b[1]==='number' ? b[1]-a[1] : 0));
+                let gLabels = [], gData = [];
+                entries.forEach(([k, v]) => {
+                    let val = (typeof v === 'object') ? (v.H + v.M) : v;
+                    sheet.getCell(`A${currentRow}`).value = k; sheet.getCell(`B${currentRow}`).value = val; currentRow++;
+                    if (gLabels.length < 10) { gLabels.push(k); gData.push(val); }
+                });
+                if (gLabels.length > 0 && chartConfig) {
+                    try {
+                        const imgB64 = await generarImagenFantasma(chartConfig.type, gLabels, gData, chartConfig.color, title);
+                        const imgId = workbook.addImage({ base64: imgB64, extension: 'png' });
+                        sheet.addImage(imgId, { tl: { col: 3, row: startRow }, ext: { width: 500, height: 300 } });
+                    } catch(e) {}
+                }
+                return Math.max(currentRow, startRow + 16) + 2;
+            };
+
+            const wsGen = workbook.addWorksheet('Generales'); wsGen.getColumn(1).width = 40;
+            let r = 1;
+            r = await addSection(wsGen, "SEXO", s.General.Sexo, {type:'pie', color:['#0d6efd','#dc3545','#ffc107']}, r);
+            r = await addSection(wsGen, "TIPO EVENTO", s.General.Evento, {type:'bar', color:'#7a123a'}, r);
+            r = await addSection(wsGen, "EDAD", s.General.Edad, {type:'bar', color:'#0d6efd'}, r);
+            r = await addSection(wsGen, "TURNOS", s.General.Turno, {type:'bar', color:'#198754'}, r);
+            r = await addSection(wsGen, "TOP SERVICIOS", s.General.Servicio, {type:'bar', color:'#0288d1'}, r);
+
+            const addTabSheet = async (name, data, color, typeFilter) => {
+                const ws = workbook.addWorksheet(name); ws.getColumn(1).width = 45;
+                let rx = 1;
+                rx = await addSection(ws, `TOP ÁREAS (${name})`, data.Servicio, {type:'bar', color: color}, rx);
+                
+                const sortedServ = Object.entries(data.Servicio).sort((a,b)=>b[1]-a[1]);
+                if (sortedServ.length > 0 && typeFilter) {
+                    const topArea = sortedServ[0][0];
+                    let drillCounts = {};
+                    rows.forEach(row => {
+                         const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
+                         let evUpper = clean(row[COL.EVENTO]).toUpperCase();
+                         let sv = clean(row[COL.SERVICIO]);
+                         let coincide = (name === 'Adversos' && evUpper.includes('ADVERSO')) || (name === 'Cuasifallas' && evUpper.includes('CUASI'));
+                         if(coincide && sv === topArea) { drillCounts[clean(row[COL.DEFINICION])] = (drillCounts[clean(row[COL.DEFINICION])] || 0) + 1; }
+                    });
+                    rx = await addSection(ws, `ANÁLISIS ÁREA CRÍTICA: ${topArea}`, drillCounts, {type:'bar', color: '#212529'}, rx);
+                }
+                rx = await addSection(ws, `CAUSAS GLOBALES (${name})`, data.Definicion, {type:'bar', color: color}, rx);
+            }
+
+            await addTabSheet('Adversos', s.Adverso, '#dc3545', 'Adverso');
+            await addTabSheet('Cuasifallas', s.Cuasi, '#ffc107', 'Cuasi');
+            await addTabSheet('Centinelas', s.Centinela, '#212529', null);
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), 'Reporte_VENCER_Final.xlsx');
+
+        } catch (err) { console.error(err); alert("Error generando Excel."); } 
+        finally { btn.innerHTML = originalText; btn.disabled = false; }
     });
 
-    if(!document.getElementById('btnDescargarGraficoPDF')) {
-        const b = document.createElement('button'); b.id='btnDescargarGraficoPDF'; b.style.display='none'; document.body.appendChild(b);
-    }
+    $('#modalGraficos').on('shown.bs.modal', generarGraficos);
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', generarGraficos);
+    $(document).on('click', '.toggle-text', function() { $(this).parent().find('.text-full, .text-short').toggleClass('d-none'); });
 });
 </script>
 
