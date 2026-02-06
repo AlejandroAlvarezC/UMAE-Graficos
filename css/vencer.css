@@ -1,0 +1,152 @@
+/* -----------------------------------
+   RESET Y ESTRUCTURA BASE
+----------------------------------- */
+html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #fffef6; /* Movido del body inline */
+}
+
+.content {
+    flex: 1;
+}
+
+/* -----------------------------------
+   NAVBAR Y FOOTER
+----------------------------------- */
+.navbar-custom {
+    background-color: #7a123a;
+}
+
+.nav-link { transition: color 0.3s; }
+.nav-link:hover { color: rgb(204, 167, 17) !important; }
+.navbar-brand { transition: color 0.3s; }
+.navbar-brand:hover { color: #9A7D0A !important; }
+
+.dropdown-submenu { display: none; margin-left: 1rem; }
+.dropdown-submenu-toggle.active + .dropdown-submenu { display: block; }
+.dropdown-submenu-toggle { cursor: pointer; }
+.dropdown-item.dropdown-submenu-toggle.active,
+.dropdown-item.dropdown-submenu-toggle:hover {
+    background-color: rgb(202, 155, 26) !important;
+    color: white;
+}
+
+footer {
+    background-color: #7a123a;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    padding-top: 10px;
+}
+
+/* -----------------------------------
+   TABLA DE DATOS
+----------------------------------- */
+table.table { font-size: 0.9rem; border-collapse: collapse; }
+table.table thead th {
+    background-color: rgba(16, 16, 16, 1);
+    color: white;
+    border: 1px solid rgba(75, 75, 75, 1);
+    text-align: center;
+    padding: 0.9px;
+    vertical-align: middle;
+}
+table.table tbody tr {
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s ease-in-out;
+}
+table.table tbody tr:hover { box-shadow: 0 4px 12px rgba(122, 35, 18, 0.5); }
+table.table td {
+    padding: 0.9px;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    max-width: 250px;
+    max-height: 90px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* DataTables Overrides */
+table.dataTable thead { background-color: rgb(34, 117, 74); color: white; font-weight: 600; }
+table.dataTable thead th { border-color: rgb(170, 213, 211); }
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+    border-radius: 14px;
+    border: 1.5px solid #ccd6dd;
+}
+
+/* -----------------------------------
+   FILTROS Y SELECTS
+----------------------------------- */
+.filter-container-inline {
+    display: flex; flex-wrap: wrap; gap: 1.5rem;
+    align-items: flex-end; justify-content: flex-start;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #f9fafc, #e9f1f7);
+    border: 1px solid #c4d3df; border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(34, 61, 71, 0.08);
+    margin-bottom: 2rem;
+}
+
+.form-select, .select-personalizado {
+    width: 100%; border-radius: 14px; padding: 10px 16px;
+    font-size: 1rem; font-weight: 500; color: #1a1a1a;
+    background-color: #ffffff; border: 1.5px solid #ccd6dd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease; cursor: pointer;
+}
+.form-select:focus, .select-personalizado:focus {
+    border-color: rgba(173, 85, 17, 1);
+    box-shadow: 0 0 8px rgba(69, 131, 33, 0.25);
+    outline: none;
+}
+
+/* Select2 Customization */
+.select2-container--default .select2-selection--multiple {
+    border-radius: 16px; border: 1.5px solid #ccd6dd;
+    min-height: 42px; display: flex; align-items: center;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #d68e67; border: none; border-radius: 3px;
+    color: #212529; font-weight: 500; margin-top: 6px;
+}
+
+/* -----------------------------------
+   BOTONES
+----------------------------------- */
+.btn-urgencia {
+    background-color: #d55500; color: #ffffff;
+    border: none; padding: 10px 20px; font-weight: 600;
+    border-radius: 6px; display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: all 0.3s ease;
+}
+.btn-urgencia:hover {
+    background-color: #dc6300; color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(179, 143, 0, 0.4);
+}
+
+.btn-excel-verde {
+    background-color: #217346; color: white;
+    border: 1px solid #1e6b41;
+}
+
+/* -----------------------------------
+   SECCIONES Y ENCABEZADOS
+----------------------------------- */
+.section-header {
+    background-color: #dee2e6;
+    border-left: 5px solid #97571c;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.section-header h1 { color: #343a40; font-weight: 700; margin-bottom: 4px; }
+.section-header small { color: #6c757d; font-weight: 500; }
