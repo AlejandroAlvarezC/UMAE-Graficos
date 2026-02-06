@@ -736,29 +736,6 @@ if ($registros && is_array($registros)) {
           <li class="nav-item"><a class="nav-link text-white" href="../admin/usuariosAdmin.php">Usuario</a>
           </li>
         </ul>
-
-        <div class="d-flex align-items-center gap-2">
-          <a class="btn btn-outline-light" onclick="anterior()" href="#" title="Atrás"><i class="bi bi-arrow-left"></i></a>
-          <a class="btn btn-outline-light" href="../usuario/vencer_user.php">Vista de usuario</a>
-
-          <div class="dropdown">
-            <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              <i class="fas fa-user-circle"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="../usuario/vencer_user.php"><i class="fas fa-eye me-2"></i>Ver
-                  como Usuario</a></li>
-              <li><a class="dropdown-item" href="../admin/usuariosAdmin.php"><i
-                    class="fas fa-id-badge me-2"></i>Perfil</a></li>
-              <li>
-                <hr class="dropdown-divider">
-              </li>
-              <li><a class="dropdown-item text-danger" href="../admin/logout.php"><i
-                    class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
   </nav>
 
   <div class="content">
@@ -825,15 +802,63 @@ if ($registros && is_array($registros)) {
 
             <div class="modal-body bg-light">
 
-                <div class="d-flex justify-content-center align-items-center mb-4 gap-3 bg-white p-3 rounded shadow-sm border">
-                    <label fw-bold>📅 Filtrar por Año:</label>
-                    <select id="filtroAnio" class="form-select w-auto fw-bold shadow-sm" style="border-color: #7a123a; background-color: #fff5f5;">
-                        <option value="todos">Cargando...</option>
-                    </select>
+                <div class="d-flex justify-content-center align-items-center mb-4 gap-3 bg-white p-3 rounded shadow-sm border flex-wrap">
                     
-                    <div class="vr mx-2"></div> <div class="d-flex align-items-center">
-                        <span class="text-muted small text-uppercase fw-bold me-2">Total Eventos:</span>
-                        <span id="lblTotalEventos" class="fs-4 fw-bold text-danger">0</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="fw-bold text-secondary small">AÑO:</label>
+                        <select id="filtroAnio" class="form-select form-select-sm w-auto fw-bold shadow-sm border-danger">
+                            <option value="todos">Cargando...</option>
+                        </select>
+                    </div>
+
+                    <div class="vr mx-2"></div>
+
+                    <div class="d-flex align-items-center gap-2 border p-1 rounded bg-light">
+                        <label class="fw-bold text-secondary small ms-1">MESES:</label>
+                        
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-0 fw-bold text-muted" style="font-size: 0.8rem;">De:</span>
+                            <select id="filtroMesInicio" class="form-select form-select-sm fw-bold shadow-sm border-secondary" style="max-width: 110px;">
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                        </div>
+
+                        <span class="fw-bold text-muted">-</span>
+
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-0 fw-bold text-muted" style="font-size: 0.8rem;">A:</span>
+                            <select id="filtroMesFin" class="form-select form-select-sm fw-bold shadow-sm border-secondary" style="max-width: 110px;">
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12" selected>Diciembre</option> </select>
+                        </div>
+                    </div>
+                    
+                    <div class="vr mx-2"></div>
+
+                    <div class="d-flex align-items-center bg-light px-3 py-1 rounded border">
+                        <span class="text-muted small text-uppercase fw-bold me-2">Total:</span>
+                        <span id="lblTotalEventos" class="fs-5 fw-bold text-danger">0</span>
                     </div>
                 </div>
 
@@ -841,170 +866,59 @@ if ($registros && is_array($registros)) {
                     <li class="nav-item"><button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-general">📊 Panorama General</button></li>
                     <li class="nav-item"><button class="nav-link fw-bold text-danger" data-bs-toggle="tab" data-bs-target="#tab-adverso">🚨 Eventos Adversos</button></li>
                     <li class="nav-item"><button class="nav-link fw-bold text-warning" data-bs-toggle="tab" data-bs-target="#tab-cuasi">⚠️ Cuasifallas</button></li>
-                    <li class="nav-item"><button class="nav-link fw-bold text-dark" data-bs-toggle="tab" data-bs-target="#tab-centinela">👁️ Eventos Centinela</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold text-dark" data-bs-toggle="tab" data-bs-target="#tab-centinela">Eventos Centinela</button></li>
                 </ul>
 
                 <div class="tab-content" id="graficosTabContent">
                     
                     <div class="tab-pane fade show active" id="tab-general">
                         <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <div class="card h-100 shadow-sm border-0">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-secondary mb-3">DISTRIBUCIÓN POR SEXO</h6>
-                                        <div style="height:250px"><canvas id="chartSexoGen"></canvas></div>
-                                        <div id="tablaSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card h-100 shadow-sm border-0">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-secondary mb-3">CLASIFICACIÓN DE EVENTOS</h6>
-                                        <div style="height:250px"><canvas id="chartEventosGen"></canvas></div>
-                                        <div id="tablaEventosGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-secondary mb-3">DISTRIBUCIÓN POR SEXO</h6><div style="height:250px"><canvas id="chartSexoGen"></canvas></div><div id="tablaSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
+                            <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-secondary mb-3">CLASIFICACIÓN DE EVENTOS</h6><div style="height:250px"><canvas id="chartEventosGen"></canvas></div><div id="tablaEventosGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
                         </div>
-
                         <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <div class="card h-100 shadow-sm border-0">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-secondary mb-3">RANGO DE EDAD (Por Sexo)</h6>
-                                        <div style="height:250px"><canvas id="chartEdadSexoGen"></canvas></div>
-                                        <div id="tablaEdadSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card h-100 shadow-sm border-0">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-success mb-3">DISTRIBUCIÓN POR TURNO</h6>
-                                        <div style="height:250px"><canvas id="chartTurnoGen"></canvas></div>
-                                        <div id="tablaTurnoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-secondary mb-3">RANGO DE EDAD</h6><div style="height:250px"><canvas id="chartEdadSexoGen"></canvas></div><div id="tablaEdadSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
+                            <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-success mb-3">TURNOS</h6><div style="height:250px"><canvas id="chartTurnoGen"></canvas></div><div id="tablaTurnoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
                         </div>
-
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <div class="card h-100 shadow-sm border-0">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-primary mb-3">TOP SERVICIOS CON MAYOR INCIDENCIA</h6>
-                                        <div style="height:350px"><canvas id="chartTopServiciosGen"></canvas></div>
-                                        <div id="tablaTopServiciosGen" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="row g-3"><div class="col-12"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-primary mb-3">TOP SERVICIOS</h6><div style="height:350px"><canvas id="chartTopServiciosGen"></canvas></div><div id="tablaTopServiciosGen" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div></div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-adverso">
                         <div class="alert alert-danger py-2 text-center fw-bold mb-3"><i class="fas fa-exclamation-circle me-2"></i>Análisis de Eventos Adversos</div>
                         <div class="row g-3 mb-3">
-                            <div class="col-lg-6">
-                                <div class="card h-100 shadow-sm border-danger border-opacity-25">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-danger">1. ÁREAS CON MAYOR INCIDENCIA</h6>
-                                        <div style="height: 300px;"><canvas id="chartServicioAdv"></canvas></div>
-                                        <div id="tablaServicioAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="card h-100 shadow-sm border-danger border-opacity-50" style="background-color: #fff5f5;">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-dark">2. ANÁLISIS ÁREA CRÍTICA: <span id="lblTopAreaAdv" class="text-danger">---</span></h6>
-                                        <div style="height: 300px;"><canvas id="chartDrillDownAdv"></canvas></div>
-                                        <div id="tablaDrillDownAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="col-lg-6"><div class="card h-100 shadow-sm border-danger border-opacity-25"><div class="card-body"><h6 class="text-center fw-bold text-danger">1. ÁREAS CON MAYOR INCIDENCIA</h6><div style="height: 300px;"><canvas id="chartServicioAdv"></canvas></div><div id="tablaServicioAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
+                            <div class="col-lg-6"><div class="card h-100 shadow-sm border-danger border-opacity-50" style="background-color: #fff5f5;"><div class="card-body"><h6 class="text-center fw-bold text-dark">2. ANÁLISIS ÁREA CRÍTICA: <span id="lblTopAreaAdv" class="text-danger">---</span></h6><div style="height: 300px;"><canvas id="chartDrillDownAdv"></canvas></div><div id="tablaDrillDownAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
                         </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <div class="card h-100 shadow-sm border-danger border-opacity-25">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-danger">3. CAUSAS GLOBALES</h6>
-                                        <div style="height: 300px;"><canvas id="chartDefinicionAdv"></canvas></div>
-                                        <div id="tablaDefinicionAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="row g-3"><div class="col-12"><div class="card h-100 shadow-sm border-danger border-opacity-25"><div class="card-body"><h6 class="text-center fw-bold text-danger">3. CAUSAS GLOBALES</h6><div style="height: 300px;"><canvas id="chartDefinicionAdv"></canvas></div><div id="tablaDefinicionAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div></div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-cuasi">
                         <div class="alert alert-warning py-2 text-center fw-bold mb-3 text-dark"><i class="fas fa-shield-alt me-2"></i>Análisis de Cuasifallas</div>
                         <div class="row g-3 mb-3">
-                            <div class="col-lg-6">
-                                <div class="card h-100 shadow-sm border-warning border-opacity-25">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-warning">1. ÁREAS CON MAYOR INCIDENCIA</h6>
-                                        <div style="height: 300px;"><canvas id="chartServicioCuasi"></canvas></div>
-                                        <div id="tablaServicioCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="card h-100 shadow-sm border-warning border-opacity-50" style="background-color: #fffsf0;">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-dark">2. ANÁLISIS ÁREA CRÍTICA: <span id="lblTopAreaCuasi" class="text-warning">---</span></h6>
-                                        <div style="height: 300px;"><canvas id="chartDrillDownCuasi"></canvas></div>
-                                        <div id="tablaDrillDownCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="col-lg-6"><div class="card h-100 shadow-sm border-warning border-opacity-25"><div class="card-body"><h6 class="text-center fw-bold text-warning">1. ÁREAS CON MAYOR INCIDENCIA</h6><div style="height: 300px;"><canvas id="chartServicioCuasi"></canvas></div><div id="tablaServicioCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
+                            <div class="col-lg-6"><div class="card h-100 shadow-sm border-warning border-opacity-50" style="background-color: #fffsf0;"><div class="card-body"><h6 class="text-center fw-bold text-dark">2. ANÁLISIS ÁREA CRÍTICA: <span id="lblTopAreaCuasi" class="text-warning">---</span></h6><div style="height: 300px;"><canvas id="chartDrillDownCuasi"></canvas></div><div id="tablaDrillDownCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
                         </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <div class="card h-100 shadow-sm border-warning border-opacity-25">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-warning">3. CAUSAS GLOBALES</h6>
-                                        <div style="height: 300px;"><canvas id="chartDefinicionCuasi"></canvas></div>
-                                        <div id="tablaDefinicionCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="row g-3"><div class="col-12"><div class="card h-100 shadow-sm border-warning border-opacity-25"><div class="card-body"><h6 class="text-center fw-bold text-warning">3. CAUSAS GLOBALES</h6><div style="height: 300px;"><canvas id="chartDefinicionCuasi"></canvas></div><div id="tablaDefinicionCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div></div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-centinela">
                         <div class="alert alert-dark py-2 text-center fw-bold mb-3">Análisis de Eventos Centinela</div>
                         <div class="row g-3">
-                            <div class="col-lg-6">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-dark">ÁREAS CON MAYOR INCIDENCIA</h6>
-                                        <div style="height: 350px;"><canvas id="chartServicioCent"></canvas></div>
-                                        <div id="tablaServicioCent" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="text-center fw-bold text-dark">CAUSAS PRINCIPALES (Definición)</h6>
-                                        <div style="height: 350px;"><canvas id="chartDefinicionCent"></canvas></div>
-                                        <div id="tablaDefinicionCent" class="mt-3 table-responsive" style="max-height: 200px;"></div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="col-lg-6"><div class="card h-100 shadow-sm"><div class="card-body"><h6 class="text-center fw-bold text-dark">ÁREAS CON MAYOR INCIDENCIA</h6><div style="height: 350px;"><canvas id="chartServicioCent"></canvas></div><div id="tablaServicioCent" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
+                            <div class="col-lg-6"><div class="card h-100 shadow-sm"><div class="card-body"><h6 class="text-center fw-bold text-dark">CAUSAS PRINCIPALES (Definición)</h6><div style="height: 350px;"><canvas id="chartDefinicionCent"></canvas></div><div id="tablaDefinicionCent" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
                         </div>
-                    </div>
-
-                </div> <div class="row mt-4 border-top pt-3">
-                    <div class="col text-center">
-                        <button id="btnDescargarExcelStats" class="btn btn-success fw-bold shadow px-4 py-2">
-                            <i class="fas fa-file-excel me-2"></i>Descargar Reporte (Excel)
-                        </button>
                     </div>
                 </div>
 
-            </div> </div>
+                <div class="row mt-4 border-top pt-3">
+                    <div class="col text-center">
+                        <button id="btnDescargarExcelStats" class="btn fw-bold shadow px-4 py-2" style="background-color: #217346; color: white; border: 1px solid #1e6b41;">
+                            <i class="fas fa-file-excel me-2"></i>Descargar Reporte(Excel)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <!-- Modal graficos hasta aqui -->
@@ -1189,79 +1103,105 @@ if ($registros && is_array($registros)) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 VENCER: Sistema Completo (Filtro Año Reparado)");
+    console.log("🚀 VENCER: Filtro de Rango de Fechas Activado");
 
-    // CONFIGURACIÓN DE COLUMNAS (Ajusta si cambia tu tabla)
-    const COL = { EVENTO: 1, EDAD: 4, SEXO: 5, TURNO: 9, SERVICIO: 10, DEFINICION: 13, ANIO: 16 };
+    // CONFIGURACIÓN DE COLUMNAS
+    const COL = { 
+        EVENTO: 1, EDAD: 4, SEXO: 5, 
+        FECHA: 7, // <--- COLUMNA DE FECHA
+        TURNO: 9, SERVICIO: 10, DEFINICION: 13, ANIO: 16 
+    };
 
     // --- A. TABLA PRINCIPAL ---
     const tabla = $('#tabla-vencer').DataTable({
-        pageLength: 10, order: [[0, 'asc']],
+        pageLength: 10, 
+        order: [[0, 'asc']],
+        deferRender: true, processing: true,
         language: { url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
     });
 
-    // --- B. FILTROS DE TABLA (Select2) ---
+    // --- B. PREPARAR FILTROS ---
+    
+    // 1. Llenar Año
+    const fAnio = document.getElementById('filtroAnio');
+    const anios = [...new Set(tabla.column(COL.ANIO).data().toArray())]
+        .filter(x => x && x !== 'NULO').sort().reverse();
+    fAnio.innerHTML = '<option value="todos">Todos los años</option>';
+    anios.forEach(a => fAnio.append(new Option(a, a)));
+
+    // 2. Llenar Columnas (Select2)
     function llenarFiltros() {
         const headers = ['Folio', 'Evento', 'Iniciales', 'NSS', 'Edad', 'Sexo', 'Diagnostico', 'FechaEvento', 'FechaNotificacion', 'Turno', 'Servicio', 'Categoria', 'Proceso', 'Definicion', 'Descripcion', 'Estatus', 'Anio'];
         headers.forEach((h, i) => {
-            const select = $(`#filter${h}`);
-            if(!select.length) return;
-            const values = new Set();
-            tabla.column(i).nodes().to$().each(function() {
-                let v = $(this).text().replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
-                values.add(v);
+            const select = document.getElementById(`filter${h}`); if (!select) return;
+            const rawData = tabla.column(i).data().toArray();
+            const uniqueValues = new Set();
+            rawData.forEach(d => {
+                let text = String(d).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim();
+                if (text && text !== 'NULO') uniqueValues.add(text);
             });
-            select.empty().append(new Option('NULO', 'NULO'));
-            Array.from(values).sort().forEach(v => { if(v !== 'NULO') select.append(new Option(v, v)); });
+            const fragment = document.createDocumentFragment();
+            const optNulo = document.createElement('option'); optNulo.value = 'NULO'; optNulo.textContent = 'NULO'; fragment.appendChild(optNulo);
+            Array.from(uniqueValues).sort().forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; fragment.appendChild(o); });
+            select.innerHTML = ''; select.appendChild(fragment);
         });
     }
-    $('.select-personalizado').select2({ placeholder: 'Filtrar...', allowClear: true, width: '100%' });
-    $('.select-personalizado').on('change', () => tabla.draw());
-    
+    $('.select-personalizado').not('#filtroAnio, #filtroMesInicio, #filtroMesFin').select2({ placeholder: 'Filtrar...', allowClear: true, width: '100%' });
+    $('.select-personalizado').on('change', () => { tabla.draw(); generarGraficos(); });
+
+
+    // --- C. MOTOR DE BÚSQUEDA (RANGO DE MESES) ---
     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         if (settings.nTable.id !== 'tabla-vencer') return true;
+        
+        const anioSel = $('#filtroAnio').val();
+        
+        // Obtener números de mes (1 al 12)
+        const mesIni = parseInt($('#filtroMesInicio').val()) || 1;
+        const mesFin = parseInt($('#filtroMesFin').val()) || 12;
+
+        const anioRow = data[COL.ANIO] || "";
+        const fechaRow = data[COL.FECHA] || "";
+
+        // 1. Validar Año
+        let okAnio = (anioSel === 'todos' || anioRow === anioSel);
+        
+        // 2. Validar Rango de Meses
+        let okMes = true;
+        if (okAnio) {
+            let mesRow = 0;
+            // Extraer mes de la fecha (asumiendo formato DD/MM/AAAA o AAAA-MM-DD)
+            if (fechaRow.includes('-')) mesRow = parseInt(fechaRow.split('-')[1]); 
+            else if (fechaRow.includes('/')) mesRow = parseInt(fechaRow.split('/')[1]);
+            
+            // Comparar si está en el rango (Inclusive)
+            if (mesRow < mesIni || mesRow > mesFin) {
+                okMes = false;
+            }
+        }
+
+        // 3. Validar Columnas
+        let okCols = true;
         const headers = ['Folio', 'Evento', 'Iniciales', 'NSS', 'Edad', 'Sexo', 'Diagnostico', 'FechaEvento', 'FechaNotificacion', 'Turno', 'Servicio', 'Categoria', 'Proceso', 'Definicion', 'Descripcion', 'Estatus', 'Anio'];
         for (let i = 0; i < headers.length; i++) {
-            const vals = $(`#filter${headers[i]}`).val();
-            if (vals && vals.length > 0 && !vals.includes(data[i].trim() || 'NULO')) return false;
+            const val = $(`#filter${headers[i]}`).val();
+            if (val && val.length > 0 && !val.includes(data[i].trim() || 'NULO')) { okCols = false; break; }
         }
-        return true;
+
+        return okAnio && okMes && okCols;
     });
+
+    // Detectar cambios en los filtros principales
+    $('#filtroAnio, #filtroMesInicio, #filtroMesFin').on('change', function() { 
+        tabla.draw(); 
+        generarGraficos(); 
+    });
+
     llenarFiltros();
     $('#filtrosContainer').show();
 
-    // --- C. LÓGICA DEL FILTRO DE AÑO (REPARADO) ---
-    // Esta función busca los años en la columna 16 y llena el select
-    function inicializarFiltroAnio() {
-        const fAnio = document.getElementById('filtroAnio');
-        if(fAnio) {
-            // Obtener años únicos de la columna 16
-            const anios = [...new Set(tabla.column(COL.ANIO).data().toArray())]
-                .filter(x => x && x !== 'NULO')
-                .sort()
-                .reverse();
-            
-            // Limpiar "Cargando..." y llenar opciones
-            fAnio.innerHTML = '<option value="todos">📅 Todos los años</option>';
-            anios.forEach(a => fAnio.append(new Option(a, a)));
-            
-            // Evento de cambio
-            fAnio.addEventListener('change', function() {
-                const val = this.value;
-                // Filtrar tabla principal por columna Año
-                tabla.column(COL.ANIO).search(val === 'todos' ? '' : val).draw();
-                // Regenerar gráficos con los datos filtrados
-                generarGraficos();
-            });
-        }
-    }
-    // Ejecutar inmediatamente
-    inicializarFiltroAnio();
-
-
-    // --- D. MOTOR DE GRÁFICOS ---
+    // --- D. MOTOR GRÁFICO ---
     let charts = {};
-
     function generarGraficos() {
         setTimeout(() => {
             const rows = tabla.rows({ search: 'applied' }).data().toArray();
@@ -1269,233 +1209,124 @@ document.addEventListener('DOMContentLoaded', function() {
             if(lbl) lbl.textContent = rows.length;
             if (rows.length === 0) return;
 
-            // Procesar Datos
-            let s = { 
-                General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{} },
-                Adverso: { Servicio:{}, Definicion:{} },
-                Cuasi: { Servicio:{}, Definicion:{} },
-                Centinela: { Servicio:{}, Definicion:{} }
-            };
-
-            rows.forEach(r => {
-                const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
-                let ev = clean(r[COL.EVENTO]), ed = clean(r[COL.EDAD]), sx = clean(r[COL.SEXO]), tu = clean(r[COL.TURNO]), sv = clean(r[COL.SERVICIO]), def = clean(r[COL.DEFINICION]);
-
-                // General
-                s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1;
-                s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1;
-                s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1;
-                s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
-                if (!s.General.Edad[ed]) s.General.Edad[ed] = { H: 0, M: 0 };
-                (sx.toUpperCase().includes('MASC') || sx.toUpperCase().includes('HOMBRE')) ? s.General.Edad[ed].H++ : s.General.Edad[ed].M++;
-
-                // Específicos
-                let evUpper = ev.toUpperCase();
-                if (evUpper.includes('ADVERSO')) { s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; }
-                else if (evUpper.includes('CUASI')) { s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1; }
-                else if (evUpper.includes('CENTINELA')) { s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; }
-            });
-
-            const draw = (id, type, labels, data, colors, extraOpts={}) => {
-                const cvs = document.getElementById(id); if (!cvs) return;
-                if (charts[id]) charts[id].destroy();
-                charts[id] = new Chart(cvs.getContext('2d'), {
-                    type: type, data: { labels: labels, datasets: [{ label: 'Total', data: data, backgroundColor: colors }] },
-                    options: { responsive: true, maintainAspectRatio: false, animation: false, indexAxis: 'y', ...extraOpts }
-                });
-            };
-
-            const dibujarTabla = (idTabla, dataObj, tituloColumna) => {
-                const el = document.getElementById(idTabla); 
-                if(!el) return;
-                const entries = Object.entries(dataObj).sort((a,b) => {
-                    const valA = (typeof a[1] === 'object') ? (a[1].H + a[1].M) : a[1];
-                    const valB = (typeof b[1] === 'object') ? (b[1].H + b[1].M) : b[1];
-                    return valB - valA;
-                });
-                let html = `<table class="table table-sm table-striped table-bordered text-center small mb-0"><thead class="table-dark"><tr><th>${tituloColumna}</th><th>Total</th></tr></thead><tbody>`;
-                entries.forEach(([k, v]) => {
-                    let val = (typeof v === 'object') ? (v.H + v.M) : v;
-                    html += `<tr><td class="text-start text-break">${k}</td><td class="fw-bold">${val}</td></tr>`;
-                });
-                if(entries.length === 0) html += `<tr><td colspan="2">Sin datos</td></tr>`;
-                el.innerHTML = html + '</tbody></table>';
-            };
-
-            // 1. GENERALES
-            draw('chartSexoGen', 'pie', Object.keys(s.General.Sexo), Object.values(s.General.Sexo), ['#0d6efd','#dc3545','#ffc107'], {indexAxis:'x'});
-            dibujarTabla('tablaSexoGen', s.General.Sexo, 'Sexo');
-            draw('chartEventosGen', 'bar', Object.keys(s.General.Evento), Object.values(s.General.Evento), '#7a123a', {indexAxis:'x'});
-            dibujarTabla('tablaEventosGen', s.General.Evento, 'Evento');
-            draw('chartTurnoGen', 'bar', Object.keys(s.General.Turno), Object.values(s.General.Turno), '#198754');
-            dibujarTabla('tablaTurnoGen', s.General.Turno, 'Turno');
-            const topS = Object.entries(s.General.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10);
-            draw('chartTopServiciosGen', 'bar', topS.map(x=>x[0]), topS.map(x=>x[1]), '#0288d1');
-            dibujarTabla('tablaTopServiciosGen', s.General.Servicio, 'Servicio'); 
-            const cvsEd = document.getElementById('chartEdadSexoGen');
-            if(cvsEd) {
-                const edades = Object.keys(s.General.Edad).sort((a,b) => parseInt(a)-parseInt(b));
-                if(charts['chartEdadSexoGen']) charts['chartEdadSexoGen'].destroy();
-                charts['chartEdadSexoGen'] = new Chart(cvsEd, {
-                    type: 'bar', data: { labels: edades, datasets: [{ label: 'H', data: edades.map(e=>s.General.Edad[e].H), backgroundColor: '#0d6efd'}, {label: 'M', data: edades.map(e=>s.General.Edad[e].M), backgroundColor: '#dc3545'}] },
-                    options: { responsive: true, maintainAspectRatio: false, scales: {x:{stacked:true}, y:{stacked:true}} }
-                });
-                dibujarTabla('tablaEdadSexoGen', s.General.Edad, 'Edad');
-            }
-
-            // 2. DRILL DOWN (Adversos y Cuasi)
-            const generarDrillDown = (tipo, colorBarra, ids) => {
-                const dataObj = s[tipo];
-                const tServ = Object.entries(dataObj.Servicio).sort((a,b)=>b[1]-a[1]);
-                
-                draw(ids.servChart, 'bar', tServ.slice(0,10).map(x=>x[0]), tServ.slice(0,10).map(x=>x[1]), colorBarra);
-                dibujarTabla(ids.servTable, dataObj.Servicio, 'Servicio');
-
-                const tDef = Object.entries(dataObj.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
-                draw(ids.defChart, 'bar', tDef.map(x=>x[0]), tDef.map(x=>x[1]), colorBarra);
-                dibujarTabla(ids.defTable, dataObj.Definicion, 'Causa');
-
-                if (tServ.length > 0) {
-                    const topAreaName = tServ[0][0];
-                    if(document.getElementById(ids.lbl)) document.getElementById(ids.lbl).textContent = topAreaName;
-                    
-                    let drillCounts = {};
-                    rows.forEach(r => {
-                        const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
-                        let evUpper = clean(r[COL.EVENTO]).toUpperCase();
-                        let sv = clean(r[COL.SERVICIO]);
-                        let coincide = (tipo === 'Adverso' && evUpper.includes('ADVERSO')) || (tipo === 'Cuasi' && evUpper.includes('CUASI'));
-                        if (coincide && sv === topAreaName) { drillCounts[clean(r[COL.DEFINICION])] = (drillCounts[clean(r[COL.DEFINICION])] || 0) + 1; }
-                    });
-                    
-                    const tDrill = Object.entries(drillCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-                    draw(ids.drillChart, 'bar', tDrill.map(x=>x[0]), tDrill.map(x=>x[1]), '#212529');
-                    dibujarTabla(ids.drillTable, drillCounts, 'Causa Específica');
-                } else {
-                    if(document.getElementById(ids.lbl)) document.getElementById(ids.lbl).textContent = "Sin Datos";
-                    dibujarTabla(ids.drillTable, {}, 'Sin Datos');
-                }
-            };
-
-            generarDrillDown('Adverso', '#dc3545', {
-                servChart: 'chartServicioAdv', servTable: 'tablaServicioAdv',
-                drillChart: 'chartDrillDownAdv', drillTable: 'tablaDrillDownAdv',
-                defChart: 'chartDefinicionAdv', defTable: 'tablaDefinicionAdv',
-                lbl: 'lblTopAreaAdv'
-            });
-
-            generarDrillDown('Cuasi', '#ffc107', {
-                servChart: 'chartServicioCuasi', servTable: 'tablaServicioCuasi',
-                drillChart: 'chartDrillDownCuasi', drillTable: 'tablaDrillDownCuasi',
-                defChart: 'chartDefinicionCuasi', defTable: 'tablaDefinicionCuasi',
-                lbl: 'lblTopAreaCuasi'
-            });
-
-            // 3. CENTINELAS
-            const tCentS = Object.entries(s.Centinela.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10);
-            const tCentD = Object.entries(s.Centinela.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
-            draw('chartServicioCent', 'bar', tCentS.map(x=>x[0]), tCentS.map(x=>x[1]), '#212529');
-            dibujarTabla('tablaServicioCent', s.Centinela.Servicio, 'Servicio');
-
-            draw('chartDefinicionCent', 'bar', tCentD.map(x=>x[0]), tCentD.map(x=>x[1]), '#212529');
-            dibujarTabla('tablaDefinicionCent', s.Centinela.Definicion, 'Causa');
-
-        }, 200);
-    }
-
-    // --- E. EXCEL MASTER ---
-    $(document).on('click', '#btnDescargarExcelStats', async function() {
-        const btn = this; const originalText = btn.innerHTML;
-        btn.innerHTML = "⏳ Generando..."; btn.disabled = true;
-
-        try {
-            const rows = tabla.rows({ search: 'applied' }).data().toArray();
-            if (rows.length === 0) throw new Error("No hay datos");
-
             let s = { General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{} }, Adverso:{Servicio:{}, Definicion:{}}, Cuasi:{Servicio:{}, Definicion:{}}, Centinela:{Servicio:{}, Definicion:{}} };
             rows.forEach(r => {
                 const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
                 let ev = clean(r[COL.EVENTO]), ed = clean(r[COL.EDAD]), sx = clean(r[COL.SEXO]), tu = clean(r[COL.TURNO]), sv = clean(r[COL.SERVICIO]), def = clean(r[COL.DEFINICION]);
-
-                s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1; s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1;
-                s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1; s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
+                s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1; s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1; s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1; s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
                 if (!s.General.Edad[ed]) s.General.Edad[ed] = { H: 0, M: 0 };
                 (sx.toUpperCase().includes('MASC') || sx.toUpperCase().includes('HOMBRE')) ? s.General.Edad[ed].H++ : s.General.Edad[ed].M++;
+                let evUpper = ev.toUpperCase();
+                if(evUpper.includes('ADVERSO')) { s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; }
+                else if(evUpper.includes('CUASI')) { s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1; }
+                else if(evUpper.includes('CENTINELA')) { s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; }
+            });
 
-                if(ev.toUpperCase().includes('ADVERSO')) { s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; }
-                else if(ev.toUpperCase().includes('CUASI')) { s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1; }
-                else if(ev.toUpperCase().includes('CENTINELA')) { s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; }
+            const draw = (id, t, l, d, c, opts={}) => {
+                const el = document.getElementById(id); if(!el) return;
+                if(charts[id]) charts[id].destroy();
+                charts[id] = new Chart(el.getContext('2d'), { type: t, data: { labels: l, datasets: [{ label: 'Total', data: d, backgroundColor: c }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, indexAxis: 'y', ...opts } });
+            };
+            const drawTable = (id, obj, t) => {
+                const el = document.getElementById(id); if(!el) return;
+                const ent = Object.entries(obj).sort((a,b)=>((typeof b[1]==='object'?b[1].H+b[1].M:b[1])-(typeof a[1]==='object'?a[1].H+a[1].M:a[1])));
+                let h = `<table class="table table-sm table-striped table-bordered text-center small mb-0"><thead class="table-dark"><tr><th>${t}</th><th>Total</th></tr></thead><tbody>`;
+                ent.forEach(([k,v])=>{ h+=`<tr><td class="text-start">${k}</td><td class="fw-bold">${typeof v==='object'?v.H+v.M:v}</td></tr>`; });
+                el.innerHTML = h+'</tbody></table>';
+            };
+
+            // Generales
+            draw('chartSexoGen', 'pie', Object.keys(s.General.Sexo), Object.values(s.General.Sexo), ['#0d6efd','#dc3545','#ffc107'], {indexAxis:'x'}); drawTable('tablaSexoGen', s.General.Sexo, 'Sexo');
+            draw('chartEventosGen', 'bar', Object.keys(s.General.Evento), Object.values(s.General.Evento), '#7a123a', {indexAxis:'x'}); drawTable('tablaEventosGen', s.General.Evento, 'Evento');
+            draw('chartTurnoGen', 'bar', Object.keys(s.General.Turno), Object.values(s.General.Turno), '#198754'); drawTable('tablaTurnoGen', s.General.Turno, 'Turno');
+            const ts = Object.entries(s.General.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10); draw('chartTopServiciosGen', 'bar', ts.map(x=>x[0]), ts.map(x=>x[1]), '#0288d1'); drawTable('tablaTopServiciosGen', s.General.Servicio, 'Servicio');
+            if(document.getElementById('chartEdadSexoGen')) {
+                const eds = Object.keys(s.General.Edad).sort((a,b)=>parseInt(a)-parseInt(b));
+                if(charts['chartEdadSexoGen']) charts['chartEdadSexoGen'].destroy();
+                charts['chartEdadSexoGen'] = new Chart(document.getElementById('chartEdadSexoGen'), { type: 'bar', data: { labels: eds, datasets: [{ label: 'H', data: eds.map(e=>s.General.Edad[e].H), backgroundColor: '#0d6efd'}, {label: 'M', data: eds.map(e=>s.General.Edad[e].M), backgroundColor: '#dc3545'}] }, options: { responsive: true, maintainAspectRatio: false, scales: {x:{stacked:true}, y:{stacked:true}} } });
+                drawTable('tablaEdadSexoGen', s.General.Edad, 'Edad');
+            }
+
+            // Drill Downs
+            const runDD = (k, c, ids) => {
+                const d = s[k];
+                const ts = Object.entries(d.Servicio).sort((a,b)=>b[1]-a[1]);
+                draw(ids.sc, 'bar', ts.slice(0,10).map(x=>x[0]), ts.slice(0,10).map(x=>x[1]), c); drawTable(ids.st, d.Servicio, 'Servicio');
+                const td = Object.entries(d.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                draw(ids.dc, 'bar', td.map(x=>x[0]), td.map(x=>x[1]), c); drawTable(ids.dt, d.Definicion, 'Causa');
+                if(ts.length>0) {
+                    const top = ts[0][0];
+                    if(document.getElementById(ids.l)) document.getElementById(ids.l).textContent = top;
+                    let dc = {};
+                    rows.forEach(r => {
+                        const cl = (x)=>String(x).replace(/<[^>]*>?/gm,'').trim()||'NULO';
+                        let evU = cl(r[COL.EVENTO]).toUpperCase();
+                        if(((k==='Adverso'&&evU.includes('ADVERSO'))||(k==='Cuasi'&&evU.includes('CUASI'))) && cl(r[COL.SERVICIO])===top) dc[cl(r[COL.DEFINICION])]=(dc[cl(r[COL.DEFINICION])]||0)+1;
+                    });
+                    const tdd = Object.entries(dc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                    draw(ids.ddc, 'bar', tdd.map(x=>x[0]), tdd.map(x=>x[1]), '#212529'); drawTable(ids.ddt, dc, 'Causa Específica');
+                } else { if(document.getElementById(ids.l)) document.getElementById(ids.l).textContent="Sin Datos"; drawTable(ids.ddt, {}, 'Sin Datos'); }
+            };
+            runDD('Adverso', '#dc3545', {sc:'chartServicioAdv',st:'tablaServicioAdv',ddc:'chartDrillDownAdv',ddt:'tablaDrillDownAdv',dc:'chartDefinicionAdv',dt:'tablaDefinicionAdv',l:'lblTopAreaAdv'});
+            runDD('Cuasi', '#ffc107', {sc:'chartServicioCuasi',st:'tablaServicioCuasi',ddc:'chartDrillDownCuasi',ddt:'tablaDrillDownCuasi',dc:'chartDefinicionCuasi',dt:'tablaDefinicionCuasi',l:'lblTopAreaCuasi'});
+
+            const tcs = Object.entries(s.Centinela.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            const tcd = Object.entries(s.Centinela.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            draw('chartServicioCent', 'bar', tcs.map(x=>x[0]), tcs.map(x=>x[1]), '#212529'); drawTable('tablaServicioCent', s.Centinela.Servicio, 'Servicio');
+            draw('chartDefinicionCent', 'bar', tcd.map(x=>x[0]), tcd.map(x=>x[1]), '#212529'); drawTable('tablaDefinicionCent', s.Centinela.Definicion, 'Causa');
+        }, 200);
+    }
+
+    // E. EXCEL MASTER (COMPLETO)
+    $(document).on('click', '#btnDescargarExcelStats', async function() {
+        const btn = this; const ot = btn.innerHTML; btn.innerHTML = "⏳ Generando..."; btn.disabled = true;
+        try {
+            const rows = tabla.rows({ search: 'applied' }).data().toArray();
+            if (rows.length === 0) throw new Error("No hay datos");
+            
+            // Reprocesar Datos para Excel
+            let s = { General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{} }, Adverso:{Servicio:{}, Definicion:{}}, Cuasi:{Servicio:{}, Definicion:{}}, Centinela:{Servicio:{}, Definicion:{}} };
+            rows.forEach(r => {
+                const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
+                let ev = clean(r[COL.EVENTO]), ed = clean(r[COL.EDAD]), sx = clean(r[COL.SEXO]), tu = clean(r[COL.TURNO]), sv = clean(r[COL.SERVICIO]), def = clean(r[COL.DEFINICION]);
+                s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1; s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1; s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1; s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
+                if (!s.General.Edad[ed]) s.General.Edad[ed] = { H: 0, M: 0 };
+                (sx.toUpperCase().includes('MASC') || sx.toUpperCase().includes('HOMBRE')) ? s.General.Edad[ed].H++ : s.General.Edad[ed].M++;
+                let evUpper = ev.toUpperCase();
+                if(evUpper.includes('ADVERSO')) { s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; }
+                else if(evUpper.includes('CUASI')) { s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1; }
+                else if(evUpper.includes('CENTINELA')) { s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; }
             });
 
             const workbook = new ExcelJS.Workbook();
-            const generarImagenFantasma = async (type, labels, data, color, title) => {
-                const canvas = document.createElement('canvas'); canvas.width = 800; canvas.height = 400;
-                const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                const tempChart = new Chart(ctx, { type: type, data: { labels: labels, datasets: [{ label: 'Total', data: data, backgroundColor: color }] }, options: { responsive: false, animation: false, indexAxis: (type==='pie'?'x':'y'), plugins: { title: { display: true, text: title, font: {size: 18} }, legend: {display: (type==='pie')} } } });
-                const b64 = canvas.toDataURL('image/png'); tempChart.destroy(); return b64;
-            };
+            const genImg = async (type, l, d, c, t) => { const cv = document.createElement('canvas'); cv.width=800; cv.height=400; const x = cv.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,800,400); const ch = new Chart(x,{type:type,data:{labels:l,datasets:[{data:d,backgroundColor:c}]},options:{animation:false,plugins:{title:{display:true,text:t,font:{size:18}}}}}); const b=cv.toDataURL(); ch.destroy(); return b; };
+            const addS = async (ws, t, o, c, r) => { ws.getCell(`A${r}`).value=t; ws.getCell(`A${r}`).font={bold:true,size:14,color:{argb:'FF7A123A'}}; ws.getCell(`A${r+1}`).value="Concepto"; ws.getCell(`B${r+1}`).value="Total"; ws.getCell(`A${r+1}`).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF333333'}}; ws.getCell(`A${r+1}`).font={color:{argb:'FFFFFFFF'}}; ws.getCell(`B${r+1}`).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF333333'}}; ws.getCell(`B${r+1}`).font={color:{argb:'FFFFFFFF'}}; let cr=r+2; let gl=[],gd=[]; Object.entries(o).sort((a,b)=>((typeof b[1]==='object'?b[1].H+b[1].M:b[1])-(typeof a[1]==='object'?a[1].H+a[1].M:a[1]))).forEach(([k,v])=>{ let val=typeof v==='object'?v.H+v.M:v; ws.getCell(`A${cr}`).value=k; ws.getCell(`B${cr}`).value=val; cr++; if(gl.length<10){gl.push(k);gd.push(val);} }); if(gl.length>0&&c){try{const i=await genImg(c.type,gl,gd,c.color,t);const id=workbook.addImage({base64:i,extension:'png'});ws.addImage(id,{tl:{col:3,row:r},ext:{width:500,height:300}});}catch(e){}} return Math.max(cr,r+16)+2; };
 
-            const addSection = async (sheet, title, dataObj, chartConfig, startRow) => {
-                sheet.getCell(`A${startRow}`).value = title; sheet.getCell(`A${startRow}`).font = { size: 14, bold: true, color: { argb: 'FF7A123A' } };
-                sheet.getCell(`A${startRow+1}`).value = "Concepto"; sheet.getCell(`B${startRow+1}`).value = "Total";
-                sheet.getCell(`A${startRow+1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } }; sheet.getCell(`A${startRow+1}`).font = { color: { argb: 'FFFFFFFF' } };
-                sheet.getCell(`B${startRow+1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } }; sheet.getCell(`B${startRow+1}`).font = { color: { argb: 'FFFFFFFF' } };
-                let currentRow = startRow + 2;
-                let entries = Object.entries(dataObj).sort((a,b) => (typeof b[1]==='number' ? b[1]-a[1] : 0));
-                let gLabels = [], gData = [];
-                entries.forEach(([k, v]) => {
-                    let val = (typeof v === 'object') ? (v.H + v.M) : v;
-                    sheet.getCell(`A${currentRow}`).value = k; sheet.getCell(`B${currentRow}`).value = val; currentRow++;
-                    if (gLabels.length < 10) { gLabels.push(k); gData.push(val); }
-                });
-                if (gLabels.length > 0 && chartConfig) {
-                    try {
-                        const imgB64 = await generarImagenFantasma(chartConfig.type, gLabels, gData, chartConfig.color, title);
-                        const imgId = workbook.addImage({ base64: imgB64, extension: 'png' });
-                        sheet.addImage(imgId, { tl: { col: 3, row: startRow }, ext: { width: 500, height: 300 } });
-                    } catch(e) {}
+            const wsG = workbook.addWorksheet('Generales'); wsG.getColumn(1).width=40; let r=1;
+            r = await addS(wsG, "SEXO", s.General.Sexo, {type:'pie',color:['#0d6efd','#dc3545','#ffc107']}, r);
+            r = await addS(wsG, "EVENTOS", s.General.Evento, {type:'bar',color:'#7a123a'}, r);
+            r = await addS(wsG, "EDAD", s.General.Edad, {type:'bar',color:'#0d6efd'}, r);
+            r = await addS(wsG, "TURNOS", s.General.Turno, {type:'bar',color:'#198754'}, r);
+            r = await addS(wsG, "SERVICIOS", s.General.Servicio, {type:'bar',color:'#0288d1'}, r);
+
+            const addT = async (n, d, c, f) => {
+                const ws = workbook.addWorksheet(n); ws.getColumn(1).width=45; let rx=1;
+                rx = await addS(ws, `TOP ÁREAS (${n})`, d.Servicio, {type:'bar',color:c}, rx);
+                const st = Object.entries(d.Servicio).sort((a,b)=>b[1]-a[1]);
+                if(st.length>0 && f) {
+                    const top = st[0][0]; let dc={};
+                    rows.forEach(rw=>{ const cl=(x)=>String(x).replace(/<[^>]*>?/gm,'').trim()||'NULO'; let eu=cl(rw[COL.EVENTO]).toUpperCase(); if(((n==='Adversos'&&eu.includes('ADVERSO'))||(n==='Cuasifallas'&&eu.includes('CUASI'))) && cl(rw[COL.SERVICIO])===top) dc[cl(rw[COL.DEFINICION])]=(dc[cl(rw[COL.DEFINICION])]||0)+1; });
+                    rx = await addS(ws, `ANÁLISIS CRÍTICO: ${top}`, dc, {type:'bar',color:'#212529'}, rx);
                 }
-                return Math.max(currentRow, startRow + 16) + 2;
+                rx = await addS(ws, `CAUSAS GLOBALES (${n})`, d.Definicion, {type:'bar',color:c}, rx);
             };
+            await addT('Adversos', s.Adverso, '#dc3545', true);
+            await addT('Cuasifallas', s.Cuasi, '#ffc107', true);
+            await addT('Centinelas', s.Centinela, '#212529', false);
 
-            const wsGen = workbook.addWorksheet('Generales'); wsGen.getColumn(1).width = 40;
-            let r = 1;
-            r = await addSection(wsGen, "SEXO", s.General.Sexo, {type:'pie', color:['#0d6efd','#dc3545','#ffc107']}, r);
-            r = await addSection(wsGen, "TIPO EVENTO", s.General.Evento, {type:'bar', color:'#7a123a'}, r);
-            r = await addSection(wsGen, "EDAD", s.General.Edad, {type:'bar', color:'#0d6efd'}, r);
-            r = await addSection(wsGen, "TURNOS", s.General.Turno, {type:'bar', color:'#198754'}, r);
-            r = await addSection(wsGen, "TOP SERVICIOS", s.General.Servicio, {type:'bar', color:'#0288d1'}, r);
-
-            const addTabSheet = async (name, data, color, typeFilter) => {
-                const ws = workbook.addWorksheet(name); ws.getColumn(1).width = 45;
-                let rx = 1;
-                rx = await addSection(ws, `TOP ÁREAS (${name})`, data.Servicio, {type:'bar', color: color}, rx);
-                
-                const sortedServ = Object.entries(data.Servicio).sort((a,b)=>b[1]-a[1]);
-                if (sortedServ.length > 0 && typeFilter) {
-                    const topArea = sortedServ[0][0];
-                    let drillCounts = {};
-                    rows.forEach(row => {
-                         const clean = (txt) => String(txt).replace(/<[^>]*>?/gm, '').replace(/Ver más|Ver menos/g, '').trim() || 'NULO';
-                         let evUpper = clean(row[COL.EVENTO]).toUpperCase();
-                         let sv = clean(row[COL.SERVICIO]);
-                         let coincide = (name === 'Adversos' && evUpper.includes('ADVERSO')) || (name === 'Cuasifallas' && evUpper.includes('CUASI'));
-                         if(coincide && sv === topArea) { drillCounts[clean(row[COL.DEFINICION])] = (drillCounts[clean(row[COL.DEFINICION])] || 0) + 1; }
-                    });
-                    rx = await addSection(ws, `ANÁLISIS ÁREA CRÍTICA: ${topArea}`, drillCounts, {type:'bar', color: '#212529'}, rx);
-                }
-                rx = await addSection(ws, `CAUSAS GLOBALES (${name})`, data.Definicion, {type:'bar', color: color}, rx);
-            }
-
-            await addTabSheet('Adversos', s.Adverso, '#dc3545', 'Adverso');
-            await addTabSheet('Cuasifallas', s.Cuasi, '#ffc107', 'Cuasi');
-            await addTabSheet('Centinelas', s.Centinela, '#212529', null);
-
-            const buffer = await workbook.xlsx.writeBuffer();
-            saveAs(new Blob([buffer]), 'Reporte_VENCER_Final.xlsx');
-
-        } catch (err) { console.error(err); alert("Error generando Excel."); } 
-        finally { btn.innerHTML = originalText; btn.disabled = false; }
+            const buff = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buff]), 'Reporte_VENCER_Final.xlsx');
+        } catch (err) { console.error(err); alert("Error excel."); } finally { btn.innerHTML = ot; btn.disabled = false; }
     });
 
     $('#modalGraficos').on('shown.bs.modal', generarGraficos);
