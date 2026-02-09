@@ -76,9 +76,9 @@
                     <li class="nav-item"><button class="nav-link fw-bold text-warning" data-bs-toggle="tab" data-bs-target="#tab-cuasi">⚠️ Cuasifallas</button></li>
                     <li class="nav-item"><button class="nav-link fw-bold text-dark" data-bs-toggle="tab" data-bs-target="#tab-centinela">Eventos Centinela</button></li>
                 </ul>
-
+                <!-- -->
                 <div class="tab-content" id="graficosTabContent">
-                    
+    
                     <div class="tab-pane fade show active" id="tab-general">
                         <div class="row g-3 mb-3">
                             <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-secondary mb-3">DISTRIBUCIÓN POR SEXO</h6><div style="height:250px"><canvas id="chartSexoGen"></canvas></div><div id="tablaSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
@@ -93,20 +93,118 @@
 
                     <div class="tab-pane fade" id="tab-adverso">
                         <div class="alert alert-danger py-2 text-center fw-bold mb-3"><i class="fas fa-exclamation-circle me-2"></i>Análisis de Eventos Adversos</div>
+                        
                         <div class="row g-3 mb-3">
-                            <div class="col-lg-6"><div class="card h-100 shadow-sm border-danger border-opacity-25"><div class="card-body"><h6 class="text-center fw-bold text-danger">1. ÁREAS CON MAYOR INCIDENCIA</h6><div style="height: 300px;"><canvas id="chartServicioAdv"></canvas></div><div id="tablaServicioAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
-                            <div class="col-lg-6"><div class="card h-100 shadow-sm border-danger border-opacity-50" style="background-color: #fff5f5;"><div class="card-body"><h6 class="text-center fw-bold text-dark">2. ANÁLISIS ÁREA CRÍTICA: <span id="lblTopAreaAdv" class="text-danger">---</span></h6><div style="height: 300px;"><canvas id="chartDrillDownAdv"></canvas></div><div id="tablaDrillDownAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-danger">ÁREAS CON MAYOR INCIDENCIA (TOP 10)</h6>
+                                        <div style="height: 250px;"><canvas id="chartServicioAdv"></canvas></div>
+                                        <div id="tablaServicioAdv" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-50" style="background-color: #fff5f5;">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">#1 ANÁLISIS: <span id="lblTopAreaAdv1" class="text-danger">---</span></h6>
+                                        <div style="height: 250px;"><canvas id="chartDrillDownAdv1"></canvas></div>
+                                        <div id="tablaDrillDownAdv1" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="row g-3"><div class="col-12"><div class="card h-100 shadow-sm border-danger border-opacity-25"><div class="card-body"><h6 class="text-center fw-bold text-danger">3. CAUSAS GLOBALES</h6><div style="height: 300px;"><canvas id="chartDefinicionAdv"></canvas></div><div id="tablaDefinicionAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div></div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-50" style="background-color: #fffaf0;">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">#2 ANÁLISIS: <span id="lblTopAreaAdv2" class="text-danger">---</span></h6>
+                                        <div style="height: 250px;"><canvas id="chartDrillDownAdv2"></canvas></div>
+                                        <div id="tablaDrillDownAdv2" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-50" style="background-color: #f0fff4;">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">#3 ANÁLISIS: <span id="lblTopAreaAdv3" class="text-danger">---</span></h6>
+                                        <div style="height: 250px;"><canvas id="chartDrillDownAdv3"></canvas></div>
+                                        <div id="tablaDrillDownAdv3" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-danger">CAUSAS GLOBALES (Definición)</h6>
+                                        <div style="height: 300px;"><canvas id="chartDefinicionAdv"></canvas></div>
+                                        <div id="tablaDefinicionAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-cuasi">
                         <div class="alert alert-warning py-2 text-center fw-bold mb-3 text-dark"><i class="fas fa-shield-alt me-2"></i>Análisis de Cuasifallas</div>
+                        
                         <div class="row g-3 mb-3">
-                            <div class="col-lg-6"><div class="card h-100 shadow-sm border-warning border-opacity-25"><div class="card-body"><h6 class="text-center fw-bold text-warning">1. ÁREAS CON MAYOR INCIDENCIA</h6><div style="height: 300px;"><canvas id="chartServicioCuasi"></canvas></div><div id="tablaServicioCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
-                            <div class="col-lg-6"><div class="card h-100 shadow-sm border-warning border-opacity-50" style="background-color: #fffsf0;"><div class="card-body"><h6 class="text-center fw-bold text-dark">2. ANÁLISIS ÁREA CRÍTICA: <span id="lblTopAreaCuasi" class="text-warning">---</span></h6><div style="height: 300px;"><canvas id="chartDrillDownCuasi"></canvas></div><div id="tablaDrillDownCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-warning">ÁREAS CON MAYOR INCIDENCIA (TOP 10)</h6>
+                                        <div style="height: 250px;"><canvas id="chartServicioCuasi"></canvas></div>
+                                        <div id="tablaServicioCuasi" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-50" style="background-color: #fffff0;">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">#1 ANÁLISIS: <span id="lblTopAreaCuasi1" class="text-warning">---</span></h6>
+                                        <div style="height: 250px;"><canvas id="chartDrillDownCuasi1"></canvas></div>
+                                        <div id="tablaDrillDownCuasi1" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="row g-3"><div class="col-12"><div class="card h-100 shadow-sm border-warning border-opacity-25"><div class="card-body"><h6 class="text-center fw-bold text-warning">3. CAUSAS GLOBALES</h6><div style="height: 300px;"><canvas id="chartDefinicionCuasi"></canvas></div><div id="tablaDefinicionCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div></div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-50" style="background-color: #fffaf0;">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">#2 ANÁLISIS: <span id="lblTopAreaCuasi2" class="text-warning">---</span></h6>
+                                        <div style="height: 250px;"><canvas id="chartDrillDownCuasi2"></canvas></div>
+                                        <div id="tablaDrillDownCuasi2" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-50" style="background-color: #f0fff4;">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">#3 ANÁLISIS: <span id="lblTopAreaCuasi3" class="text-warning">---</span></h6>
+                                        <div style="height: 250px;"><canvas id="chartDrillDownCuasi3"></canvas></div>
+                                        <div id="tablaDrillDownCuasi3" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-warning">CAUSAS GLOBALES (Definición)</h6>
+                                        <div style="height: 300px;"><canvas id="chartDefinicionCuasi"></canvas></div>
+                                        <div id="tablaDefinicionCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-centinela">
@@ -117,7 +215,9 @@
                         </div>
                     </div>
                 </div>
-
+                        
+                
+                <!-- -->
                 <div class="row mt-4 border-top pt-3">
                     <div class="col text-center">
                         <button id="btnDescargarExcelStats" class="btn btn-excel-verde fw-bold shadow px-4 py-2" style="background-color: #217346; color: white;">
