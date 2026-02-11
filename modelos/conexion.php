@@ -1,50 +1,67 @@
 <?php
 class Conexion
 {
-	private $conexion;
+    private $conexion;
 
-	public function __construct()
-	{
-		$this->conexion = new mysqli('localhost:3307', 'root', '', 'base1');
-		$this->conexion->set_charset('utf8');
-	}
+    public function __construct()
+    {
+        // --- 1. CONFIGURACIÓN DE INFINITYFREE ---
+        // Busca estos datos en tu panel -> "MySQL Databases"
+        
+        $host = 'sql112.infinityfree.com';  // MySQL Host Name 
+        $user = 'if0_41125231';              // MySQL User Name
+        $pass = 'DEtK59bqZzA';       // Tu contraseña del panel (MySQL Password)
+        $db   = 'if0_41125231_vencer';        // MySQL Database Name 
 
-	public function consultar($sql)
-	{
-		return $this->conexion->query($sql)->fetch_all();
-	}
+        // --- 2. CREAR CONEXIÓN ---
+        // Quitamos el puerto :3307 porque en la nube es estándar
+        $this->conexion = new mysqli($host, $user, $pass, $db);
 
-	public function actualizar($sql)
-	{
-		return $this->conexion->query($sql);
-	}
-	public function consultarUnaFila($sql)
-	{
-		$resultado = $this->conexion->query($sql);
-		return $resultado->fetch_assoc();
-	}
+        // --- 3. VERIFICAR ERRORES (IMPORTANTE PARA LA NUBE) ---
+        if ($this->conexion->connect_error) {
+            die("Error fatal de conexión: " . $this->conexion->connect_error);
+        }
 
-	public function obtenerUltimoId()
-	{
-		return $this->conexion->insert_id;
-	}
+        $this->conexion->set_charset('utf8');
+    }
 
-	public function getConexion()
-	{
-		return $this->conexion;
-	}
+    // --- EL RESTO DE TUS FUNCIONES SIGUEN IGUAL ---
 
-	public function cerrar()
-	{
-		$this->conexion->close();
-	}
+    public function consultar($sql)
+    {
+        return $this->conexion->query($sql)->fetch_all();
+    }
 
-	public static function conectar()
-	{
-		$instance = new self();
-		return $instance->getConexion();
-	}
+    public function actualizar($sql)
+    {
+        return $this->conexion->query($sql);
+    }
+    
+    public function consultarUnaFila($sql)
+    {
+        $resultado = $this->conexion->query($sql);
+        return $resultado->fetch_assoc();
+    }
+
+    public function obtenerUltimoId()
+    {
+        return $this->conexion->insert_id;
+    }
+
+    public function getConexion()
+    {
+        return $this->conexion;
+    }
+
+    public function cerrar()
+    {
+        $this->conexion->close();
+    }
+
+    public static function conectar()
+    {
+        $instance = new self();
+        return $instance->getConexion();
+    }
 }
-
-
 ?>

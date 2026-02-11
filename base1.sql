@@ -1,8 +1,4 @@
-CREATE DATABASE IF NOT EXISTS base1
-CHARACTER SET utf8mb4
-DEFAULT COLLATE utf8mb4_general_ci;
 
-USE base1;
 
 Create Table If Not Exists admi (
     Id Int Not Null Primary Key Auto_Increment,

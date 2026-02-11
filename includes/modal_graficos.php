@@ -205,6 +205,7 @@
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
                     <div class="tab-pane fade" id="tab-centinela">
@@ -214,6 +215,7 @@
                             <div class="col-lg-6"><div class="card h-100 shadow-sm"><div class="card-body"><h6 class="text-center fw-bold text-dark">CAUSAS PRINCIPALES (Definición)</h6><div style="height: 350px;"><canvas id="chartDefinicionCent"></canvas></div><div id="tablaDefinicionCent" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
                         </div>
                     </div>
+
                 </div>
                         
                 
