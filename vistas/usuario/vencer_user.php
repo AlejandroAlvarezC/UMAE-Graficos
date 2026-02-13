@@ -1,3 +1,4 @@
+//Vista de solo lectura 
 <?php
 session_start();
 require_once '../../modelos/vencer.php';
@@ -40,7 +41,6 @@ if (count($registros) > 0) {
   <title>UMAE-48 | Vencer</title>
 
   <style>
-    /* Estilos base mantenidos de tu original */
     html, body { height: 100%; margin: 0; display: flex; flex-direction: column; }
     .content { flex: 1; }
     table.table { font-size: 0.85rem; }
@@ -148,7 +148,6 @@ if (count($registros) > 0) {
           });
       }
 
-      // 3. Script PDF (CORREGIDO PARA EVITAR NULL)
       const btnPdf = document.getElementById('btnDescargarGraficoPDF');
       if (btnPdf) {
           btnPdf.addEventListener('click', async () => {

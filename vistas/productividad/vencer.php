@@ -65,9 +65,6 @@ $registros = Vencer::listar();
           </div>
 
           <div class="col-md d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
-            <form id="formDescargarExcelVencer" action="./descargar-excel_vencer.php" method="post" class="m-0">
-               <button class="btn btn-urgencia" type="submit">🟩 Descargar Tabla</button>
-            </form>
 
             <button id="btnGrafico" class="btn btn-urgencia" data-bs-toggle="modal" data-bs-target="#modalGraficos">
               📊 Ver Gráficos
