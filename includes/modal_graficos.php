@@ -85,7 +85,19 @@
                             <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-secondary mb-3">CLASIFICACIÓN DE EVENTOS</h6><div style="height:250px"><canvas id="chartEventosGen"></canvas></div><div id="tablaEventosGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
                         </div>
                         <div class="row g-3 mb-3">
-                            <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-secondary mb-3">RANGO DE EDAD</h6><div style="height:250px"><canvas id="chartEdadSexoGen"></canvas></div><div id="tablaEdadSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
+                            <div class="col-md-6">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-secondary mb-3"> Edad/Sexo</h6>
+                                        
+                                        <div style="height: 350px; position: relative;">
+                                            <canvas id="chartPiramide"></canvas>
+                                        </div>
+
+                                        <div id="tablaEdadSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-success mb-3">TURNOS</h6><div style="height:250px"><canvas id="chartTurnoGen"></canvas></div><div id="tablaTurnoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
                         </div>
                         <div class="row g-3"><div class="col-12"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-primary mb-3">TOP SERVICIOS</h6><div style="height:350px"><canvas id="chartTopServiciosGen"></canvas></div><div id="tablaTopServiciosGen" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div></div>
