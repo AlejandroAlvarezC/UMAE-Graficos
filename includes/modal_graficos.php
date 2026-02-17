@@ -1,9 +1,9 @@
-<div class="modal fade" id="modalGraficos" tabindex="-1" aria-labelledby="modalGraficosLabel" aria-hidden="true">
+<div class="modal fade" id="modalGraficos" tabindex="-1" aria-labelledby="modalGraficosLabel" >
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             
             <div class="modal-header" style="background-color: #7a123a; color: white;">
-                <h5 class="modal-title fw-bold"><i class="fas fa-chart-line me-2"></i>Dashboard Estadístico VENCER</h5>
+                <h5 class="modal-title fw-bold"><i class="fas fa-chart-line me-2"></i>VENCER</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
@@ -63,6 +63,11 @@
                     </div>
                     
                     <div class="vr mx-2"></div>
+
+                    <label class="small fw-bold ms-2">Servicio:</label>
+                    <select id="filtroServicioGrafico" class="form-select form-select-sm shadow-sm" style="max-width: 200px;">
+                        <option value="">Todos</option>
+                    </select>
 
                     <div class="d-flex align-items-center bg-light px-3 py-1 rounded border">
                         <span class="text-muted small text-uppercase fw-bold me-2">Total:</span>

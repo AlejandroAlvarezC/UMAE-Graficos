@@ -1,24 +1,11 @@
 <?php
 session_start();
 
-// Verificar sesión de administrador
+// 1. SOLO SEGURIDAD (Nada de modelos, nada de bases de datos aquí)
 if (!isset($_SESSION['admin_id'])) {
-    $_SESSION['login_error'] = "Debes iniciar sesión como administrador para acceder a esa sección.";
+    $_SESSION['login_error'] = "Debes iniciar sesión como administrador.";
     header('Location: ../admin/login.php');
     exit();
-}
-
-// --- CORRECCIÓN VITAL ---
-// Conectamos con el MODELO (Cerebro) que creaste en el Paso 1.
-// Así la vista puede pedir los datos usando Vencer::listar().
-require_once __DIR__ . '/../../modelos/Vencer.php'; 
-
-// Obtenemos los datos para la tabla
-$registros = [];
-try {
-    $registros = Vencer::listar();
-} catch (Exception $e) {
-    $error_msg = "Error al cargar datos: " . $e->getMessage();
 }
 ?>
 
@@ -70,9 +57,9 @@ try {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
       <?php endif; ?>
-      <?php if(isset($_GET['error']) || isset($error_msg)): ?>
+      <?php if(isset($_GET['error'])): ?>
         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= htmlspecialchars($_GET['error'] ?? $error_msg) ?>
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= htmlspecialchars($_GET['error']) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
       <?php endif; ?>
@@ -87,7 +74,7 @@ try {
 
           <div class="col-md d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
             <button id="btnGrafico" class="btn btn-urgencia shadow-sm" data-bs-toggle="modal" data-bs-target="#modalGraficos">
-              📊 Ver Gráficos
+              📊 Ver Dashboard
             </button>
           </div>
         </div>
@@ -103,20 +90,25 @@ try {
           ?>
             <div class="col-md-3">
                 <label for="filter<?= $c ?>" class="form-label small fw-bold text-muted"><?= $c ?>:</label>
-                <select id="filter<?= $c ?>" class="form-select select-personalizado form-select-sm" multiple></select>
+                <select id="filter<?= $c ?>" name="filter<?= $c ?>" class="form-select select-personalizado form-select-sm" multiple></select>
             </div>
           <?php endforeach; ?>
         </div>
       </div>
 
-      <?php if (count($registros) > 0): ?>
-        <div class="card shadow-sm mt-4 border-0">
+      <div class="card shadow-sm mt-4 border-0">
           <div class="card-header bg-white border-bottom">
             <h5 class="mb-0 text-secondary"><i class="bi bi-table me-2"></i>Registros Actuales</h5>
           </div>
           <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover table-striped mb-0 text-center align-middle" id="tabla-vencer">
+            
+            <div id="loaderTabla" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+                <h5 class="mt-3 text-muted">Cargando registros...</h5>
+            </div>
+
+            <div class="table-responsive" id="contenedorTabla" style="display: none;">
+              <table class="table table-hover table-striped mb-0 text-center align-middle" id="tabla-vencer" style="width:100%">
                 <thead class="table-light">
                   <tr>
                     <th>Folio</th><th>Evento</th><th>Iniciales</th><th>NSS</th><th>Edad</th><th>Sexo</th>
@@ -125,50 +117,12 @@ try {
                     <th>Estatus</th><th>Año</th><th>Acciones</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <?php foreach ($registros as $r): ?>
-                    <tr>
-                      <td><?= htmlspecialchars($r['folio'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['evento'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['ini_paciente'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['seguridad_social'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['edad'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['sexo'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['diagnostico'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['fecha_evento'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['fecha_noti'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['turno'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['servicio'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['categoria'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['proceso'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['definicion'] ?? '') ?></td>
-                      <td><?= htmlspecialchars($r['descripcion'] ?? '') ?></td>
-                      <td>
-                        <span class="badge bg-secondary"><?= htmlspecialchars($r['estatus'] ?? '') ?></span>
-                      </td>
-                      <td><?= htmlspecialchars($r['anio'] ?? '') ?></td>
-                      <td>
-                        <div class="d-flex gap-1 justify-content-center">
-                            <a class="btn btn-outline-primary btn-sm" href="./editar-vencer.php?id=<?= base64_encode($r['id']) ?>" title="Editar"><i class="bi bi-pencil"></i></a>
-                            <a class="btn btn-outline-danger btn-sm" href="../../controladores/vencer.php?a=Eliminar&id=<?= base64_encode($r['id']) ?>" onclick="return confirm('¿Estás seguro de eliminar este registro? No se puede deshacer.')" title="Eliminar"><i class="bi bi-trash"></i></a>
-                        </div>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
+                <tbody></tbody>
               </table>
             </div>
+
           </div>
-        </div>
-      <?php else: ?>
-        <div class="alert alert-info mt-4 d-flex align-items-center shadow-sm">
-            <i class="bi bi-info-circle fs-4 me-3"></i>
-            <div>
-                <strong>No hay registros.</strong> La base de datos está vacía o no se encontraron datos.
-                <br>Usa el botón "Agregar manual" o "Cargar archivo" para comenzar.
-            </div>
-        </div>
-      <?php endif; ?>
+      </div>
 
     </div>
   </div>
@@ -187,29 +141,6 @@ try {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-<script>
-      // 1. Recibimos los datos "sucios" de PHP
-      const datosBrutos = <?php echo json_encode($registros, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
-
-      // 2. Función para convertir "&lt;" de vuelta a "<"
-      function decodificarTexto(html) {
-          var txt = document.createElement("textarea");
-          txt.innerHTML = html;
-          return txt.value;
-      }
-
-      // 3. Limpiamos cada registro antes de dárselo a los gráficos
-      const datosVencer = datosBrutos.map(function(item) {
-          return {
-              ...item, // Copiamos todo el registro
-              edad: decodificarTexto(item.edad), // Corregimos la edad
-              diagnostico: decodificarTexto(item.diagnostico) // Corregimos diagnóstico por si acaso
-          };
-      });
-
-      console.log("Datos limpios cargados:", datosVencer.length);
-  </script>
-  
   <script src="../../js/vencer.js"></script>
 
 </body>

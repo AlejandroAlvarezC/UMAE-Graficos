@@ -24,39 +24,55 @@ class Vencer {
     }
 
     // LISTAR
-    public static function listar() {
-        $instancia = new self(); 
+public static function listar() {
+        $instancia = new self();
         $conexion = $instancia->conexion;
-        
+
+        // 1. Configurar caracteres
+        try { $conexion->consultar("SET NAMES 'utf8mb4'"); } catch(Throwable $e){}
+
+        // 2. Consulta SQL
         $sql = "SELECT * FROM vencer ORDER BY id DESC";
         $consulta = $conexion->consultar($sql);
-        $instancia->conexion->cerrar();
 
         $result = [];
+
         if ($consulta) {
             foreach ($consulta as $fila) {
-                $result[] = [
-                    'id'               => $fila[0] ?? '',
-                    'folio'            => $fila[1] ?? '',
-                    'evento'           => $fila[2] ?? '',
-                    'ini_paciente'     => $fila[3] ?? '',
-                    'seguridad_social' => $fila[4] ?? '',
-                    'edad'             => $fila[5] ?? '',
-                    'sexo'             => $fila[6] ?? '',
-                    'diagnostico'      => $fila[7] ?? '',
-                    'fecha_evento'     => $fila[8] ?? '',
-                    'fecha_noti'       => $fila[9] ?? '',
-                    'turno'            => $fila[10] ?? '',
-                    'servicio'         => $fila[11] ?? '',
-                    'categoria'        => $fila[12] ?? '',
-                    'proceso'          => $fila[13] ?? '',
-                    'definicion'       => $fila[14] ?? '',
-                    'descripcion'      => $fila[15] ?? '',
-                    'estatus'          => $fila[16] ?? '',
-                    'anio'             => $fila[17] ?? ''
-                ];
+                // Convertimos a array por si el wrapper devuelve objetos
+                $r = (array)$fila;
+
+                // DETECCIÓN INTELIGENTE:
+                // Si la fila tiene claves numéricas (0, 1, 2...), las convertimos a nombres.
+                // Si ya tiene nombres ('folio', 'evento'...), la dejamos pasar.
+                if (isset($r[0])) {
+                    $result[] = [
+                        'id'               => $r[0] ?? '',
+                        'folio'            => $r[1] ?? '',
+                        'evento'           => $r[2] ?? '',
+                        'ini_paciente'     => $r[3] ?? '',
+                        'seguridad_social' => $r[4] ?? '',
+                        'edad'             => $r[5] ?? '',
+                        'sexo'             => $r[6] ?? '',
+                        'diagnostico'      => $r[7] ?? '',
+                        'fecha_evento'     => $r[8] ?? '',
+                        'fecha_noti'       => $r[9] ?? '',
+                        'turno'            => $r[10] ?? '',
+                        'servicio'         => $r[11] ?? '',
+                        'categoria'        => $r[12] ?? '',
+                        'proceso'          => $r[13] ?? '',
+                        'definicion'       => $r[14] ?? '',
+                        'descripcion'      => $r[15] ?? '',
+                        'estatus'          => $r[16] ?? '',
+                        'anio'             => $r[17] ?? ''
+                    ];
+                } else {
+                    // Ya viene con nombres (ej: 'folio'), lo usamos directo
+                    $result[] = $r;
+                }
             }
         }
+
         return $result;
     }
 
