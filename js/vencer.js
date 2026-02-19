@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 VENCER: Dashboard Final 2x2 Fixed");
+    console.log("🚀 VENCER: Dashboard Final (Procesos en todas las pestañas)");
 
     const COL = { EVENTO: 1, EDAD: 4, SEXO: 5, FECHA: 7, TURNO: 9, SERVICIO: 10, DEFINICION: 13, ANIO: 16 };
     window.dbDatos = []; 
@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const mapa = {'Ã±':'ñ','Ã‘':'Ñ','Ã¡':'á','Ã©':'é','Ãed':'í','Ã³':'ó','Ãº':'ú','Ã':'Á','Ã‰':'É','Ã':'Í','Ã“':'Ó','Ãš':'Ú','&nbsp;':' ','&amp;':'&','&lt;':'<','&gt;':'>'};
             return str.replace(/Ã±|Ã‘|Ã¡|Ã©|Ãed|Ã³|Ãº|Ã|Ã‰|Ã|Ã“|Ãš|&nbsp;|&amp;|&lt;|&gt;/g, m => mapa[m]);
         }
+    };
+
+    // --- TRUNCAR TEXTO PARA GRÁFICOS ---
+    const truncarTexto = (texto, max = 40) => {
+        if (texto.length > max) return texto.substring(0, max) + '...';
+        return texto;
     };
 
     // --- CARGA AJAX ---
@@ -105,7 +111,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             const allRows = tabla.rows({ search: 'applied' }).data().toArray();
             
-            // Selector Servicio
             const elSelectServicio = document.getElementById('filtroServicioGrafico');
             const servicioSeleccionado = elSelectServicio ? elSelectServicio.value : "";
             
@@ -123,20 +128,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const lbl = document.getElementById('lblTotalEventos'); if(lbl) lbl.textContent = rows.length;
             if (rows.length === 0) return;
 
+            // --- RECOLECCIÓN DE DATOS ---
             let s = { 
-                General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{} }, 
-                Adverso: { Servicio:{}, Definicion:{}, Sexo:{}, Edad:{} }, 
-                Cuasi:   { Servicio:{}, Definicion:{}, Sexo:{}, Edad:{} }, 
-                Centinela: { Servicio:{}, Definicion:{} } 
+                General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{}, Proceso:{} }, 
+                Adverso: { Servicio:{}, Definicion:{}, Sexo:{}, Edad:{}, Proceso:{} }, 
+                Cuasi:   { Servicio:{}, Definicion:{}, Sexo:{}, Edad:{}, Proceso:{} }, 
+                Centinela: { Servicio:{}, Definicion:{}, Proceso:{} } // <--- AÑADIDO PROCESO EN CENTINELA
             };
 
             rows.forEach(r => {
-                let ev = clean(r.evento), ed = clean(r.edad), sx = clean(r.sexo), tu = clean(r.turno), sv = clean(r.servicio), def = clean(r.definicion);
+                let ev = clean(r.evento), ed = clean(r.edad), sx = clean(r.sexo), tu = clean(r.turno), sv = clean(r.servicio), def = clean(r.definicion), pro = clean(r.proceso);
                 
                 s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1; 
                 s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1; 
                 s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1; 
                 s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
+                s.General.Proceso[pro] = (s.General.Proceso[pro] || 0) + 1; 
                 
                 if (!s.General.Edad[ed]) s.General.Edad[ed] = { H: 0, M: 0 };
                 let esHombre = sx.toUpperCase().includes('MASC') || sx.toUpperCase().startsWith('H') || sx.toUpperCase() === 'M';
@@ -146,24 +153,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 if(evUpper.includes('ADVERSO')) { 
                     s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; 
                     s.Adverso.Sexo[sx]=(s.Adverso.Sexo[sx]||0)+1;
+                    s.Adverso.Proceso[pro]=(s.Adverso.Proceso[pro]||0)+1; 
                     if (!s.Adverso.Edad[ed]) s.Adverso.Edad[ed] = { H: 0, M: 0 };
                     esHombre ? s.Adverso.Edad[ed].H++ : s.Adverso.Edad[ed].M++;
                 }
                 else if(evUpper.includes('CUASI')) { 
                     s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1;
                     s.Cuasi.Sexo[sx]=(s.Cuasi.Sexo[sx]||0)+1;
+                    s.Cuasi.Proceso[pro]=(s.Cuasi.Proceso[pro]||0)+1; 
                     if (!s.Cuasi.Edad[ed]) s.Cuasi.Edad[ed] = { H: 0, M: 0 };
                     esHombre ? s.Cuasi.Edad[ed].H++ : s.Cuasi.Edad[ed].M++;
                 }
                 else if(evUpper.includes('CENTINELA')) { 
                     s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; 
+                    s.Centinela.Proceso[pro]=(s.Centinela.Proceso[pro]||0)+1; // <--- LLENAR PROCESO CENTINELA
                 }
             });
 
             const draw = (id, t, l, d, c, opts={}) => {
                 const el = document.getElementById(id); if(!el) return;
                 if(charts[id]) charts[id].destroy();
-                charts[id] = new Chart(el.getContext('2d'), { type: t, data: { labels: l, datasets: [{ label: 'Total', data: d, backgroundColor: c }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, indexAxis: 'y', ...opts } });
+                charts[id] = new Chart(el.getContext('2d'), { type: t, data: { labels: l, datasets: [{ label: 'Total', data: d, backgroundColor: c }] }, options: { responsive: true, maintainAspectRatio: false, animation: false, ...opts } });
             };
 
             const drawTable = (id, obj, t) => {
@@ -196,15 +206,20 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             // --- 1. GENERAL ---
-            draw('chartSexoGen', 'pie', Object.keys(s.General.Sexo), Object.values(s.General.Sexo), ['#0d6efd','#dc3545','#ffc107'], {indexAxis:'x'}); drawTable('tablaSexoGen', s.General.Sexo, 'Sexo');
-            draw('chartEventosGen', 'bar', Object.keys(s.General.Evento), Object.values(s.General.Evento), '#7a123a', {indexAxis:'x'}); drawTable('tablaEventosGen', s.General.Evento, 'Evento');
+            draw('chartSexoGen', 'pie', Object.keys(s.General.Sexo), Object.values(s.General.Sexo), ['#0d6efd','#dc3545','#ffc107']); drawTable('tablaSexoGen', s.General.Sexo, 'Sexo');
+            draw('chartEventosGen', 'bar', Object.keys(s.General.Evento), Object.values(s.General.Evento), '#7a123a'); drawTable('tablaEventosGen', s.General.Evento, 'Evento');
             draw('chartTurnoGen', 'bar', Object.keys(s.General.Turno), Object.values(s.General.Turno), '#198754'); drawTable('tablaTurnoGen', s.General.Turno, 'Turno');
             
             const canvasTop = document.getElementById('chartTopServiciosGen');
-            const containerTop = canvasTop ? (canvasTop.closest('.card') || canvasTop.parentElement) : null;
+            const containerTop = canvasTop ? (canvasTop.closest('.row')) : null; 
             if (servicioSeleccionado !== "") { if(containerTop) containerTop.style.display = 'none'; } 
-            else { if(containerTop) containerTop.style.display = 'block'; const ts = Object.entries(s.General.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10); draw('chartTopServiciosGen', 'bar', ts.map(x=>x[0]), ts.map(x=>x[1]), '#0288d1'); drawTable('tablaTopServiciosGen', s.General.Servicio, 'Servicio'); }
+            else { if(containerTop) containerTop.style.display = 'flex'; const ts = Object.entries(s.General.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10); draw('chartTopServiciosGen', 'bar', ts.map(x=>x[0]), ts.map(x=>x[1]), '#0288d1'); drawTable('tablaTopServiciosGen', s.General.Servicio, 'Servicio'); }
+            
             drawPiramide('chartPiramide', 'tablaEdadSexoGen', s.General.Edad);
+            
+            const tProcGen = Object.entries(s.General.Proceso).sort((a,b)=>b[1]-a[1]);
+            draw('chartProcesoGen', 'bar', tProcGen.map(x=>x[0]), tProcGen.map(x=>x[1]), '#6f42c1', { indexAxis: 'y' }); 
+            drawTable('tablaProcesoGen', s.General.Proceso, 'Proceso Relacionado');
 
             // --- FUNCIÓN MAESTRA (ADVERSOS Y CUASIFALLAS) ---
             const generarMultiDrill = (tipo, colorBarra, configIds, idsControl) => {
@@ -228,31 +243,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 const colPiramide = document.getElementById(idsControl.colPiramide);
                 
                 if (servicioSeleccionado !== "") {
-                    // MODO FILTRO: Ocultar Top 1, Mostrar Pirámide
                     if(cardTop1) cardTop1.style.display = 'none';
                     if(colPiramide) colPiramide.style.display = 'block';
                     drawPiramide(configIds.piramideChart, configIds.piramideTable, dataObj.Edad);
                 } else {
-                    // MODO GENERAL: Mostrar Top 1 (si hay datos), Ocultar Pirámide
-                    if(cardTop1) cardTop1.style.display = 'block'; // Se llenará abajo
+                    if(cardTop1) cardTop1.style.display = 'block'; 
                     if(colPiramide) colPiramide.style.display = 'none';
                 }
 
                 // 3. Fila de Tops 2 y 3
                 const rowTops23 = document.getElementById(idsControl.rowTops23);
                 if (servicioSeleccionado !== "") {
-                    if(rowTops23) rowTops23.style.display = 'none'; // OCULTAR COMPLETO
+                    if(rowTops23) rowTops23.style.display = 'none'; 
                 } else {
-                    if(rowTops23) rowTops23.style.display = 'flex'; // MOSTRAR
+                    if(rowTops23) rowTops23.style.display = 'flex'; 
                 }
 
-                // 4. Llenar los Tops (si están visibles)
+                // 4. Llenar los Tops con TEXTO TRUNCADO EN GRÁFICOS
                 [0, 1, 2].forEach(index => {
                     const chartId = configIds.drills[index].chart;
                     const tableId = configIds.drills[index].table;
                     const labelId = configIds.drills[index].lbl;
                     
-                    if (tServ.length > index) {
+                    const canvasEl = document.getElementById(chartId);
+                    const colParent = canvasEl ? canvasEl.closest('.col-md-6') : null; 
+
+                    let mostrarColumna = (tServ.length > index);
+                    if (servicioSeleccionado !== "" && index > 0) mostrarColumna = false; 
+
+                    if (mostrarColumna) {
+                        if(colParent) colParent.style.display = 'block';
+                        
                         const areaName = tServ[index][0];
                         const areaVal = tServ[index][1];
                         const elLbl = document.getElementById(labelId); if(elLbl) elLbl.textContent = `${areaName} (${areaVal})`;
@@ -264,24 +285,35 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (coincide && sv === areaName) { let d = clean(r.definicion); drillCounts[d] = (drillCounts[d] || 0) + 1; }
                         });
                         const tDrill = Object.entries(drillCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-                        draw(chartId, 'bar', tDrill.map(x=>x[0]), tDrill.map(x=>x[1]), '#212529'); drawTable(tableId, drillCounts, 'Causa Específica');
+                        
+                        // TRUNCAR TEXTO PARA EL GRÁFICO (El tooltip mostrará la info truncada, la tabla abajo lo muestra completo)
+                        const etiquetasTruncadas = tDrill.map(x => truncarTexto(x[0], 35)); 
+                        
+                        draw(chartId, 'bar', etiquetasTruncadas, tDrill.map(x=>x[1]), '#212529'); 
+                        drawTable(tableId, drillCounts, 'Causa Específica');
                     } else {
-                        // Si no hay datos para Top 2 o 3 (y no estamos filtrando), limpiar
-                        const elLbl = document.getElementById(labelId); if(elLbl) elLbl.textContent = "---";
-                        draw(chartId, 'bar', [], [], '#ccc'); document.getElementById(tableId).innerHTML = '';
+                        if(colParent) colParent.style.display = 'none';
                     }
                 });
 
                 // 5. Causas Globales
                 const tDef = Object.entries(dataObj.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
                 draw(configIds.defChart, 'bar', tDef.map(x=>x[0]), tDef.map(x=>x[1]), colorBarra); drawTable(configIds.defTable, dataObj.Definicion, 'Causa');
+
+                // 6. Proceso Relacionado (Horizontal)
+                if (configIds.procChart && dataObj.Proceso) {
+                    const tProc = Object.entries(dataObj.Proceso).sort((a,b)=>b[1]-a[1]);
+                    draw(configIds.procChart, 'bar', tProc.map(x=>x[0]), tProc.map(x=>x[1]), colorBarra, { indexAxis: 'y' }); 
+                    drawTable(configIds.procTable, dataObj.Proceso, 'Proceso Relacionado');
+                }
             };
 
-            // EJECUTAR LÓGICA CON NUEVOS IDs
+            // EJECUTAR LÓGICA
             generarMultiDrill('Adverso', '#dc3545', { 
                 mainChart: 'chartServicioAdv', sexChart: 'chartSexoAdverso', mainTable: 'tablaServicioAdv', 
                 piramideChart: 'chartPiramideAdverso', piramideTable: 'tablaEdadSexoAdverso',
                 defChart: 'chartDefinicionAdv', defTable: 'tablaDefinicionAdv', 
+                procChart: 'chartProcesoAdv', procTable: 'tablaProcesoAdv',
                 drills: [{ chart: 'chartDrillDownAdv1', table: 'tablaDrillDownAdv1', lbl: 'lblTopAreaAdv1' }, { chart: 'chartDrillDownAdv2', table: 'tablaDrillDownAdv2', lbl: 'lblTopAreaAdv2' }, { chart: 'chartDrillDownAdv3', table: 'tablaDrillDownAdv3', lbl: 'lblTopAreaAdv3' }] 
             }, { cardTop1: 'cardTopAdv1', colPiramide: 'colPiramideAdverso', rowTops23: 'rowTopsAdv23' }); 
 
@@ -289,14 +321,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 mainChart: 'chartServicioCuasi', sexChart: 'chartSexoCuasi', mainTable: 'tablaServicioCuasi', 
                 piramideChart: 'chartPiramideCuasi', piramideTable: 'tablaEdadSexoCuasi',
                 defChart: 'chartDefinicionCuasi', defTable: 'tablaDefinicionCuasi', 
+                procChart: 'chartProcesoCuasi', procTable: 'tablaProcesoCuasi',
                 drills: [{ chart: 'chartDrillDownCuasi1', table: 'tablaDrillDownCuasi1', lbl: 'lblTopAreaCuasi1' }, { chart: 'chartDrillDownCuasi2', table: 'tablaDrillDownCuasi2', lbl: 'lblTopAreaCuasi2' }, { chart: 'chartDrillDownCuasi3', table: 'tablaDrillDownCuasi3', lbl: 'lblTopAreaCuasi3' }] 
             }, { cardTop1: 'cardTopCuasi1', colPiramide: 'colPiramideCuasi', rowTops23: 'rowTopsCuasi23' }); 
 
-            // CENTINELA
+            // --- 4. CENTINELA ---
             const tCentS = Object.entries(s.Centinela.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10);
             const tCentD = Object.entries(s.Centinela.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            const tCentP = Object.entries(s.Centinela.Proceso).sort((a,b)=>b[1]-a[1]); // DIBUJAR PROCESO
+            
             draw('chartServicioCent', 'bar', tCentS.map(x=>x[0]), tCentS.map(x=>x[1]), '#212529'); drawTable('tablaServicioCent', s.Centinela.Servicio, 'Servicio');
             draw('chartDefinicionCent', 'bar', tCentD.map(x=>x[0]), tCentD.map(x=>x[1]), '#212529'); drawTable('tablaDefinicionCent', s.Centinela.Definicion, 'Causa');
+            draw('chartProcesoCent', 'bar', tCentP.map(x=>x[0]), tCentP.map(x=>x[1]), '#212529', { indexAxis: 'y' }); drawTable('tablaProcesoCent', s.Centinela.Proceso, 'Proceso Relacionado');
             
         }, 200);
     };
@@ -309,16 +345,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const rows = tabla ? tabla.rows({ search: 'applied' }).data().toArray() : window.dbDatos;
             if (rows.length === 0) throw new Error("No hay datos");
             
-            let s = { General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{} }, Adverso:{Servicio:{}, Definicion:{}}, Cuasi:{Servicio:{}, Definicion:{}}, Centinela:{Servicio:{}, Definicion:{}} };
+            let s = { General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{}, Proceso:{} }, Adverso:{Servicio:{}, Definicion:{}, Proceso:{}}, Cuasi:{Servicio:{}, Definicion:{}, Proceso:{}}, Centinela:{Servicio:{}, Definicion:{}, Proceso:{}} };
             rows.forEach(r => {
-                let ev = clean(r.evento), ed = clean(r.edad), sx = clean(r.sexo), tu = clean(r.turno), sv = clean(r.servicio), def = clean(r.definicion);
+                let ev = clean(r.evento), ed = clean(r.edad), sx = clean(r.sexo), tu = clean(r.turno), sv = clean(r.servicio), def = clean(r.definicion), pro = clean(r.proceso);
                 s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1; s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1; s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1; s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
+                s.General.Proceso[pro] = (s.General.Proceso[pro] || 0) + 1;
+                
                 if (!s.General.Edad[ed]) s.General.Edad[ed] = { H: 0, M: 0 };
                 (sx.toUpperCase().includes('MASC') || sx.toUpperCase().includes('HOMBRE') || sx==='M') ? s.General.Edad[ed].H++ : s.General.Edad[ed].M++;
                 let evUpper = ev.toUpperCase();
-                if(evUpper.includes('ADVERSO')) { s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; }
-                else if(evUpper.includes('CUASI')) { s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1; }
-                else if(evUpper.includes('CENTINELA')) { s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; }
+                if(evUpper.includes('ADVERSO')) { s.Adverso.Servicio[sv]=(s.Adverso.Servicio[sv]||0)+1; s.Adverso.Definicion[def]=(s.Adverso.Definicion[def]||0)+1; s.Adverso.Proceso[pro]=(s.Adverso.Proceso[pro]||0)+1;}
+                else if(evUpper.includes('CUASI')) { s.Cuasi.Servicio[sv]=(s.Cuasi.Servicio[sv]||0)+1; s.Cuasi.Definicion[def]=(s.Cuasi.Definicion[def]||0)+1; s.Cuasi.Proceso[pro]=(s.Cuasi.Proceso[pro]||0)+1;}
+                else if(evUpper.includes('CENTINELA')) { s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; s.Centinela.Proceso[pro]=(s.Centinela.Proceso[pro]||0)+1;}
             });
 
             const workbook = new ExcelJS.Workbook();
@@ -326,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return new Promise((resolve, reject) => {
                     const canvas = document.createElement('canvas'); canvas.width = 800; canvas.height = 400; const ctx = canvas.getContext('2d');
                     const whiteBackground = { id: 'custom_bg', beforeDraw: (chart) => { const ctx = chart.canvas.getContext('2d'); ctx.save(); ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = 'white'; ctx.fillRect(0, 0, chart.width, chart.height); ctx.restore(); } };
-                    const tempChart = new Chart(ctx, { type: type, data: { labels: labels, datasets: [{ label: 'Total', data: data, backgroundColor: color }] }, plugins: [whiteBackground], options: { responsive: false, animation: { onComplete: function() { try { const b64 = canvas.toDataURL('image/png'); tempChart.destroy(); resolve(b64); } catch (e) { reject(e); } } }, plugins: { title: { display: true, text: title, font: {size: 18} }, legend: {display: (type==='pie')} } } });
+                    const tempChart = new Chart(ctx, { type: type, data: { labels: labels, datasets: [{ label: 'Total', data: data, backgroundColor: color }] }, plugins: [whiteBackground], options: { indexAxis: (type==='bar'&&title.includes('PROCESO')?'y':'x'), responsive: false, animation: { onComplete: function() { try { const b64 = canvas.toDataURL('image/png'); tempChart.destroy(); resolve(b64); } catch (e) { reject(e); } } }, plugins: { title: { display: true, text: title, font: {size: 18} }, legend: {display: (type==='pie')} } } });
                 });
             };
 
@@ -350,11 +388,13 @@ document.addEventListener('DOMContentLoaded', function() {
             r = await addSection(wsG, "EDAD", s.General.Edad, {type:'bar',color:'#0d6efd'}, r);
             r = await addSection(wsG, "TURNOS", s.General.Turno, {type:'bar',color:'#198754'}, r);
             r = await addSection(wsG, "SERVICIOS", s.General.Servicio, {type:'bar',color:'#0288d1'}, r);
+            r = await addSection(wsG, "PROCESOS", s.General.Proceso, {type:'bar',color:'#6f42c1'}, r);
 
             const addT = async (n, d, c, f) => {
                 const ws = workbook.addWorksheet(n); ws.getColumn(1).width=45; let rx=1;
                 rx = await addSection(ws, `TOP ÁREAS (${n})`, d.Servicio, {type:'bar',color:c}, rx);
                 rx = await addSection(ws, `CAUSAS GLOBALES (${n})`, d.Definicion, {type:'bar',color:c}, rx);
+                if(d.Proceso) rx = await addSection(ws, `PROCESOS RELACIONADOS (${n})`, d.Proceso, {type:'bar',color:c}, rx);
             };
             await addT('Adversos', s.Adverso, '#dc3545', true);
             await addT('Cuasifallas', s.Cuasi, '#ffc107', true);

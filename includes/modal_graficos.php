@@ -12,22 +12,32 @@
                 <div class="d-flex justify-content-center align-items-center mb-4 gap-3 bg-white p-3 rounded shadow-sm border flex-wrap">
                     <div class="d-flex align-items-center gap-2">
                         <label class="fw-bold text-secondary small">AÑO:</label>
-                        <select id="filtroAnio" class="form-select form-select-sm w-auto fw-bold shadow-sm border-danger"><option value="todos">Cargando...</option></select>
+                        <select id="filtroAnio" class="form-select form-select-sm w-auto fw-bold shadow-sm border-danger">
+                            <option value="todos">Cargando...</option>
+                        </select>
                     </div>
                     <div class="vr mx-2"></div>
                     <div class="d-flex align-items-center gap-2 border p-1 rounded bg-light">
                         <label class="fw-bold text-secondary small ms-1">MESES:</label>
-                        <select id="filtroMesInicio" class="form-select form-select-sm fw-bold shadow-sm border-secondary" style="max-width: 110px;">
-                            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-                        </select>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-0 fw-bold text-muted" style="font-size: 0.8rem;">De:</span>
+                            <select id="filtroMesInicio" class="form-select form-select-sm fw-bold shadow-sm border-secondary" style="max-width: 110px;">
+                                <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                            </select>
+                        </div>
                         <span class="fw-bold text-muted">-</span>
-                        <select id="filtroMesFin" class="form-select form-select-sm fw-bold shadow-sm border-secondary" style="max-width: 110px;">
-                            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12" selected>Diciembre</option>
-                        </select>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-0 fw-bold text-muted" style="font-size: 0.8rem;">A:</span>
+                            <select id="filtroMesFin" class="form-select form-select-sm fw-bold shadow-sm border-secondary" style="max-width: 110px;">
+                                <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12" selected>Diciembre</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="vr mx-2"></div>
                     <label class="small fw-bold ms-2">Servicio:</label>
-                    <select id="filtroServicioGrafico" class="form-select form-select-sm shadow-sm" style="max-width: 200px;"><option value="">Todos</option></select>
+                    <select id="filtroServicioGrafico" class="form-select form-select-sm shadow-sm" style="max-width: 200px;">
+                        <option value="">Todos</option>
+                    </select>
                     <div class="d-flex align-items-center bg-light px-3 py-1 rounded border">
                         <span class="text-muted small text-uppercase fw-bold me-2">Total:</span>
                         <span id="lblTotalEventos" class="fs-5 fw-bold text-danger">0</span>
@@ -52,7 +62,12 @@
                             <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-secondary mb-3">PIRÁMIDE POBLACIONAL</h6><div style="height: 350px; position: relative;"><canvas id="chartPiramide"></canvas></div><div id="tablaEdadSexoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
                             <div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-success mb-3">TURNOS</h6><div style="height:250px; position: relative;"><canvas id="chartTurnoGen"></canvas></div><div id="tablaTurnoGen" class="mt-3 table-responsive" style="max-height: 150px;"></div></div></div></div>
                         </div>
-                        <div class="row g-3"><div class="col-12"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-primary mb-3">TOP SERVICIOS</h6><div style="height:350px; position: relative;"><canvas id="chartTopServiciosGen"></canvas></div><div id="tablaTopServiciosGen" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div></div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-12"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-primary mb-3">TOP SERVICIOS</h6><div style="height:350px; position: relative;"><canvas id="chartTopServiciosGen"></canvas></div><div id="tablaTopServiciosGen" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h6 class="text-center fw-bold text-info mb-3" style="color: #6f42c1 !important;">PROCESO RELACIONADO</h6><div style="height:400px; position: relative;"><canvas id="chartProcesoGen"></canvas></div><div id="tablaProcesoGen" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
+                        </div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-adverso">
@@ -90,7 +105,7 @@
                             </div>
                         </div>
 
-                        <div class="row g-3 mb-3" id="rowTopsAdv23">
+                        <div class="row g-3 mb-3 contenedor-tops-adverso" id="rowTopsAdv23">
                             <div class="col-md-6">
                                 <div class="card h-100 shadow-sm border-danger border-opacity-50" style="background-color: #fffaf0;">
                                     <div class="card-body">
@@ -111,13 +126,25 @@
                             </div>
                         </div>
 
-                        <div class="row g-3">
+                        <div class="row g-3 mb-3">
                             <div class="col-12">
                                 <div class="card h-100 shadow-sm border-danger border-opacity-25">
                                     <div class="card-body">
                                         <h6 class="text-center fw-bold text-danger">CAUSAS GLOBALES (Definición)</h6>
                                         <div style="height: 250px; position: relative;"><canvas id="chartDefinicionAdv"></canvas></div>
                                         <div id="tablaDefinicionAdv" class="mt-3 table-responsive" style="max-height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card h-100 shadow-sm border-danger border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-danger">PROCESO RELACIONADO (Eventos Adversos)</h6>
+                                        <div style="height: 350px; position: relative;"><canvas id="chartProcesoAdv"></canvas></div>
+                                        <div id="tablaProcesoAdv" class="mt-3 table-responsive" style="max-height: 200px;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -158,7 +185,7 @@
                             </div>
                         </div>
 
-                        <div class="row g-3 mb-3" id="rowTopsCuasi23">
+                        <div class="row g-3 mb-3 contenedor-tops-cuasi" id="rowTopsCuasi23">
                             <div class="col-md-6">
                                 <div class="card h-100 shadow-sm border-warning border-opacity-50" style="background-color: #fffaf0;">
                                     <div class="card-body">
@@ -179,7 +206,7 @@
                             </div>
                         </div>
 
-                        <div class="row g-3">
+                        <div class="row g-3 mb-3">
                             <div class="col-12">
                                 <div class="card h-100 shadow-sm border-warning border-opacity-25">
                                     <div class="card-body">
@@ -190,13 +217,38 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card h-100 shadow-sm border-warning border-opacity-25">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-warning">PROCESO RELACIONADO (Cuasifallas)</h6>
+                                        <div style="height: 350px; position: relative;"><canvas id="chartProcesoCuasi"></canvas></div>
+                                        <div id="tablaProcesoCuasi" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-centinela">
                         <div class="alert alert-dark py-2 text-center fw-bold mb-3">Análisis de Eventos Centinela</div>
-                        <div class="row g-3">
+                        
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6"><div class="card h-100 shadow-sm"><div class="card-body"><h6 class="text-center fw-bold text-dark">ÁREAS CON MAYOR INCIDENCIA</h6><div style="height: 350px; position: relative;"><canvas id="chartServicioCent"></canvas></div><div id="tablaServicioCent" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
                             <div class="col-md-6"><div class="card h-100 shadow-sm"><div class="card-body"><h6 class="text-center fw-bold text-dark">CAUSAS PRINCIPALES (Definición)</h6><div style="height: 350px; position: relative;"><canvas id="chartDefinicionCent"></canvas></div><div id="tablaDefinicionCent" class="mt-3 table-responsive" style="max-height: 200px;"></div></div></div></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="text-center fw-bold text-dark">PROCESO RELACIONADO (Eventos Centinela)</h6>
+                                        <div style="height: 350px; position: relative;"><canvas id="chartProcesoCent"></canvas></div>
+                                        <div id="tablaProcesoCent" class="mt-3 table-responsive" style="max-height: 200px;"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
