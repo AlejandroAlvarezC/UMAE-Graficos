@@ -1,178 +1,126 @@
-//Vista de solo lectura 
 <?php
+// Sin validación de redirección, vista 100% pública
+require_once '../../modelos/conexion.php';
 session_start();
-require_once '../../modelos/vencer.php';
-
-// --- PROCESAMIENTO DE DATOS PARA EL GRÁFICO ---
-$registros = Vencer::listar();
-$conteoGrafico = [];
-
-if (count($registros) > 0) {
-    foreach ($registros as $r) {
-        // Usamos Sexo (índice 6) y Definición (índice 14) según la estructura estándar
-        $etiqueta = ($r[6] ?? 'N/E') . " - " . ($r[14] ?? 'Sin Definir');
-        $conteoGrafico[$etiqueta] = ($conteoGrafico[$etiqueta] ?? 0) + 1;
-    }
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
-  <link rel="stylesheet" href="../../css/bootstrap.min.css">
-  <link rel="stylesheet" href="../../css/styles.css">
-  <link rel="icon" type="image/png" href="../../logo-imss.png">
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
-  
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <title>UMAE-48 | Vencer</title>
-
-  <style>
-    html, body { height: 100%; margin: 0; display: flex; flex-direction: column; }
-    .content { flex: 1; }
-    table.table { font-size: 0.85rem; }
-    table.table thead th { background-color: #c46116; color: white; text-align: center; }
-    .btn-urgencia { background-color: #d55500; color: white; padding: 10px 20px; border-radius: 6px; font-weight: 600; text-decoration: none; border:none; }
-    .btn-urgencia:hover { background-color: #b34700; color: white; }
-    .btn-success { background: linear-gradient(135deg, #6e3d1e, #ac5d1d); border: none; color: white !important; font-weight: 700; border-radius: 12px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero VENCER</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* ========================================= */
+        /* LA MAGIA PARA OCULTAR LA TABLA CRUDA      */
+        /* Bloquea la orden del JS de mostrarla      */
+        /* ========================================= */
+        #contenedorTabla {
+            display: none !important; 
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+    </style>
 </head>
+<body>
 
-<body style="background-color: #fffef6">
+    <div class="container text-center" style="margin-top: 10vh; min-height: 60vh;">
+        <h1 class="fw-bold" style="color: #00664d; font-size: 3.5rem;">
+            <i class="fas fa-shield-alt me-3"></i>Sistema VENCER
+        </h1>
+        <p class="lead text-muted mt-3 fs-4">
+            Módulo de consulta pública y análisis de eventos adversos, cuasifallas y centinelas.
+        </p>
+        
+        <div class="d-flex justify-content-center align-items-center gap-4 mt-5 flex-wrap">
+            
+            <a href="../roles/index.php" class="btn btn-lg shadow-sm px-4 py-3 fw-bold text-secondary" 
+               style="background-color: #e9ecef; border-radius: 50px; border: 1px solid #ced4da; transition: transform 0.2s;"
+               onmouseover="this.style.transform='scale(1.05)'; this.style.backgroundColor='#dee2e6';" 
+               onmouseout="this.style.transform='scale(1)'; this.style.backgroundColor='#e9ecef';">
+                <i class="fas fa-arrow-left me-2 fs-4 align-middle"></i> Regresar al Inicio
+            </a>
 
-  <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #00664d;">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="../roles/index.php">Inicio / Vencer</a>
-    </div>
-  </nav>
-
-  <div class="content">
-    <div class="container py-4">
-      <h1 class="text-center mb-4" style="color: #495057; font-weight:bold">Módulo Vencer</h1>
-
-      <div class="card shadow-sm mb-4 p-3">
-        <div class="d-flex justify-content-center gap-3 flex-wrap">
-            <button class="btn btn-urgencia">🟩 Descargar Excel</button>
-            <button id="btnDescargarGraficoPDF" class="btn btn-success">📈 Descargar PDF Reporte</button>
-            <button id="btnGrafico" class="btn btn-urgencia" data-bs-toggle="modal" data-bs-target="#modalGraficos">
-              📊 Ver Gráficos
+            <button type="button" id="btnAbrirDashboard" class="btn btn-lg shadow-lg px-5 py-3 text-white fw-bold" 
+                    style="background-color: #7a123a; border-radius: 50px; font-size: 1.2rem; transition: transform 0.2s;" 
+                    onmouseover="this.style.transform='scale(1.05)'" 
+                    onmouseout="this.style.transform='scale(1)'"
+                    data-bs-toggle="modal" data-bs-target="#modalGraficos">
+                <span id="textoBtnDash"><i class="fas fa-spinner fa-spin me-2 fs-4 align-middle"></i> Cargando datos...</span>
             </button>
+            
         </div>
-      </div>
-
-      <div class="modal fade" id="modalGraficos" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-          <div class="modal-content">
-            <div class="modal-header bg-light">
-              <h5 class="modal-title">📈 Tablero Estadístico VENCER</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              <div class="row g-4">
-                <div class="col-md-10 mx-auto">
-                  <div class="card shadow-sm">
-                    <div class="card-body">
-                      <h5 class="text-center">Distribución por Sexo y Tipo de Evento</h5>
-                      <div style="height: 450px;">
-                        <canvas id="chartSexoEvento"></canvas>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm mt-4">
-        <div class="card-body">
-          <div class="table-responsive">
-            <table id="tablaVencer" class="table table-bordered table-hover">
-              <thead>
-                <tr>
-                    <th>Folio</th><th>Evento</th><th>Sexo</th><th>Servicio</th><th>Definición</th><th>Estatus</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($registros as $r): ?>
-                <tr>
-                    <td><?= $r[0] ?></td><td><?= $r[1] ?></td><td><?= $r[6] ?></td><td><?= $r[11] ?></td><td><?= $r[14] ?></td><td><?= $r[16] ?></td>
-                </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
     </div>
-  </div>
 
-  <footer>IMSS UMAE 48 - 2024</footer>
+    <div id="contenedorTabla">
+        <table id="tabla-vencer" class="table">
+            <thead>
+                <tr>
+                    <th>Folio</th><th>Evento</th><th>Iniciales</th><th>NSS</th><th>Edad</th>
+                    <th>Sexo</th><th>Diagnóstico</th><th>Fecha Evento</th><th>Fecha Noti</th>
+                    <th>Turno</th><th>Servicio</th><th>Categoría</th><th>Proceso</th>
+                    <th>Definición</th><th>Descripción</th><th>Estatus</th><th>Año</th><th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-  <script>
-    $(document).ready(function() {
-      // 1. Inicializar DataTable
-      $('#tablaVencer').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' } });
+    <?php require_once '../../includes/modal_graficos.php'; ?>
 
-      // 2. Crear el Gráfico de Pastel
-      const ctx = document.getElementById('chartSexoEvento');
-      if (ctx) {
-          new Chart(ctx, {
-              type: 'pie',
-              data: {
-                  labels: <?= json_encode(array_keys($conteoGrafico)) ?>,
-                  datasets: [{
-                      data: <?= json_encode(array_values($conteoGrafico)) ?>,
-                      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-                  }]
-              },
-              options: { responsive: true, maintainAspectRatio: false }
-          });
-      }
+    <footer class="text-white text-center py-3 mt-auto w-100" style="background-color: #00664d; position: fixed; bottom: 0;">
+        <div class="container">
+            <p class="mb-0">© <?php echo date("Y"); ?> IMSS. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 
-      const btnPdf = document.getElementById('btnDescargarGraficoPDF');
-      if (btnPdf) {
-          btnPdf.addEventListener('click', async () => {
-              const { jsPDF } = window.jspdf;
-              const canvas = document.getElementById('chartSexoEvento');
-              
-              if (!canvas) {
-                  alert("Por favor abre primero 'Ver Gráficos' para generar el reporte.");
-                  return;
-              }
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-              const pdf = new jsPDF('p', 'mm', 'letter');
-              pdf.setFontSize(16);
-              pdf.text("REPORTE ESTADÍSTICO VENCER - UMAE 48", 105, 20, { align: "center" });
-              
-              const imgData = canvas.toDataURL("image/png");
-              pdf.addImage(imgData, 'PNG', 30, 40, 150, 100);
-              
-              pdf.setFontSize(10);
-              pdf.text("Generado el: " + new Date().toLocaleDateString(), 105, 150, { align: "center" });
-              
-              pdf.save("Reporte_Vencer.pdf");
-          });
-      }
-    });
-  </script>
+    <script src="../../js/vencer.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let btnDash = document.getElementById('btnAbrirDashboard');
+            let txtBtn = document.getElementById('textoBtnDash');
+            btnDash.disabled = true; // Desactivamos el botón temporalmente
+
+            // El "Vigilante": Revisa cada 500ms si los datos ya llegaron
+            let checkData = setInterval(function() {
+                if (window.dbDatos && window.dbDatos.length > 0) {
+                    clearInterval(checkData); // Ya cargaron los datos, detenemos el vigilante
+                    
+                    // Activamos el botón y cambiamos el texto
+                    btnDash.disabled = false;
+                    txtBtn.innerHTML = '<i class="fas fa-chart-pie me-2 fs-3 align-middle"></i> Abrir Tablero Estadístico';
+                    
+                    // Abrimos el modal automáticamente
+                    var myModal = new bootstrap.Modal(document.getElementById('modalGraficos'), {
+                        keyboard: false
+                    });
+                    myModal.show();
+                    
+                    // Aseguramos que los gráficos se dibujen
+                    setTimeout(() => {
+                        if(typeof generarGraficos === 'function') generarGraficos();
+                    }, 500);
+                }
+            }, 500); // Revisa cada medio segundo
+        });
+    </script>
 </body>
 </html>
