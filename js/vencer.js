@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 VENCER: Dashboard Final (Procesos en todas las pestañas)");
+    console.log("🚀 VENCER: Dashboard Final (Top 3 Procesos Drill Down en todas las pestañas)");
 
     const COL = { EVENTO: 1, EDAD: 4, SEXO: 5, FECHA: 7, TURNO: 9, SERVICIO: 10, DEFINICION: 13, ANIO: 16 };
     window.dbDatos = []; 
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // --- TRUNCAR TEXTO PARA GRÁFICOS ---
-    const truncarTexto = (texto, max = 40) => {
+    const truncarTexto = (texto, max = 35) => {
         if (texto.length > max) return texto.substring(0, max) + '...';
         return texto;
     };
@@ -128,12 +128,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const lbl = document.getElementById('lblTotalEventos'); if(lbl) lbl.textContent = rows.length;
             if (rows.length === 0) return;
 
-            // --- RECOLECCIÓN DE DATOS ---
             let s = { 
                 General: { Sexo:{}, Evento:{}, Turno:{}, Servicio:{}, Edad:{}, Proceso:{} }, 
                 Adverso: { Servicio:{}, Definicion:{}, Sexo:{}, Edad:{}, Proceso:{} }, 
                 Cuasi:   { Servicio:{}, Definicion:{}, Sexo:{}, Edad:{}, Proceso:{} }, 
-                Centinela: { Servicio:{}, Definicion:{}, Proceso:{} } // <--- AÑADIDO PROCESO EN CENTINELA
+                Centinela: { Servicio:{}, Definicion:{}, Proceso:{} } 
             };
 
             rows.forEach(r => {
@@ -166,10 +165,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 else if(evUpper.includes('CENTINELA')) { 
                     s.Centinela.Servicio[sv]=(s.Centinela.Servicio[sv]||0)+1; s.Centinela.Definicion[def]=(s.Centinela.Definicion[def]||0)+1; 
-                    s.Centinela.Proceso[pro]=(s.Centinela.Proceso[pro]||0)+1; // <--- LLENAR PROCESO CENTINELA
+                    s.Centinela.Proceso[pro]=(s.Centinela.Proceso[pro]||0)+1; 
                 }
             });
 
+            // Helpers de Dibujo
             const draw = (id, t, l, d, c, opts={}) => {
                 const el = document.getElementById(id); if(!el) return;
                 if(charts[id]) charts[id].destroy();
@@ -205,6 +205,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 drawTable(tablaId, dataEdad, 'Edad');
             };
 
+            // FUNCIÓN HELPER PARA DIBUJAR TOP 3 DE PROCESOS
+            const dibujarDrillProcesos = (tProc, configDrills, color, matchCondicion) => {
+                [0, 1, 2].forEach(index => {
+                    const chartId = configDrills[index].chart;
+                    const tableId = configDrills[index].table;
+                    const labelId = configDrills[index].lbl;
+                    
+                    const canvasEl = document.getElementById(chartId);
+                    const colParent = canvasEl ? canvasEl.closest('.col-md-6') : null;
+                    
+                    if (tProc.length > index) {
+                        if(colParent) colParent.style.display = 'block';
+                        const pName = tProc[index][0];
+                        const pVal = tProc[index][1];
+                        const lbl = document.getElementById(labelId); if(lbl) lbl.textContent = `${pName} (${pVal})`;
+                        
+                        let counts = {};
+                        rows.forEach(r => {
+                            if (matchCondicion(r) && clean(r.proceso) === pName) {
+                                let d = clean(r.definicion); counts[d] = (counts[d]||0)+1;
+                            }
+                        });
+                        const tD = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                        draw(chartId, 'bar', tD.map(x=>truncarTexto(x[0], 35)), tD.map(x=>x[1]), color);
+                        drawTable(tableId, counts, 'Causas (Definición)');
+                    } else {
+                        if(colParent) colParent.style.display = 'none';
+                    }
+                });
+            };
+
             // --- 1. GENERAL ---
             draw('chartSexoGen', 'pie', Object.keys(s.General.Sexo), Object.values(s.General.Sexo), ['#0d6efd','#dc3545','#ffc107']); drawTable('tablaSexoGen', s.General.Sexo, 'Sexo');
             draw('chartEventosGen', 'bar', Object.keys(s.General.Evento), Object.values(s.General.Evento), '#7a123a'); drawTable('tablaEventosGen', s.General.Evento, 'Evento');
@@ -217,9 +248,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             drawPiramide('chartPiramide', 'tablaEdadSexoGen', s.General.Edad);
             
+            // GENERAL PROCESOS (Top 3 Drill Down)
             const tProcGen = Object.entries(s.General.Proceso).sort((a,b)=>b[1]-a[1]);
-            draw('chartProcesoGen', 'bar', tProcGen.map(x=>x[0]), tProcGen.map(x=>x[1]), '#6f42c1', { indexAxis: 'y' }); 
+            draw('chartProcesoGen', 'bar', tProcGen.map(x=>truncarTexto(x[0], 35)), tProcGen.map(x=>x[1]), '#6f42c1', { indexAxis: 'y' }); 
             drawTable('tablaProcesoGen', s.General.Proceso, 'Proceso Relacionado');
+            dibujarDrillProcesos(tProcGen, [
+                { chart: 'chartDrillProcGen1', table: 'tablaDrillProcGen1', lbl: 'lblTopProcGen1' },
+                { chart: 'chartDrillProcGen2', table: 'tablaDrillProcGen2', lbl: 'lblTopProcGen2' },
+                { chart: 'chartDrillProcGen3', table: 'tablaDrillProcGen3', lbl: 'lblTopProcGen3' }
+            ], '#6f42c1', (r) => true); // Condición true: abarca todos los datos.
 
             // --- FUNCIÓN MAESTRA (ADVERSOS Y CUASIFALLAS) ---
             const generarMultiDrill = (tipo, colorBarra, configIds, idsControl) => {
@@ -233,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if(canvasArea) canvasArea.style.display = 'none';
                     if(canvasSexo) { canvasSexo.style.display = 'block'; draw(configIds.sexChart, 'pie', Object.keys(dataObj.Sexo), Object.values(dataObj.Sexo), ['#36A2EB', '#FF6384']); }
                 } else {
-                    if(canvasArea) { canvasArea.style.display = 'block'; draw(configIds.mainChart, 'bar', tServ.slice(0,10).map(x=>x[0]), tServ.slice(0,10).map(x=>x[1]), colorBarra); }
+                    if(canvasArea) { canvasArea.style.display = 'block'; draw(configIds.mainChart, 'bar', tServ.slice(0,10).map(x=>truncarTexto(x[0],30)), tServ.slice(0,10).map(x=>x[1]), colorBarra); }
                     if(canvasSexo) canvasSexo.style.display = 'none';
                 }
                 drawTable(configIds.mainTable, dataObj.Servicio, 'Servicio');
@@ -259,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if(rowTops23) rowTops23.style.display = 'flex'; 
                 }
 
-                // 4. Llenar los Tops con TEXTO TRUNCADO EN GRÁFICOS
+                // 4. Llenar los Tops (Drill down de Servicio)
                 [0, 1, 2].forEach(index => {
                     const chartId = configIds.drills[index].chart;
                     const tableId = configIds.drills[index].table;
@@ -275,8 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if(colParent) colParent.style.display = 'block';
                         
                         const areaName = tServ[index][0];
-                        const areaVal = tServ[index][1];
-                        const elLbl = document.getElementById(labelId); if(elLbl) elLbl.textContent = `${areaName} (${areaVal})`;
+                        const elLbl = document.getElementById(labelId); if(elLbl) elLbl.textContent = `${areaName} (${tServ[index][1]})`;
                         
                         let drillCounts = {};
                         rows.forEach(r => {
@@ -285,11 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (coincide && sv === areaName) { let d = clean(r.definicion); drillCounts[d] = (drillCounts[d] || 0) + 1; }
                         });
                         const tDrill = Object.entries(drillCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-                        
-                        // TRUNCAR TEXTO PARA EL GRÁFICO (El tooltip mostrará la info truncada, la tabla abajo lo muestra completo)
-                        const etiquetasTruncadas = tDrill.map(x => truncarTexto(x[0], 35)); 
-                        
-                        draw(chartId, 'bar', etiquetasTruncadas, tDrill.map(x=>x[1]), '#212529'); 
+                        draw(chartId, 'bar', tDrill.map(x=>truncarTexto(x[0], 35)), tDrill.map(x=>x[1]), '#212529'); 
                         drawTable(tableId, drillCounts, 'Causa Específica');
                     } else {
                         if(colParent) colParent.style.display = 'none';
@@ -298,41 +330,57 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // 5. Causas Globales
                 const tDef = Object.entries(dataObj.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
-                draw(configIds.defChart, 'bar', tDef.map(x=>x[0]), tDef.map(x=>x[1]), colorBarra); drawTable(configIds.defTable, dataObj.Definicion, 'Causa');
+                draw(configIds.defChart, 'bar', tDef.map(x=>truncarTexto(x[0], 35)), tDef.map(x=>x[1]), colorBarra); drawTable(configIds.defTable, dataObj.Definicion, 'Causa');
 
-                // 6. Proceso Relacionado (Horizontal)
+                // 6. Procesos y Drill Down de Proceso (Top 3)
                 if (configIds.procChart && dataObj.Proceso) {
                     const tProc = Object.entries(dataObj.Proceso).sort((a,b)=>b[1]-a[1]);
-                    draw(configIds.procChart, 'bar', tProc.map(x=>x[0]), tProc.map(x=>x[1]), colorBarra, { indexAxis: 'y' }); 
+                    draw(configIds.procChart, 'bar', tProc.map(x=>truncarTexto(x[0],35)), tProc.map(x=>x[1]), colorBarra, { indexAxis: 'y' }); 
                     drawTable(configIds.procTable, dataObj.Proceso, 'Proceso Relacionado');
+
+                    let condFunc;
+                    if (tipo === 'Adverso') condFunc = (r) => clean(r.evento).toUpperCase().includes('ADVERSO');
+                    else condFunc = (r) => clean(r.evento).toUpperCase().includes('CUASI');
+                    
+                    dibujarDrillProcesos(tProc, configIds.procDrills, colorBarra, condFunc);
                 }
             };
 
-            // EJECUTAR LÓGICA
+            // EJECUTAR ADVERSOS
             generarMultiDrill('Adverso', '#dc3545', { 
                 mainChart: 'chartServicioAdv', sexChart: 'chartSexoAdverso', mainTable: 'tablaServicioAdv', 
                 piramideChart: 'chartPiramideAdverso', piramideTable: 'tablaEdadSexoAdverso',
                 defChart: 'chartDefinicionAdv', defTable: 'tablaDefinicionAdv', 
                 procChart: 'chartProcesoAdv', procTable: 'tablaProcesoAdv',
+                procDrills: [{ chart: 'chartDrillProcAdv1', table: 'tablaDrillProcAdv1', lbl: 'lblTopProcAdv1' }, { chart: 'chartDrillProcAdv2', table: 'tablaDrillProcAdv2', lbl: 'lblTopProcAdv2' }, { chart: 'chartDrillProcAdv3', table: 'tablaDrillProcAdv3', lbl: 'lblTopProcAdv3' }],
                 drills: [{ chart: 'chartDrillDownAdv1', table: 'tablaDrillDownAdv1', lbl: 'lblTopAreaAdv1' }, { chart: 'chartDrillDownAdv2', table: 'tablaDrillDownAdv2', lbl: 'lblTopAreaAdv2' }, { chart: 'chartDrillDownAdv3', table: 'tablaDrillDownAdv3', lbl: 'lblTopAreaAdv3' }] 
             }, { cardTop1: 'cardTopAdv1', colPiramide: 'colPiramideAdverso', rowTops23: 'rowTopsAdv23' }); 
 
+            // EJECUTAR CUASIFALLAS
             generarMultiDrill('Cuasi', '#ffc107', { 
                 mainChart: 'chartServicioCuasi', sexChart: 'chartSexoCuasi', mainTable: 'tablaServicioCuasi', 
                 piramideChart: 'chartPiramideCuasi', piramideTable: 'tablaEdadSexoCuasi',
                 defChart: 'chartDefinicionCuasi', defTable: 'tablaDefinicionCuasi', 
                 procChart: 'chartProcesoCuasi', procTable: 'tablaProcesoCuasi',
+                procDrills: [{ chart: 'chartDrillProcCuasi1', table: 'tablaDrillProcCuasi1', lbl: 'lblTopProcCuasi1' }, { chart: 'chartDrillProcCuasi2', table: 'tablaDrillProcCuasi2', lbl: 'lblTopProcCuasi2' }, { chart: 'chartDrillProcCuasi3', table: 'tablaDrillProcCuasi3', lbl: 'lblTopProcCuasi3' }],
                 drills: [{ chart: 'chartDrillDownCuasi1', table: 'tablaDrillDownCuasi1', lbl: 'lblTopAreaCuasi1' }, { chart: 'chartDrillDownCuasi2', table: 'tablaDrillDownCuasi2', lbl: 'lblTopAreaCuasi2' }, { chart: 'chartDrillDownCuasi3', table: 'tablaDrillDownCuasi3', lbl: 'lblTopAreaCuasi3' }] 
             }, { cardTop1: 'cardTopCuasi1', colPiramide: 'colPiramideCuasi', rowTops23: 'rowTopsCuasi23' }); 
 
-            // --- 4. CENTINELA ---
+            // --- CENTINELA ---
             const tCentS = Object.entries(s.Centinela.Servicio).sort((a,b)=>b[1]-a[1]).slice(0,10);
             const tCentD = Object.entries(s.Centinela.Definicion).sort((a,b)=>b[1]-a[1]).slice(0,10);
-            const tCentP = Object.entries(s.Centinela.Proceso).sort((a,b)=>b[1]-a[1]); // DIBUJAR PROCESO
+            const tCentP = Object.entries(s.Centinela.Proceso).sort((a,b)=>b[1]-a[1]); 
             
-            draw('chartServicioCent', 'bar', tCentS.map(x=>x[0]), tCentS.map(x=>x[1]), '#212529'); drawTable('tablaServicioCent', s.Centinela.Servicio, 'Servicio');
-            draw('chartDefinicionCent', 'bar', tCentD.map(x=>x[0]), tCentD.map(x=>x[1]), '#212529'); drawTable('tablaDefinicionCent', s.Centinela.Definicion, 'Causa');
-            draw('chartProcesoCent', 'bar', tCentP.map(x=>x[0]), tCentP.map(x=>x[1]), '#212529', { indexAxis: 'y' }); drawTable('tablaProcesoCent', s.Centinela.Proceso, 'Proceso Relacionado');
+            draw('chartServicioCent', 'bar', tCentS.map(x=>truncarTexto(x[0],35)), tCentS.map(x=>x[1]), '#212529'); drawTable('tablaServicioCent', s.Centinela.Servicio, 'Servicio');
+            draw('chartDefinicionCent', 'bar', tCentD.map(x=>truncarTexto(x[0],35)), tCentD.map(x=>x[1]), '#212529'); drawTable('tablaDefinicionCent', s.Centinela.Definicion, 'Causa');
+            
+            // PROCESOS Y DRILL DOWN DE PROCESOS (CENTINELA)
+            draw('chartProcesoCent', 'bar', tCentP.map(x=>truncarTexto(x[0],35)), tCentP.map(x=>x[1]), '#212529', { indexAxis: 'y' }); drawTable('tablaProcesoCent', s.Centinela.Proceso, 'Proceso Relacionado');
+            dibujarDrillProcesos(tCentP, [
+                { chart: 'chartDrillProcCent1', table: 'tablaDrillProcCent1', lbl: 'lblTopProcCent1' },
+                { chart: 'chartDrillProcCent2', table: 'tablaDrillProcCent2', lbl: 'lblTopProcCent2' },
+                { chart: 'chartDrillProcCent3', table: 'tablaDrillProcCent3', lbl: 'lblTopProcCent3' }
+            ], '#212529', (r) => clean(r.evento).toUpperCase().includes('CENTINELA'));
             
         }, 200);
     };
@@ -364,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return new Promise((resolve, reject) => {
                     const canvas = document.createElement('canvas'); canvas.width = 800; canvas.height = 400; const ctx = canvas.getContext('2d');
                     const whiteBackground = { id: 'custom_bg', beforeDraw: (chart) => { const ctx = chart.canvas.getContext('2d'); ctx.save(); ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = 'white'; ctx.fillRect(0, 0, chart.width, chart.height); ctx.restore(); } };
-                    const tempChart = new Chart(ctx, { type: type, data: { labels: labels, datasets: [{ label: 'Total', data: data, backgroundColor: color }] }, plugins: [whiteBackground], options: { indexAxis: (type==='bar'&&title.includes('PROCESO')?'y':'x'), responsive: false, animation: { onComplete: function() { try { const b64 = canvas.toDataURL('image/png'); tempChart.destroy(); resolve(b64); } catch (e) { reject(e); } } }, plugins: { title: { display: true, text: title, font: {size: 18} }, legend: {display: (type==='pie')} } } });
+                    const tempChart = new Chart(ctx, { type: type, data: { labels: labels.map(l => truncarTexto(l, 40)), datasets: [{ label: 'Total', data: data, backgroundColor: color }] }, plugins: [whiteBackground], options: { indexAxis: (type==='bar'&&title.includes('PROCESO')?'y':'x'), responsive: false, animation: { onComplete: function() { try { const b64 = canvas.toDataURL('image/png'); tempChart.destroy(); resolve(b64); } catch (e) { reject(e); } } }, plugins: { title: { display: true, text: title, font: {size: 18} }, legend: {display: (type==='pie')} } } });
                 });
             };
 
