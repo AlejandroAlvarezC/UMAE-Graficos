@@ -1,7 +1,7 @@
 <?php
-// 1. DESACTIVAR ERRORES VISUALES (Para que no rompan el JSON)
-error_reporting(0); 
-ini_set('display_errors', 0);
+// ERRORES
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 // 2. ENCABEZADOS DE SEGURIDAD (El "Pase de Invitado")
 header("Access-Control-Allow-Origin: *"); // Permite entrar a cualquiera
