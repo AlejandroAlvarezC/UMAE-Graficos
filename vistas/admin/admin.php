@@ -204,8 +204,14 @@ $totalManuales = Manual::contarManuales();
                         <a class="nav-link text-white" href="./Personal/personal.php">Organigrama</a>
                     </li>
 
+                    <!--
                     <li class="nav-item">
                         <a class="nav-link text-white" href="../productividad/vencer.php">Vencer</a>
+                    </li>
+-->
+
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/">Vencer</a>
                     </li>
 
                     <!-- Normatividad -->

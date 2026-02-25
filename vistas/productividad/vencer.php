@@ -72,10 +72,17 @@ if (!isset($_SESSION['admin_id'])) {
             <a href="./actualizar-vencer.php" class="btn btn-urgencia shadow-sm" onclick="return confirm('¿Seguro que deseas actualizar?')">🔁 Actualizar datos</a>
           </div>
 
+          <!--
           <div class="col-md d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
             <button id="btnGrafico" class="btn btn-urgencia shadow-sm" data-bs-toggle="modal" data-bs-target="#modalGraficos">
               📊 Ver Dashboard
             </button>
+          </div>
+          -->
+          <div class="col-md d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+            <a id="btnGrafico" href="/" target="_blank" class="btn btn-urgencia shadow-sm text-decoration-none">
+              📊 Ver Dashboard
+            </a>
           </div>
         </div>
       </div>

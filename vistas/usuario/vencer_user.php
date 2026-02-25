@@ -53,7 +53,7 @@ session_start();
                     style="background-color: #7a123a; border-radius: 50px; font-size: 1.2rem; transition: transform 0.2s;" 
                     onmouseover="this.style.transform='scale(1.05)'" 
                     onmouseout="this.style.transform='scale(1)'"
-                    data-bs-toggle="modal" data-bs-target="#modalGraficos">
+                    onclick="window.open('/', '_blank')">
                 <span id="textoBtnDash"><i class="fas fa-spinner fa-spin me-2 fs-4 align-middle"></i> Cargando datos...</span>
             </button>
             
@@ -108,13 +108,15 @@ session_start();
                     btnDash.disabled = false;
                     txtBtn.innerHTML = '<i class="fas fa-chart-pie me-2 fs-3 align-middle"></i> Abrir Tablero Estadístico';
                     
-                    // Abrimos el modal automáticamente
+                    // CAMBIO 2: Comentamos la apertura automática del modal antiguo
+                    /*
                     var myModal = new bootstrap.Modal(document.getElementById('modalGraficos'), {
                         keyboard: false
                     });
                     myModal.show();
+                    */
                     
-                    // Aseguramos que los gráficos se dibujen
+                    // Aseguramos que los gráficos antiguos se dibujen en segundo plano (por si quieres abrirlo manual después)
                     setTimeout(() => {
                         if(typeof generarGraficos === 'function') generarGraficos();
                     }, 500);

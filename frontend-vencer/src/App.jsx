@@ -10,7 +10,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 // ============================================================================
-// 1. COMPONENTE: GRÁFICO + TABLA (Actualizado para ocultar tablas)
+// 1. COMPONENTE: GRÁFICO + TABLA
 // ============================================================================
 const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005C46', limite = 10, mostrarTablas = true }) => {
     const procesados = useMemo(() => {
@@ -33,7 +33,7 @@ const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005
             data: procesados.topGrafica.map(([, v]) => v),
             backgroundColor: color,
             borderRadius: 4,
-            barThickness: tipo === 'bar' ? (mostrarTablas ? 20 : 35) : undefined // Barras más gruesas si hay más espacio
+            barThickness: tipo === 'bar' ? (mostrarTablas ? 20 : 35) : undefined 
         }]
     };
 
@@ -51,10 +51,7 @@ const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005
                 <span className="text-xs font-bold bg-slate-200 text-slate-700 px-2 py-1 rounded-full">{procesados.total}</span>
             </div>
             
-            {/* Si mostrarTablas es true, usa 5 columnas. Si es false, usa 1 sola columna. */}
             <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5' : 'lg:grid-cols-1'} min-h-[300px]`}>
-                
-                {/* Contenedor del Gráfico */}
                 <div className={`p-4 col-span-1 ${mostrarTablas ? 'lg:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-100' : 'lg:col-span-1'} transition-all`}>
                     <div className="w-full h-full relative min-h-[250px]">
                         {tipo === 'bar' ? <Bar data={chartData} options={options} /> : 
@@ -62,7 +59,6 @@ const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005
                     </div>
                 </div>
 
-                {/* Contenedor de la Tabla (Solo se renderiza si mostrarTablas es true) */}
                 {mostrarTablas && (
                     <div className="bg-white col-span-1 lg:col-span-2 max-h-[300px] overflow-y-auto custom-scrollbar">
                         <table className="w-full text-xs text-left text-slate-600">
@@ -92,7 +88,7 @@ const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005
 };
 
 // ============================================================================
-// 2. COMPONENTE: ANÁLISIS TOP 3 ÁREAS (Actualizado)
+// 2. COMPONENTE: ANÁLISIS TOP 3 ÁREAS 
 // ============================================================================
 const AnalisisTopAreas = ({ datos, colorArea, colorCausa, mostrarTablas }) => {
     const topAreas = useMemo(() => {
@@ -127,31 +123,54 @@ const AnalisisTopAreas = ({ datos, colorArea, colorCausa, mostrarTablas }) => {
 };
 
 // ============================================================================
-// 3. COMPONENTE: PIRÁMIDE POBLACIONAL
+// 3. COMPONENTE: PIRÁMIDE POBLACIONAL (Grupos etarios epidemiológicos)
 // ============================================================================
-const PiramidePoblacional = ({ datos }) => {
+const PiramidePoblacional = ({ datos, colorHombres = '#005C46', colorMujeres = '#D4C19C' }) => {
     const dataPiramide = useMemo(() => {
-        const brackets = ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71+'];
-        const hombres = Array(8).fill(0);
-        const mujeres = Array(8).fill(0);
+        // Nuevos rangos exactos solicitados
+        const brackets = ['< 1 año', '1 a 4', '5 a 9', '10 a 14', '15 a 19', '20 a 29', '30 a 39', '40 a 49', '50 a 59', '> 60 años'];
+        const hombres = Array(10).fill(0);
+        const mujeres = Array(10).fill(0);
 
         datos.forEach(d => {
-            let e = parseInt(d.edad);
+            let valorEdad = d.edad || d.Edad || d.EDAD;
+            let valorSexo = d.sexo || d.Sexo || d.SEXO;
+
+            if (valorEdad === undefined || valorSexo === undefined) return;
+
+            let e = parseInt(valorEdad);
             if (isNaN(e)) return;
-            let index = e<=10 ? 0 : e<=20 ? 1 : e<=30 ? 2 : e<=40 ? 3 : e<=50 ? 4 : e<=60 ? 5 : e<=70 ? 6 : 7;
-            let s = (d.sexo || '').toUpperCase();
-            if (s.includes('HOMBRE') || s === 'M' || s === 'MASCULINO') hombres[index]++;
-            else if (s.includes('MUJER') || s === 'F' || s === 'FEMENINO') mujeres[index]++;
+
+            // Lógica de agrupación por rangos
+            let index = 0;
+            if (e < 1) index = 0;
+            else if (e <= 4) index = 1;
+            else if (e <= 9) index = 2;
+            else if (e <= 14) index = 3;
+            else if (e <= 19) index = 4;
+            else if (e <= 29) index = 5;
+            else if (e <= 39) index = 6;
+            else if (e <= 49) index = 7;
+            else if (e <= 59) index = 8;
+            else index = 9; // Mayor o igual a 60
+            
+            let s = String(valorSexo).toUpperCase().trim();
+            
+            if (s === 'H' || s.includes('HOMBRE') || s === 'MASCULINO') {
+                hombres[index]++;
+            } else if (s === 'M' || s === 'F' || s.includes('MUJER') || s.includes('FEMENINO')) {
+                mujeres[index]++;
+            }
         });
 
         return {
             labels: brackets,
             datasets: [
-                { label: 'Hombres', data: hombres.map(v => -v), backgroundColor: '#005C46', borderRadius: 4 }, 
-                { label: 'Mujeres', data: mujeres, backgroundColor: '#D4C19C', borderRadius: 4 }
+                { label: 'Hombres', data: hombres.map(v => -v), backgroundColor: colorHombres, borderRadius: 4 }, 
+                { label: 'Mujeres', data: mujeres, backgroundColor: colorMujeres, borderRadius: 4 }
             ]
         };
-    }, [datos]);
+    }, [datos, colorHombres, colorMujeres]);
 
     const options = {
         indexAxis: 'y',
@@ -177,9 +196,8 @@ const PiramidePoblacional = ({ datos }) => {
         </div>
     );
 };
-
 // ============================================================================
-// 4. COMPONENTE: ACORDEÓN DE PROCESOS (Actualizado)
+// 4. COMPONENTE: ACORDEÓN DE PROCESOS
 // ============================================================================
 const AcordeonProcesos = ({ datos, colorBase = "#005C46", titulo = "Análisis de Procesos Relacionados", mostrarTablas }) => {
     const [expandido, setExpandido] = useState(false);
@@ -236,7 +254,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         e.preventDefault(); if (!archivo) return; setSubiendo(true); setMensaje(null);
         const formData = new FormData(); formData.append('archivo_excel', archivo);
         try {
-            await axios.post('http://localhost/paginaPrueba/api/subir_archivo.php', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            await axios.post('/api/subir_archivo.php, ...', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             setMensaje({ tipo: 'success', texto: '¡Cargado con éxito!' }); setTimeout(() => { onSuccess(); onClose(); setMensaje(null); setArchivo(null); }, 1500);
         } catch { setMensaje({ tipo: 'error', texto: 'Error al subir.' }); } finally { setSubiendo(false); }
     };
@@ -271,12 +289,11 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  // NUEVOS ESTADOS DE UX
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mostrarTablas, setMostrarTablas] = useState(true);
 
   useEffect(() => {
-    axios.get('http://localhost/paginaPrueba/api/api_vencer.php')
+    axios.get('/api/api_vencer.php')
       .then(res => { setDatos(Array.isArray(res.data) ? res.data : []); setCargando(false); })
       .catch(err => { setError("Error de conexión con el servidor"); setCargando(false); });
   }, []);
@@ -311,7 +328,6 @@ function App() {
   if (error) return <div className="h-screen flex items-center justify-center text-red-500 bg-slate-50 font-bold">{error}</div>;
 
   return (
-    // EL ANCHO DE LA COLUMNA 1 AHORA ES DINÁMICO: 260px si está abierto, 80px si está colapsado.
     <div style={{ display: 'grid', gridTemplateColumns: sidebarCollapsed ? '80px 1fr' : '260px 1fr', transition: 'grid-template-columns 0.3s ease', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f8fafc' }} className="text-slate-800 font-sans">
       
       <UploadModal isOpen={showModal} onClose={() => setShowModal(false)} onSuccess={() => window.location.reload()} />
@@ -424,7 +440,16 @@ function App() {
                       
                       {dAdversos.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Eventos Adversos con estos filtros.</div> : (
                           <>
+                              {/* NUEVO: Condición para mostrar Pirámide y Sexo si hay un servicio seleccionado */}
+                              {servicioSeleccionado !== 'todos' && (
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in zoom-in duration-500">
+                                      <PiramidePoblacional datos={dAdversos} colorHombres="#ef4444" colorMujeres="#fca5a5" />
+                                      <SeccionGraficoTabla titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dAdversos} campo="sexo" tipo="doughnut" color={['#ef4444', '#fca5a5', '#b91c1c']} mostrarTablas={mostrarTablas} />
+                                  </div>
+                              )}
+
                               <AnalisisTopAreas datos={dAdversos} colorArea="#ef4444" colorCausa="#b91c1c" mostrarTablas={mostrarTablas} />
+                              
                               <div className="mb-6">
                                   <SeccionGraficoTabla titulo="Causas Globales (Definición)" datos={dAdversos} campo="definicion" color="#991b1b" limite={10} mostrarTablas={mostrarTablas} />
                               </div>
@@ -445,7 +470,16 @@ function App() {
                       
                       {dCuasi.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Cuasifallas con estos filtros.</div> : (
                           <>
+                              {/* NUEVO: Condición para mostrar Pirámide y Sexo si hay un servicio seleccionado */}
+                              {servicioSeleccionado !== 'todos' && (
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in zoom-in duration-500">
+                                      <PiramidePoblacional datos={dCuasi} colorHombres="#f59e0b" colorMujeres="#fcd34d" />
+                                      <SeccionGraficoTabla titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dCuasi} campo="sexo" tipo="doughnut" color={['#f59e0b', '#fcd34d', '#d97706']} mostrarTablas={mostrarTablas} />
+                                  </div>
+                              )}
+
                               <AnalisisTopAreas datos={dCuasi} colorArea="#f59e0b" colorCausa="#d97706" mostrarTablas={mostrarTablas} />
+                              
                               <div className="mb-6">
                                   <SeccionGraficoTabla titulo="Causas Globales (Definición)" datos={dCuasi} campo="definicion" color="#b45309" limite={10} mostrarTablas={mostrarTablas} />
                               </div>

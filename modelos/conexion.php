@@ -45,6 +45,9 @@ class Conexion
     public static function conectar()
     {
         $instance = new self();
+        $link = new PDO("mysql:host=sql112.infinityfree.com;dbname=if0_41125231_XXX;charset=utf8mb4", 
+                        "if0_41125231", 
+                        "a");
         return $instance->getConexion();
     }
 }
