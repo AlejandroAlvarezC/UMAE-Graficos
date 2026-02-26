@@ -1,10 +1,10 @@
 <?php
-// ERRORES
+// 1. ERRORES (Solo para desarrollo)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// 2. ENCABEZADOS DE SEGURIDAD (El "Pase de Invitado")
-header("Access-Control-Allow-Origin: *"); // Permite entrar a cualquiera
+// 2. ENCABEZADOS DE SEGURIDAD (El "Pase de Invitado" / CORS)
+header("Access-Control-Allow-Origin: *"); 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -19,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 session_start();
 
 // OJO: Para pruebas locales, comentamos la seguridad temporalmente
-// Si quieres probar sin iniciar sesión en el sistema principal, mantén estas líneas comentadas:
 /*
 if (!isset($_SESSION['admin_id'])) {
     echo json_encode(["error" => "No autorizado (Sesion cerrada)"]);
@@ -30,8 +29,8 @@ if (!isset($_SESSION['admin_id'])) {
 // 5. INTENTAR OBTENER LOS DATOS
 try {
     // Asegúrate de que esta ruta sea correcta. 
-    // Si la carpeta 'api' está dentro de 'paginaPrueba', subir 2 niveles (../../) debería llevar a 'modelos'
-    $rutaModelo = '../modelos/vencer.php';
+    // Nota: en tu comentario decías '../../' pero en tu código pusiste '../'
+    $rutaModelo = '../modelos/Vencer.php'; 
     
     if (!file_exists($rutaModelo)) {
         throw new Exception("No encuentro el archivo del modelo en: " . $rutaModelo);
@@ -44,16 +43,18 @@ try {
         throw new Exception("La clase Vencer o el método listar no existen.");
     }
 
+    // Obtenemos los registros directamente
     $registros = Vencer::listar();
 
     if ($registros) {
+        // Como la base de datos ya es UTF-8, los enviamos directo
         echo json_encode($registros, JSON_UNESCAPED_UNICODE);
     } else {
         echo json_encode([]); 
     }
 
 } catch (Exception $e) {
-    // Si algo falla, devolver JSON de error, no HTML
+    // Si algo falla, devolver JSON de error
     http_response_code(500);
     echo json_encode(["error" => $e->getMessage()]);
 }

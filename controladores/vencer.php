@@ -14,7 +14,6 @@ try {
     // 1. CARGA DEL MODELO (Buscamos Vencer.php)
     $rutas = [
         '../modelos/Vencer.php', 
-        '../modelos/vencer.php'
     ];
     
     $rutaModelo = null;
@@ -34,19 +33,16 @@ try {
 
     switch ($accion) {
         
-        // --- CASO 1: CARGA DE EXCEL (Tu código original) ---
+        // --- CASO 1: CARGA DE EXCEL (Corregido para acentos) ---
         case 'CargarCSV':
             if (empty($_FILES['csv']['tmp_name'])) throw new Exception("Falta archivo.");
             
             $contenido = file_get_contents($_FILES['csv']['tmp_name']);
             // Limpieza BOM
             $contenido = preg_replace('/^\xEF\xBB\xBF/', '', $contenido); 
-            // Encoding
-            $encoding = mb_detect_encoding($contenido, ['ISO-8859-1', 'Windows-1252', 'UTF-8'], true);
-            if ($encoding !== 'UTF-8') $contenido = mb_convert_encoding($contenido, 'UTF-8', $encoding);
 
             $lineas = explode("\n", $contenido);
-            if(count($lineas)>0) array_shift($lineas);
+            if(count($lineas)>0) array_shift($lineas); // Quita encabezados
             
             $exitos = 0; $errores = 0;
             foreach ($lineas as $linea) {
@@ -55,7 +51,21 @@ try {
                 if (count($datos) < 5) $datos = str_getcsv($linea, ";");
                 
                 if (count($datos) >= 5) {
-                    $v->cargarDesdeCSV($datos);
+                    
+                    // 🔥 EL TRADUCTOR ANTI-EXCEL DEFINITIVO 🔥
+                    $datosLimpios = array();
+                    foreach ($datos as $celda) {
+                        // Si la celda viene en formato Windows/Excel antiguo, la reparamos a UTF-8
+                        if (!mb_check_encoding($celda, 'UTF-8')) {
+                            $datosLimpios[] = mb_convert_encoding($celda, 'UTF-8', 'Windows-1252');
+                        } else {
+                            // Si ya viene bien, la dejamos igual
+                            $datosLimpios[] = $celda;
+                        }
+                    }
+
+                    // Le mandamos los datos LIMPIOS al modelo en vez de los crudos
+                    $v->cargarDesdeCSV($datosLimpios);
                     $res = $v->ingresar2();
                     ($res == 'insertado' || $res == 'actualizado' || $res == 'colision_sin_cambios') ? $exitos++ : $errores++;
                 }
