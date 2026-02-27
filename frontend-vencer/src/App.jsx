@@ -2,8 +2,10 @@ import { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { Activity, AlertOctagon, ShieldAlert, Siren, Lock, Unlock, UploadCloud, X, ChevronDown, ChevronUp, Settings, Filter } from 'lucide-react';
+import { Activity, AlertOctagon, ShieldAlert, Siren, Lock, Unlock, UploadCloud, X, ChevronDown, ChevronUp, Settings, Filter, Download} from 'lucide-react';
 import Sidebar from './componentes/Sidebar';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -12,7 +14,7 @@ const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "O
 // ============================================================================
 // 1. COMPONENTE: GRÁFICO + TABLA
 // ============================================================================
-const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005C46', limite = 10, mostrarTablas = true }) => {
+const SeccionGraficoTabla = ({ idCanvas, titulo, datos, campo, tipo = 'bar', color = '#005C46', limite = 10, mostrarTablas = true }) => {
     const procesados = useMemo(() => {
         const conteo = datos.reduce((acc, curr) => {
             const key = (curr[campo] || 'Sin Dato').trim();
@@ -40,6 +42,7 @@ const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005
     const options = {
         indexAxis: tipo === 'bar' ? 'y' : 'x',
         maintainAspectRatio: false,
+        animation: { duration: 0 }, 
         plugins: { legend: { display: tipo !== 'bar', position: 'right' } },
         scales: tipo === 'bar' ? { x: { display: false }, y: { ticks: { font: { size: 10 }, callback: function(v){ const l=this.getLabelForValue(v); return l.length>25?l.substr(0,25)+'...':l; } }, grid: { display: false } } } : {}
     };
@@ -54,8 +57,8 @@ const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005
             <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5' : 'lg:grid-cols-1'} min-h-[300px]`}>
                 <div className={`p-4 col-span-1 ${mostrarTablas ? 'lg:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-100' : 'lg:col-span-1'} transition-all`}>
                     <div className="w-full h-full relative min-h-[250px]">
-                        {tipo === 'bar' ? <Bar data={chartData} options={options} /> : 
-                         <div className="h-full flex justify-center"><Doughnut data={chartData} options={{ maintainAspectRatio: false, cutout: '60%' }} /></div>}
+                        {tipo === 'bar' ? <Bar data={chartData} options={options} id={idCanvas} /> : 
+                         <div className="h-full flex justify-center"><Doughnut data={chartData} options={options} id={idCanvas} /></div>}
                     </div>
                 </div>
 
@@ -90,7 +93,7 @@ const SeccionGraficoTabla = ({ titulo, datos, campo, tipo = 'bar', color = '#005
 // ============================================================================
 // 2. COMPONENTE: ANÁLISIS TOP 3 ÁREAS 
 // ============================================================================
-const AnalisisTopAreas = ({ datos, colorArea, colorCausa, mostrarTablas }) => {
+const AnalisisTopAreas = ({ prefijoId, datos, colorArea, colorCausa, mostrarTablas }) => {
     const topAreas = useMemo(() => {
         const conteo = datos.reduce((acc, curr) => {
             const k = (curr.servicio || 'Sin Dato').trim();
@@ -105,17 +108,17 @@ const AnalisisTopAreas = ({ datos, colorArea, colorCausa, mostrarTablas }) => {
     return (
         <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <SeccionGraficoTabla titulo="Áreas con Mayor Incidencia" datos={datos} campo="servicio" color={colorArea} mostrarTablas={mostrarTablas} />
+                <SeccionGraficoTabla idCanvas={`${prefijoId}_areas_mayor_incidencia`} titulo="Áreas con Mayor Incidencia" datos={datos} campo="servicio" color={colorArea} mostrarTablas={mostrarTablas} />
                 {topAreas[0] && (
                     <div className="ring-2 ring-offset-2 ring-slate-100 rounded-xl">
-                        <SeccionGraficoTabla titulo={`#1 ANÁLISIS ÁREA: ${topAreas[0]}`} datos={datos.filter(d => d.servicio === topAreas[0])} campo="definicion" color={colorCausa} limite={7} mostrarTablas={mostrarTablas} />
+                        <SeccionGraficoTabla idCanvas={`${prefijoId}_analisis_area_1`} titulo={`#1 ANÁLISIS ÁREA: ${topAreas[0]}`} datos={datos.filter(d => d.servicio === topAreas[0])} campo="definicion" color={colorCausa} limite={7} mostrarTablas={mostrarTablas} />
                     </div>
                 )}
             </div>
             {(topAreas[1] || topAreas[2]) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    {topAreas[1] ? <SeccionGraficoTabla titulo={`#2 ANÁLISIS ÁREA: ${topAreas[1]}`} datos={datos.filter(d => d.servicio === topAreas[1])} campo="definicion" color={colorCausa} limite={5} mostrarTablas={mostrarTablas} /> : <div />}
-                    {topAreas[2] ? <SeccionGraficoTabla titulo={`#3 ANÁLISIS ÁREA: ${topAreas[2]}`} datos={datos.filter(d => d.servicio === topAreas[2])} campo="definicion" color={colorCausa} limite={5} mostrarTablas={mostrarTablas} /> : <div />}
+                    {topAreas[1] ? <SeccionGraficoTabla idCanvas={`${prefijoId}_analisis_area_2`} titulo={`#2 ANÁLISIS ÁREA: ${topAreas[1]}`} datos={datos.filter(d => d.servicio === topAreas[1])} campo="definicion" color={colorCausa} limite={5} mostrarTablas={mostrarTablas} /> : <div />}
+                    {topAreas[2] ? <SeccionGraficoTabla idCanvas={`${prefijoId}_analisis_area_3`} titulo={`#3 ANÁLISIS ÁREA: ${topAreas[2]}`} datos={datos.filter(d => d.servicio === topAreas[2])} campo="definicion" color={colorCausa} limite={5} mostrarTablas={mostrarTablas} /> : <div />}
                 </div>
             )}
         </>
@@ -123,10 +126,10 @@ const AnalisisTopAreas = ({ datos, colorArea, colorCausa, mostrarTablas }) => {
 };
 
 // ============================================================================
-// 3. COMPONENTE: PIRÁMIDE POBLACIONAL (Grupos etarios epidemiológicos)
+// 3. COMPONENTE: PIRÁMIDE POBLACIONAL 
 // ============================================================================
-const PiramidePoblacional = ({ datos, colorHombres = '#005C46', colorMujeres = '#D4C19C' }) => {
-    const dataPiramide = useMemo(() => {
+const PiramidePoblacional = ({ idCanvas, datos, colorHombres = '#005C46', colorMujeres = '#D4C19C', mostrarTablas = true }) => {
+    const { chartData, tableData, totalTotal } = useMemo(() => {
         const brackets = ['< 1 año', '1 a 4', '5 a 9', '10 a 14', '15 a 19', '20 a 29', '30 a 39', '40 a 49', '50 a 59', '> 60 años'];
         const hombres = Array(10).fill(0);
         const mujeres = Array(10).fill(0);
@@ -140,16 +143,11 @@ const PiramidePoblacional = ({ datos, colorHombres = '#005C46', colorMujeres = '
             let valStr = String(valorEdad).toUpperCase().trim();
             let index = -1;
 
-            // 1. Detección Inteligente de Bebés (El arreglo principal)
             if (valStr.includes('<') || valStr.includes('MES') || valStr.includes('DIA') || valStr.includes('DÍA') || valStr.includes('MENOR') || valStr === '0') {
                 index = 0;
-            }
-            // 2. Detección de Mayores de 60
-            else if (valStr.includes('>60') || valStr.includes('> 60') || valStr.includes('MAYOR')) {
+            } else if (valStr.includes('>60') || valStr.includes('> 60') || valStr.includes('MAYOR')) {
                 index = 9;
-            }
-            // 3. Extracción de número normal
-            else {
+            } else {
                 let match = valStr.match(/\d+/);
                 if (match) {
                     let e = parseInt(match[0], 10);
@@ -162,15 +160,13 @@ const PiramidePoblacional = ({ datos, colorHombres = '#005C46', colorMujeres = '
                     else if (e <= 39) index = 6;
                     else if (e <= 49) index = 7;
                     else if (e <= 59) index = 8;
-                    else index = 9; // Mayor o igual a 60
+                    else index = 9; 
                 }
             }
 
-            // Si después de todo no pudimos clasificar la edad, la ignoramos
             if (index === -1) return; 
             
             let s = String(valorSexo).toUpperCase().trim();
-            
             if (s === 'H' || s.includes('HOMBRE') || s === 'MASCULINO') {
                 hombres[index]++;
             } else if (s === 'M' || s === 'F' || s.includes('MUJER') || s.includes('FEMENINO')) {
@@ -178,18 +174,33 @@ const PiramidePoblacional = ({ datos, colorHombres = '#005C46', colorMujeres = '
             }
         });
 
+        let tbl = brackets.map((rango, i) => ({
+            rango,
+            h: hombres[i],
+            m: mujeres[i],
+            t: hombres[i] + mujeres[i]
+        })).filter(row => row.t > 0);
+
+        tbl.sort((a, b) => b.t - a.t);
+        const totalTotal = tbl.reduce((sum, row) => sum + row.t, 0);
+
         return {
-            labels: brackets,
-            datasets: [
-                { label: 'Hombres', data: hombres.map(v => -v), backgroundColor: colorHombres, borderRadius: 4 }, 
-                { label: 'Mujeres', data: mujeres, backgroundColor: colorMujeres, borderRadius: 4 }
-            ]
+            chartData: {
+                labels: brackets,
+                datasets: [
+                    { label: 'Hombres', data: hombres.map(v => -v), backgroundColor: colorHombres, borderRadius: 4 }, 
+                    { label: 'Mujeres', data: mujeres, backgroundColor: colorMujeres, borderRadius: 4 }
+                ]
+            },
+            tableData: tbl,
+            totalTotal
         };
     }, [datos, colorHombres, colorMujeres]);
 
     const options = {
         indexAxis: 'y',
         maintainAspectRatio: false,
+        animation: { duration: 0 },
         scales: { 
             x: { stacked: true, ticks: { callback: v => Math.abs(v) }, grid: {display: false} }, 
             y: { stacked: true, grid: {display: false} } 
@@ -201,21 +212,61 @@ const PiramidePoblacional = ({ datos, colorHombres = '#005C46', colorMujeres = '
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col">
-            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 shrink-0">
-                <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide text-center">Pirámide Poblacional</h3>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-all duration-300">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide">Pirámide Poblacional</h3>
+                <span className="text-xs font-bold bg-slate-200 text-slate-700 px-2 py-1 rounded-full">{totalTotal}</span>
             </div>
-            <div className="p-4 flex-1 min-h-[300px]">
-                <Bar data={dataPiramide} options={options} />
+            
+            <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5' : 'lg:grid-cols-1'} min-h-[300px]`}>
+                <div className={`p-4 col-span-1 ${mostrarTablas ? 'lg:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-100' : 'lg:col-span-1'} transition-all`}>
+                    <div className="w-full h-full relative min-h-[250px]">
+                        <Bar data={chartData} options={options} id={idCanvas} />
+                    </div>
+                </div>
+
+                {mostrarTablas && (
+                    <div className="bg-white col-span-1 lg:col-span-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <table className="w-full text-xs text-left text-slate-600">
+                            <thead className="text-[10px] text-slate-400 uppercase bg-slate-50 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th className="px-3 py-2">Edad</th>
+                                    <th className="px-2 py-2 text-center text-blue-600">H</th>
+                                    <th className="px-2 py-2 text-center text-pink-600">M</th>
+                                    <th className="px-3 py-2 text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {tableData.map((row, i) => (
+                                    <tr key={i} className="hover:bg-slate-50 transition">
+                                        <td className="px-3 py-2 font-medium truncate max-w-[100px]" title={row.rango}>
+                                            <span className="text-[9px] text-slate-300 font-mono inline-block w-3 mr-1">{i+1}</span>
+                                            {row.rango}
+                                        </td>
+                                        <td className="px-2 py-2 text-center font-bold text-slate-500">{row.h > 0 ? row.h : '-'}</td>
+                                        <td className="px-2 py-2 text-center font-bold text-slate-500">{row.m > 0 ? row.m : '-'}</td>
+                                        <td className="px-3 py-2 text-right font-black text-slate-700">{row.t}</td>
+                                    </tr>
+                                ))}
+                                {tableData.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" className="px-3 py-4 text-center text-slate-400 italic">Sin datos</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
+
 // ============================================================================
-// 4. COMPONENTE: ACORDEÓN DE PROCESOS
+// 4. COMPONENTE: ACORDEÓN DE PROCESOS 
 // ============================================================================
-const AcordeonProcesos = ({ datos, colorBase = "#005C46", titulo = "Análisis de Procesos Relacionados", mostrarTablas }) => {
-    const [expandido, setExpandido] = useState(false);
+const AcordeonProcesos = ({ prefijoId, datos, colorBase = "#005C46", titulo = "Análisis de Procesos Relacionados", mostrarTablas }) => {
+    const [expandido, setExpandido] = useState(true); 
 
     const topProcesos = useMemo(() => {
         const conteo = datos.reduce((acc, curr) => {
@@ -240,16 +291,16 @@ const AcordeonProcesos = ({ datos, colorBase = "#005C46", titulo = "Análisis de
             {expandido && (
                 <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <SeccionGraficoTabla titulo="Procesos con Mayor Incidencia" datos={datos} campo="proceso" color={colorBase} limite={10} mostrarTablas={mostrarTablas} />
+                        <SeccionGraficoTabla idCanvas={`${prefijoId}_procesos_mayor_incidencia`} titulo="Procesos con Mayor Incidencia" datos={datos} campo="proceso" color={colorBase} limite={10} mostrarTablas={mostrarTablas} />
                         {topProcesos[0] && (
                             <div className="ring-2 ring-offset-2 ring-amber-200 rounded-xl">
-                                <SeccionGraficoTabla titulo={`#1 CAUSAS: ${topProcesos[0]}`} datos={datos.filter(d=>d.proceso===topProcesos[0])} campo="definicion" color="#D4C19C" limite={7} mostrarTablas={mostrarTablas} />
+                                <SeccionGraficoTabla idCanvas={`${prefijoId}_procesos_causas_1`} titulo={`#1 CAUSAS: ${topProcesos[0]}`} datos={datos.filter(d=>d.proceso===topProcesos[0])} campo="definicion" color="#D4C19C" limite={7} mostrarTablas={mostrarTablas} />
                             </div>
                         )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {topProcesos[1] && <SeccionGraficoTabla titulo={`#2 CAUSAS: ${topProcesos[1]}`} datos={datos.filter(d=>d.proceso===topProcesos[1])} campo="definicion" color="#007A5E" limite={5} mostrarTablas={mostrarTablas} />}
-                        {topProcesos[2] && <SeccionGraficoTabla titulo={`#3 CAUSAS: ${topProcesos[2]}`} datos={datos.filter(d=>d.proceso===topProcesos[2])} campo="definicion" color="#007A5E" limite={5} mostrarTablas={mostrarTablas} />}
+                        {topProcesos[1] && <SeccionGraficoTabla idCanvas={`${prefijoId}_procesos_causas_2`} titulo={`#2 CAUSAS: ${topProcesos[1]}`} datos={datos.filter(d=>d.proceso===topProcesos[1])} campo="definicion" color="#007A5E" limite={5} mostrarTablas={mostrarTablas} />}
+                        {topProcesos[2] && <SeccionGraficoTabla idCanvas={`${prefijoId}_procesos_causas_3`} titulo={`#3 CAUSAS: ${topProcesos[2]}`} datos={datos.filter(d=>d.proceso===topProcesos[2])} campo="definicion" color="#007A5E" limite={5} mostrarTablas={mostrarTablas} />}
                     </div>
                 </div>
             )}
@@ -258,7 +309,7 @@ const AcordeonProcesos = ({ datos, colorBase = "#005C46", titulo = "Análisis de
 };
 
 // ============================================================================
-// 5. COMPONENTE: MODAL DE CARGA DE EXCEL
+// 5. COMPONENTE: MODAL DE CARGA DE EXCEL 
 // ============================================================================
 const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const [archivo, setArchivo] = useState(null);
@@ -269,7 +320,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         e.preventDefault(); if (!archivo) return; setSubiendo(true); setMensaje(null);
         const formData = new FormData(); formData.append('archivo_excel', archivo);
         try {
-            await axios.post('/api/subir_archivo.php, ...', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            await axios.post('/api/subir_archivo.php', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             setMensaje({ tipo: 'success', texto: '¡Cargado con éxito!' }); setTimeout(() => { onSuccess(); onClose(); setMensaje(null); setArchivo(null); }, 1500);
         } catch { setMensaje({ tipo: 'error', texto: 'Error al subir.' }); } finally { setSubiendo(false); }
     };
@@ -306,6 +357,142 @@ function App() {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mostrarTablas, setMostrarTablas] = useState(true);
+
+  const [descargandoExcel, setDescargandoExcel] = useState(false);
+
+  const generarExcelReporte = async () => {
+      setDescargandoExcel(true);
+      try {
+          const workbook = new ExcelJS.Workbook();
+
+          const attachChartImage = (ws, canvasId, startCol, startRow) => {
+              const canvas = document.getElementById(canvasId);
+              if (canvas) {
+                  const imgData = canvas.toDataURL('image/png');
+                  const base64Str = imgData.split(',')[1];
+                  
+                  const imageId = workbook.addImage({
+                      base64: base64Str,
+                      extension: 'png',
+                  });
+
+                  ws.addImage(imageId, {
+                      tl: { col: startCol, row: startRow },
+                      ext: { width: 450, height: 250 } 
+                  });
+              }
+          };
+
+          const addSection = (ws, title, obj, startRow, canvasIdParaFoto) => {
+              ws.getCell(`A${startRow}`).value = title;
+              ws.getCell(`A${startRow}`).font = { bold: true, size: 14, color: { argb: 'FF7A123A' } };
+              ws.getCell(`A${startRow + 1}`).value = "Concepto";
+              ws.getCell(`B${startRow + 1}`).value = "Total";
+              ws.getCell(`A${startRow + 1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } };
+              ws.getCell(`A${startRow + 1}`).font = { color: { argb: 'FFFFFFFF' } };
+              ws.getCell(`B${startRow + 1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } };
+              ws.getCell(`B${startRow + 1}`).font = { color: { argb: 'FFFFFFFF' } };
+
+              let cr = startRow + 2;
+              Object.entries(obj)
+                  .sort((a, b) => b[1] - a[1]) 
+                  .forEach(([k, v]) => {
+                      ws.getCell(`A${cr}`).value = k;
+                      ws.getCell(`B${cr}`).value = v;
+                      cr++;
+                  });
+
+              if (canvasIdParaFoto) {
+                  attachChartImage(ws, canvasIdParaFoto, 3, startRow);
+              }
+
+              return Math.max(cr + 2, startRow + 15); 
+          };
+
+          let s = {
+              General: { Sexo: {}, Evento: {}, Turno: {}, Servicio: {}, Proceso: {} },
+              Adverso: { Servicio: {}, Definicion: {}, Proceso: {} },
+              Cuasi: { Servicio: {}, Definicion: {}, Proceso: {} },
+              Centinela: { Servicio: {}, Definicion: {}, Proceso: {} }
+          };
+
+          datosFiltrados.forEach(r => {
+              let ev = (r.evento || 'Sin Dato').trim();
+              let sx = (r.sexo || 'Sin Dato').trim();
+              let tu = (r.turno || 'Sin Dato').trim();
+              let sv = (r.servicio || 'Sin Dato').trim();
+              let def = (r.definicion || 'Sin Dato').trim();
+              let pro = (r.proceso || 'Sin Dato').trim();
+
+              s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1;
+              s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1;
+              s.General.Turno[tu] = (s.General.Turno[tu] || 0) + 1;
+              s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
+              s.General.Proceso[pro] = (s.General.Proceso[pro] || 0) + 1;
+
+              let evUpper = ev.toUpperCase();
+              if (evUpper.includes('ADVERSO')) {
+                  s.Adverso.Servicio[sv] = (s.Adverso.Servicio[sv] || 0) + 1;
+                  s.Adverso.Definicion[def] = (s.Adverso.Definicion[def] || 0) + 1;
+                  s.Adverso.Proceso[pro] = (s.Adverso.Proceso[pro] || 0) + 1;
+              } else if (evUpper.includes('CUASI')) {
+                  s.Cuasi.Servicio[sv] = (s.Cuasi.Servicio[sv] || 0) + 1;
+                  s.Cuasi.Definicion[def] = (s.Cuasi.Definicion[def] || 0) + 1;
+                  s.Cuasi.Proceso[pro] = (s.Cuasi.Proceso[pro] || 0) + 1;
+              } else if (evUpper.includes('CENTINELA')) {
+                  s.Centinela.Servicio[sv] = (s.Centinela.Servicio[sv] || 0) + 1;
+                  s.Centinela.Definicion[def] = (s.Centinela.Definicion[def] || 0) + 1;
+                  s.Centinela.Proceso[pro] = (s.Centinela.Proceso[pro] || 0) + 1;
+              }
+          });
+
+          // Hoja 1: Generales
+          const wsG = workbook.addWorksheet('Generales');
+          wsG.getColumn(1).width = 50;
+          let rowGen = 1;
+          rowGen = addSection(wsG, "SEXO", s.General.Sexo, rowGen, 'gen_sexo');
+          rowGen = addSection(wsG, "EVENTOS", s.General.Evento, rowGen, 'gen_evento');
+          rowGen = addSection(wsG, "TURNOS", s.General.Turno, rowGen, 'gen_turno');
+          rowGen = addSection(wsG, "SERVICIOS", s.General.Servicio, rowGen, 'gen_servicio');
+          
+          wsG.getCell(`A${rowGen}`).value = "PIRÁMIDE POBLACIONAL";
+          wsG.getCell(`A${rowGen}`).font = { bold: true, size: 14 };
+          attachChartImage(wsG, 'gen_piramide', 0, rowGen + 1);
+
+          // Hoja 2: Adversos
+          const wsA = workbook.addWorksheet('Adversos');
+          wsA.getColumn(1).width = 60;
+          let rA = 1;
+          rA = addSection(wsA, `TOP ÁREAS (Adversos)`, s.Adverso.Servicio, rA, 'adv_areas_mayor_incidencia');
+          rA = addSection(wsA, `CAUSAS GLOBALES (Adversos)`, s.Adverso.Definicion, rA, 'adv_causas_globales');
+          rA = addSection(wsA, `PROCESOS RELACIONADOS (Adversos)`, s.Adverso.Proceso, rA, 'adv_procesos_mayor_incidencia');
+
+          // Hoja 3: Cuasifallas
+          const wsC = workbook.addWorksheet('Cuasifallas');
+          wsC.getColumn(1).width = 60;
+          let rC = 1;
+          rC = addSection(wsC, `TOP ÁREAS (Cuasifallas)`, s.Cuasi.Servicio, rC, 'cuasi_areas_mayor_incidencia');
+          rC = addSection(wsC, `CAUSAS GLOBALES (Cuasifallas)`, s.Cuasi.Definicion, rC, 'cuasi_causas_globales');
+          rC = addSection(wsC, `PROCESOS RELACIONADOS (Cuasifallas)`, s.Cuasi.Proceso, rC, 'cuasi_procesos_mayor_incidencia');
+
+          // Hoja 4: Centinelas
+          const wsCen = workbook.addWorksheet('Centinelas');
+          wsCen.getColumn(1).width = 60;
+          let rCen = 1;
+          rCen = addSection(wsCen, `TOP ÁREAS (Centinelas)`, s.Centinela.Servicio, rCen, 'cen_areas_mayor_incidencia');
+          rCen = addSection(wsCen, `CAUSAS GLOBALES (Centinelas)`, s.Centinela.Definicion, rCen, 'cen_causas_globales');
+          rCen = addSection(wsCen, `PROCESOS RELACIONADOS (Centinelas)`, s.Centinela.Proceso, rCen, 'cen_procesos_mayor_incidencia');
+
+          const buffer = await workbook.xlsx.writeBuffer();
+          saveAs(new Blob([buffer]), `Reporte_VENCER_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      } catch (error) {
+          console.error(error);
+          alert("Error al generar el Excel.");
+      } finally {
+          setDescargandoExcel(false);
+      }
+  };
 
   useEffect(() => {
     axios.get('/api/api_vencer.php')
@@ -357,11 +544,14 @@ function App() {
           setSidebarCollapsed={setSidebarCollapsed}
           mostrarTablas={mostrarTablas}
           setMostrarTablas={setMostrarTablas}
+          generarExcelReporte={generarExcelReporte} 
+          descargandoExcel={descargandoExcel}
+          hayDatos={datosFiltrados.length > 0}
         />
       </div>
 
       {/* --- COLUMNA 2: CONTENIDO DERECHO --- */}
-      <div style={{ overflowY: 'auto', minWidth: 0, height: '100%', position: 'relative', zIndex: 0 }}>
+      <div style={{ overflowY: 'auto', overflowX: 'hidden', minWidth: 0, height: '100%', position: 'relative', zIndex: 0 }}>
         
         <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm h-16 flex-shrink-0">
           <div className="max-w-[1400px] mx-auto px-6 h-full flex items-center justify-between">
@@ -399,139 +589,127 @@ function App() {
           </div>
         </nav>
 
-        <main className="max-w-[1400px] mx-auto px-8 pt-8 pb-16 w-full transition-all duration-300">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              
-              {/* ===================================================
-                  PESTAÑA: PANORAMA GENERAL
-              =================================================== */}
-              {pestanaActiva === 'general' && (
-                  <>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Eventos</p>
-                              <p className="text-4xl font-black text-[#005C46] mt-2">{dGeneral.length}</p>
-                          </div>
-                          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Adversos</p>
-                              <p className="text-4xl font-black text-red-600 mt-2">{dAdversos.length}</p>
-                          </div>
-                          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cuasifallas</p>
-                              <p className="text-4xl font-black text-amber-500 mt-2">{dCuasi.length}</p>
-                          </div>
-                           <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Centinelas</p>
-                              <p className="text-4xl font-black text-slate-800 mt-2">{dCentinela.length}</p>
-                          </div>
-                      </div>
+        <main className="max-w-[1400px] mx-auto px-8 pt-8 pb-16 w-full transition-all duration-300 relative">
+          
+          {/* ===================================================
+              PESTAÑA: PANORAMA GENERAL
+          =================================================== */}
+          <div className={pestanaActiva === 'general' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Eventos</p>
+                      <p className="text-4xl font-black text-[#005C46] mt-2">{dGeneral.length}</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Adversos</p>
+                      <p className="text-4xl font-black text-red-600 mt-2">{dAdversos.length}</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cuasifallas</p>
+                      <p className="text-4xl font-black text-amber-500 mt-2">{dCuasi.length}</p>
+                  </div>
+                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Centinelas</p>
+                      <p className="text-4xl font-black text-slate-800 mt-2">{dCentinela.length}</p>
+                  </div>
+              </div>
 
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                          <SeccionGraficoTabla titulo="Distribución por Sexo" datos={dGeneral} campo="sexo" tipo="doughnut" color={['#005C46', '#D4C19C', '#003B2D']} mostrarTablas={mostrarTablas} />
-                          <SeccionGraficoTabla titulo="Clasificación de Eventos" datos={dGeneral} campo="evento" color="#007A5E" mostrarTablas={mostrarTablas} />
-                      </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <SeccionGraficoTabla idCanvas="gen_sexo" titulo="Distribución por Sexo" datos={dGeneral} campo="sexo" tipo="doughnut" color={['#005C46', '#D4C19C', '#003B2D']} mostrarTablas={mostrarTablas} />
+                  <SeccionGraficoTabla idCanvas="gen_evento" titulo="Clasificación de Eventos" datos={dGeneral} campo="evento" color="#007A5E" mostrarTablas={mostrarTablas} />
+              </div>
 
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                          <PiramidePoblacional datos={dGeneral} />
-                          <SeccionGraficoTabla titulo="Turnos" datos={dGeneral} campo="turno" color="#D4C19C" mostrarTablas={mostrarTablas} />
-                      </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <PiramidePoblacional idCanvas="gen_piramide" datos={dGeneral} mostrarTablas = {mostrarTablas} />
+                  <SeccionGraficoTabla idCanvas="gen_turno" titulo="Turnos" datos={dGeneral} campo="turno" color="#D4C19C" mostrarTablas={mostrarTablas} />
+              </div>
 
-                      <div className="mb-6">
-                          <SeccionGraficoTabla titulo="Top Servicios" datos={dGeneral} campo="servicio" color="#005C46" limite={15} mostrarTablas={mostrarTablas} />
-                      </div>
+              <div className="mb-6">
+                  <SeccionGraficoTabla idCanvas="gen_servicio" titulo="Top Servicios" datos={dGeneral} campo="servicio" color="#005C46" limite={15} mostrarTablas={mostrarTablas} />
+              </div>
 
-                      <AcordeonProcesos datos={dGeneral} colorBase="#005C46" titulo="Análisis de Procesos Relacionados (General)" mostrarTablas={mostrarTablas} />
-                  </>
-              )}
-
-              {/* ===================================================
-                  PESTAÑA: EVENTOS ADVERSOS
-              =================================================== */}
-              {pestanaActiva === 'adversos' && (
-                  <>
-                      <div className="bg-red-50 border border-red-200 p-4 rounded-xl mb-6 flex gap-3 items-center text-red-800 shadow-sm">
-                          <AlertOctagon /> <h2 className="font-bold text-xl uppercase tracking-wider">Análisis de Eventos Adversos</h2>
-                      </div>
-                      
-                      {dAdversos.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Eventos Adversos con estos filtros.</div> : (
-                          <>
-                              {/* NUEVO: Condición para mostrar Pirámide y Sexo si hay un servicio seleccionado */}
-                              {servicioSeleccionado !== 'todos' && (
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in zoom-in duration-500">
-                                      <PiramidePoblacional datos={dAdversos} colorHombres="#ef4444" colorMujeres="#fca5a5" />
-                                      <SeccionGraficoTabla titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dAdversos} campo="sexo" tipo="doughnut" color={['#ef4444', '#fca5a5', '#b91c1c']} mostrarTablas={mostrarTablas} />
-                                  </div>
-                              )}
-
-                              <AnalisisTopAreas datos={dAdversos} colorArea="#ef4444" colorCausa="#b91c1c" mostrarTablas={mostrarTablas} />
-                              
-                              <div className="mb-6">
-                                  <SeccionGraficoTabla titulo="Causas Globales (Definición)" datos={dAdversos} campo="definicion" color="#991b1b" limite={10} mostrarTablas={mostrarTablas} />
-                              </div>
-                              <AcordeonProcesos datos={dAdversos} colorBase="#ef4444" titulo="Procesos Relacionados (Adversos)" mostrarTablas={mostrarTablas} />
-                          </>
-                      )}
-                  </>
-              )}
-
-              {/* ===================================================
-                  PESTAÑA: CUASIFALLAS
-              =================================================== */}
-              {pestanaActiva === 'cuasi' && (
-                  <>
-                      <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 flex gap-3 items-center text-amber-800 shadow-sm">
-                          <ShieldAlert /> <h2 className="font-bold text-xl uppercase tracking-wider">Análisis de Cuasifallas</h2>
-                      </div>
-                      
-                      {dCuasi.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Cuasifallas con estos filtros.</div> : (
-                          <>
-                              {/* NUEVO: Condición para mostrar Pirámide y Sexo si hay un servicio seleccionado */}
-                              {servicioSeleccionado !== 'todos' && (
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in zoom-in duration-500">
-                                      <PiramidePoblacional datos={dCuasi} colorHombres="#f59e0b" colorMujeres="#fcd34d" />
-                                      <SeccionGraficoTabla titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dCuasi} campo="sexo" tipo="doughnut" color={['#f59e0b', '#fcd34d', '#d97706']} mostrarTablas={mostrarTablas} />
-                                  </div>
-                              )}
-
-                              <AnalisisTopAreas datos={dCuasi} colorArea="#f59e0b" colorCausa="#d97706" mostrarTablas={mostrarTablas} />
-                              
-                              <div className="mb-6">
-                                  <SeccionGraficoTabla titulo="Causas Globales (Definición)" datos={dCuasi} campo="definicion" color="#b45309" limite={10} mostrarTablas={mostrarTablas} />
-                              </div>
-                              <AcordeonProcesos datos={dCuasi} colorBase="#f59e0b" titulo="Procesos Relacionados (Cuasifallas)" mostrarTablas={mostrarTablas} />
-                          </>
-                      )}
-                  </>
-              )}
-
-              {/* ===================================================
-                  PESTAÑA: CENTINELAS
-              =================================================== */}
-              {pestanaActiva === 'centinela' && (
-                  <>
-                      <div className="bg-slate-800 border border-slate-900 p-4 rounded-xl mb-6 flex gap-3 items-center text-white shadow-sm">
-                          <Siren /> <h2 className="font-bold text-xl uppercase tracking-wider">Eventos Centinela (Críticos)</h2>
-                      </div>
-                      
-                      {dCentinela.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center p-16 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400">
-                              <Siren size={48} className="mb-4 text-emerald-400"/>
-                              <p className="font-bold text-lg text-slate-600">0 Eventos Centinela</p>
-                              <p className="text-sm">No se encontraron registros críticos con los filtros seleccionados.</p>
-                          </div>
-                      ) : (
-                          <>
-                              <AnalisisTopAreas datos={dCentinela} colorArea="#475569" colorCausa="#1e293b" mostrarTablas={mostrarTablas} />
-                              <div className="mb-6">
-                                  <SeccionGraficoTabla titulo="Causas Principales (Definición)" datos={dCentinela} campo="definicion" color="#0f172a" limite={10} mostrarTablas={mostrarTablas} />
-                              </div>
-                              <AcordeonProcesos datos={dCentinela} colorBase="#475569" titulo="Procesos Relacionados (Centinelas)" mostrarTablas={mostrarTablas} />
-                          </>
-                      )}
-                  </>
-              )}
-
+              <AcordeonProcesos prefijoId="gen" datos={dGeneral} colorBase="#005C46" titulo="Análisis de Procesos Relacionados (General)" mostrarTablas={mostrarTablas} />
           </div>
+
+          {/* ===================================================
+              PESTAÑA: EVENTOS ADVERSOS
+          =================================================== */}
+          <div className={pestanaActiva === 'adversos' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
+              <div className="bg-red-50 border border-red-200 p-4 rounded-xl mb-6 flex gap-3 items-center text-red-800 shadow-sm">
+                  <AlertOctagon /> <h2 className="font-bold text-xl uppercase tracking-wider">Análisis de Eventos Adversos</h2>
+              </div>
+              
+              {dAdversos.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Eventos Adversos con estos filtros.</div> : (
+                  <>
+                      {servicioSeleccionado !== 'todos' && (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                              <PiramidePoblacional idCanvas="adv_piramide" datos={dAdversos} colorHombres="#ef4444" colorMujeres="#fca5a5" mostrarTablas = {mostrarTablas}/>
+                              <SeccionGraficoTabla idCanvas="adv_sexo" titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dAdversos} campo="sexo" tipo="doughnut" color={['#ef4444', '#fca5a5', '#b91c1c']} mostrarTablas={mostrarTablas} />
+                          </div>
+                      )}
+
+                      <AnalisisTopAreas prefijoId="adv" datos={dAdversos} colorArea="#ef4444" colorCausa="#b91c1c" mostrarTablas={mostrarTablas} />
+                      
+                      <div className="mb-6">
+                          <SeccionGraficoTabla idCanvas="adv_causas_globales" titulo="Causas Globales (Definición)" datos={dAdversos} campo="definicion" color="#991b1b" limite={10} mostrarTablas={mostrarTablas} />
+                      </div>
+                      <AcordeonProcesos prefijoId="adv" datos={dAdversos} colorBase="#ef4444" titulo="Procesos Relacionados (Adversos)" mostrarTablas={mostrarTablas} />
+                  </>
+              )}
+          </div>
+
+          {/* ===================================================
+              PESTAÑA: CUASIFALLAS
+          =================================================== */}
+          <div className={pestanaActiva === 'cuasi' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 flex gap-3 items-center text-amber-800 shadow-sm">
+                  <ShieldAlert /> <h2 className="font-bold text-xl uppercase tracking-wider">Análisis de Cuasifallas</h2>
+              </div>
+              
+              {dCuasi.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Cuasifallas con estos filtros.</div> : (
+                  <>
+                      {servicioSeleccionado !== 'todos' && (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                              <PiramidePoblacional idCanvas="cuasi_piramide" datos={dCuasi} colorHombres="#f59e0b" colorMujeres="#fcd34d" mostrarTablas = {mostrarTablas}/>
+                              <SeccionGraficoTabla idCanvas="cuasi_sexo" titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dCuasi} campo="sexo" tipo="doughnut" color={['#f59e0b', '#fcd34d', '#d97706']} mostrarTablas={mostrarTablas} />
+                          </div>
+                      )}
+
+                      <AnalisisTopAreas prefijoId="cuasi" datos={dCuasi} colorArea="#f59e0b" colorCausa="#d97706" mostrarTablas={mostrarTablas} />
+                      
+                      <div className="mb-6">
+                          <SeccionGraficoTabla idCanvas="cuasi_causas_globales" titulo="Causas Globales (Definición)" datos={dCuasi} campo="definicion" color="#b45309" limite={10} mostrarTablas={mostrarTablas} />
+                      </div>
+                      <AcordeonProcesos prefijoId="cuasi" datos={dCuasi} colorBase="#f59e0b" titulo="Procesos Relacionados (Cuasifallas)" mostrarTablas={mostrarTablas} />
+                  </>
+              )}
+          </div>
+
+          {/* ===================================================
+              PESTAÑA: CENTINELAS
+          =================================================== */}
+          <div className={pestanaActiva === 'centinela' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
+              <div className="bg-slate-800 border border-slate-900 p-4 rounded-xl mb-6 flex gap-3 items-center text-white shadow-sm">
+                  <Siren /> <h2 className="font-bold text-xl uppercase tracking-wider">Eventos Centinela (Críticos)</h2>
+              </div>
+              
+              {dCentinela.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-16 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400">
+                      <Siren size={48} className="mb-4 text-emerald-400"/>
+                      <p className="font-bold text-lg text-slate-600">0 Eventos Centinela</p>
+                      <p className="text-sm">No se encontraron registros críticos con los filtros seleccionados.</p>
+                  </div>
+              ) : (
+                  <>
+                      <AnalisisTopAreas prefijoId="cen" datos={dCentinela} colorArea="#475569" colorCausa="#1e293b" mostrarTablas={mostrarTablas} />
+                      <div className="mb-6">
+                          <SeccionGraficoTabla idCanvas="cen_causas_globales" titulo="Causas Principales (Definición)" datos={dCentinela} campo="definicion" color="#0f172a" limite={10} mostrarTablas={mostrarTablas} />
+                      </div>
+                      <AcordeonProcesos prefijoId="cen" datos={dCentinela} colorBase="#475569" titulo="Procesos Relacionados (Centinelas)" mostrarTablas={mostrarTablas} />
+                  </>
+              )}
+          </div>
+
         </main>
       </div>
     </div>

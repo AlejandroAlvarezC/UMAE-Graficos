@@ -1,7 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, AlertOctagon, ShieldAlert, Siren, LogOut, Menu, Table, BarChart } from 'lucide-react';
+import { LayoutDashboard, AlertOctagon, ShieldAlert, Siren, LogOut, Menu, Table, BarChart, Download, Activity} from 'lucide-react';
 
-const Sidebar = ({ pestanaActiva, setPestanaActiva, conteos, sidebarCollapsed, setSidebarCollapsed, mostrarTablas, setMostrarTablas }) => {
+
+const Sidebar = ({ pestanaActiva, setPestanaActiva, conteos, sidebarCollapsed, setSidebarCollapsed, mostrarTablas, setMostrarTablas,generarExcelReporte, descargandoExcel, hayDatos }) => {
   const menuOptions = [
     { id: 'general', label: 'General', icon: LayoutDashboard, count: conteos?.general },
     { id: 'adversos', label: 'Adversos', icon: AlertOctagon, count: conteos?.adversos },
@@ -71,6 +72,19 @@ const Sidebar = ({ pestanaActiva, setPestanaActiva, conteos, sidebarCollapsed, s
         >
           {mostrarTablas ? <BarChart size={22} className="shrink-0"/> : <Table size={22} className="shrink-0 text-amber-300"/>}
           {!sidebarCollapsed && <span className="text-sm font-bold whitespace-nowrap">{mostrarTablas ? "Solo ver gráficos" : "Mostrar tablas"}</span>}
+        </button>
+        
+        <button 
+            onClick={generarExcelReporte}
+            disabled={descargandoExcel || !hayDatos}
+            className={`w-full flex items-center p-3 mb-4 rounded-lg transition-colors font-bold text-sm
+                ${descargandoExcel || !hayDatos ? 'opacity-50 cursor-not-allowed bg-[#004A38] text-white/50' : 'hover:bg-[#004A38] text-emerald-100 hover:text-white'}
+                ${sidebarCollapsed ? 'justify-center' : 'justify-start gap-3'}
+            `}
+            title="Descargar Reporte Excel"
+        >
+            {descargandoExcel ? <Activity size={20} className="animate-spin" /> : <Download size={20} />}
+            {!sidebarCollapsed && <span>{descargandoExcel ? 'Generando...' : 'Descargar Excel'}</span>}
         </button>
 
         <button 
