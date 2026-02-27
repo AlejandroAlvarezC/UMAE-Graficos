@@ -127,7 +127,6 @@ const AnalisisTopAreas = ({ datos, colorArea, colorCausa, mostrarTablas }) => {
 // ============================================================================
 const PiramidePoblacional = ({ datos, colorHombres = '#005C46', colorMujeres = '#D4C19C' }) => {
     const dataPiramide = useMemo(() => {
-        // Nuevos rangos exactos solicitados
         const brackets = ['< 1 año', '1 a 4', '5 a 9', '10 a 14', '15 a 19', '20 a 29', '30 a 39', '40 a 49', '50 a 59', '> 60 años'];
         const hombres = Array(10).fill(0);
         const mujeres = Array(10).fill(0);
@@ -138,21 +137,37 @@ const PiramidePoblacional = ({ datos, colorHombres = '#005C46', colorMujeres = '
 
             if (valorEdad === undefined || valorSexo === undefined) return;
 
-            let e = parseInt(valorEdad);
-            if (isNaN(e)) return;
+            let valStr = String(valorEdad).toUpperCase().trim();
+            let index = -1;
 
-            // Lógica de agrupación por rangos
-            let index = 0;
-            if (e < 1) index = 0;
-            else if (e <= 4) index = 1;
-            else if (e <= 9) index = 2;
-            else if (e <= 14) index = 3;
-            else if (e <= 19) index = 4;
-            else if (e <= 29) index = 5;
-            else if (e <= 39) index = 6;
-            else if (e <= 49) index = 7;
-            else if (e <= 59) index = 8;
-            else index = 9; // Mayor o igual a 60
+            // 1. Detección Inteligente de Bebés (El arreglo principal)
+            if (valStr.includes('<') || valStr.includes('MES') || valStr.includes('DIA') || valStr.includes('DÍA') || valStr.includes('MENOR') || valStr === '0') {
+                index = 0;
+            }
+            // 2. Detección de Mayores de 60
+            else if (valStr.includes('>60') || valStr.includes('> 60') || valStr.includes('MAYOR')) {
+                index = 9;
+            }
+            // 3. Extracción de número normal
+            else {
+                let match = valStr.match(/\d+/);
+                if (match) {
+                    let e = parseInt(match[0], 10);
+                    if (e === 0) index = 0;
+                    else if (e <= 4) index = 1;
+                    else if (e <= 9) index = 2;
+                    else if (e <= 14) index = 3;
+                    else if (e <= 19) index = 4;
+                    else if (e <= 29) index = 5;
+                    else if (e <= 39) index = 6;
+                    else if (e <= 49) index = 7;
+                    else if (e <= 59) index = 8;
+                    else index = 9; // Mayor o igual a 60
+                }
+            }
+
+            // Si después de todo no pudimos clasificar la edad, la ignoramos
+            if (index === -1) return; 
             
             let s = String(valorSexo).toUpperCase().trim();
             

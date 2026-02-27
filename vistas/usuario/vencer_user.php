@@ -91,7 +91,7 @@ session_start();
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-    <script src="../../js/vencer.js"></script>
+    <script src="../../js/vencer_v2.js?v=<?php echo time(); ?>"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
