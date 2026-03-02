@@ -530,7 +530,7 @@ function App() {
   if (error) return <div className="h-screen flex items-center justify-center text-red-500 bg-slate-50 font-bold">{error}</div>;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: sidebarCollapsed ? '80px 1fr' : '260px 1fr', transition: 'grid-template-columns 0.3s ease', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f8fafc' }} className="text-slate-800 font-sans">
+    <div style={{ display: 'grid', gridTemplateColumns: sidebarCollapsed ? '80px 1fr' : '260px 1fr', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f8fafc' }} className="text-slate-800 font-sans">
       
       <UploadModal isOpen={showModal} onClose={() => setShowModal(false)} onSuccess={() => window.location.reload()} />
 
