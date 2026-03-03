@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { Activity, AlertOctagon, ShieldAlert, Siren, Lock, Unlock, UploadCloud, X, ChevronDown, ChevronUp, Settings, Filter, Download} from 'lucide-react';
+import { Activity, AlertOctagon, ShieldAlert, Siren, Lock, Unlock, ChevronDown, ChevronUp, Settings, Filter, Download} from 'lucide-react';
 import Sidebar from './componentes/Sidebar';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -12,7 +12,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 // ============================================================================
-// 1. COMPONENTE: GRÁFICO + TABLA
+// 1. COMPONENTE: GRÁFICO + TABLA (ESTÁNDAR)
 // ============================================================================
 const SeccionGraficoTabla = ({ idCanvas, titulo, datos, campo, tipo = 'bar', color = '#005C46', limite = 10, mostrarTablas = true }) => {
     const procesados = useMemo(() => {
@@ -91,7 +91,118 @@ const SeccionGraficoTabla = ({ idCanvas, titulo, datos, campo, tipo = 'bar', col
 };
 
 // ============================================================================
-// 2. COMPONENTE: ANÁLISIS TOP 3 ÁREAS 
+// 2. NUEVO COMPONENTE: ANÁLISIS DE CATEGORÍAS (TOP 5 EN GRÁFICO, TODO EN TABLA)
+// ============================================================================
+const AnalisisCategorias = ({ idCanvas, datos, mostrarTablas = true }) => {
+    const { chartData, tableData, totalTotal } = useMemo(() => {
+        const conteo = {};
+        let totalGeneral = 0;
+
+        datos.forEach(d => {
+            const cat = (d.categoria || 'Sin Dato').trim();
+            const ev = (d.evento || '').toUpperCase();
+
+            if (!conteo[cat]) {
+                conteo[cat] = { adversos: 0, cuasi: 0, centinelas: 0, total: 0 };
+            }
+
+            if (ev.includes('ADVERSO')) conteo[cat].adversos++;
+            else if (ev.includes('CUASI')) conteo[cat].cuasi++;
+            else if (ev.includes('CENTINELA')) conteo[cat].centinelas++;
+            
+            conteo[cat].total++;
+            totalGeneral++;
+        });
+
+        // Ordenamos por la categoría que tenga el mayor total
+        const ordenados = Object.entries(conteo)
+            .map(([nombre, counts]) => ({ nombre, ...counts }))
+            .sort((a, b) => b.total - a.total);
+
+        // EXTRAEMOS SOLO EL TOP 5 PARA QUE EL GRÁFICO SE VEA MÁS GRANDE Y LIMPIO
+        const top5 = ordenados.slice(0, 5);
+
+        return {
+            chartData: {
+                labels: top5.map(i => i.nombre.length > 25 ? i.nombre.substring(0, 25) + '...' : i.nombre),
+                datasets: [
+                    { label: 'Adversos', data: top5.map(i => i.adversos), backgroundColor: '#ef4444', borderRadius: 4 },
+                    { label: 'Cuasifallas', data: top5.map(i => i.cuasi), backgroundColor: '#f59e0b', borderRadius: 4 },
+                    { label: 'Centinelas', data: top5.map(i => i.centinelas), backgroundColor: '#1e293b', borderRadius: 4 }
+                ]
+            },
+            tableData: ordenados, // LA TABLA SIGUE RECIBIENDO LA LISTA COMPLETA
+            totalTotal: totalGeneral
+        };
+    }, [datos]);
+
+    const options = {
+        indexAxis: 'y',
+        maintainAspectRatio: false,
+        animation: { duration: 0 },
+        scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, grid: { display: false } }
+        },
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    };
+
+    if (datos.length === 0) return null;
+
+    return (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col transition-all duration-300 mb-6">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide">Categoría que Reporta</h3>
+                <span className="text-xs font-bold bg-slate-200 text-slate-700 px-2 py-1 rounded-full">{totalTotal}</span>
+            </div>
+            
+            <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5' : 'lg:grid-cols-1'} min-h-[300px]`}>
+                {/* GRÁFICA (Solo muestra el Top 5) */}
+                <div className={`p-4 col-span-1 ${mostrarTablas ? 'lg:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-100' : 'lg:col-span-1'} transition-all`}>
+                    <div className="w-full h-full relative min-h-[250px]">
+                        <Bar data={chartData} options={options} id={idCanvas} />
+                    </div>
+                </div>
+
+                {/* TABLA MULTICOLUMNA (Muestra todas las categorías) */}
+                {mostrarTablas && (
+                    <div className="bg-white col-span-1 lg:col-span-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <table className="w-full text-[11px] text-left text-slate-600">
+                            <thead className="text-[10px] text-slate-400 uppercase bg-slate-50 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th className="px-3 py-2">Categoría</th>
+                                    <th className="px-2 py-2 text-center text-red-600" title="Adversos">Adv.</th>
+                                    <th className="px-2 py-2 text-center text-amber-600" title="Cuasifallas">Cuas.</th>
+                                    <th className="px-2 py-2 text-center text-slate-800" title="Centinelas">Cen.</th>
+                                    <th className="px-3 py-2 text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {tableData.map((row, i) => (
+                                    <tr key={i} className="hover:bg-slate-50 transition">
+                                        <td className="px-3 py-2 font-medium truncate max-w-[100px]" title={row.nombre}>
+                                            <span className="text-[9px] text-slate-300 font-mono inline-block w-3 mr-1">{i+1}</span>
+                                            {row.nombre}
+                                        </td>
+                                        <td className="px-2 py-2 text-center font-bold text-slate-500">{row.adversos > 0 ? row.adversos : '-'}</td>
+                                        <td className="px-2 py-2 text-center font-bold text-slate-500">{row.cuasi > 0 ? row.cuasi : '-'}</td>
+                                        <td className="px-2 py-2 text-center font-bold text-slate-500">{row.centinelas > 0 ? row.centinelas : '-'}</td>
+                                        <td className="px-3 py-2 text-right font-black text-slate-700">{row.total}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ============================================================================
+// 3. COMPONENTE: ANÁLISIS TOP 3 ÁREAS 
 // ============================================================================
 const AnalisisTopAreas = ({ prefijoId, datos, colorArea, colorCausa, mostrarTablas }) => {
     const topAreas = useMemo(() => {
@@ -126,7 +237,7 @@ const AnalisisTopAreas = ({ prefijoId, datos, colorArea, colorCausa, mostrarTabl
 };
 
 // ============================================================================
-// 3. COMPONENTE: PIRÁMIDE POBLACIONAL 
+// 4. COMPONENTE: PIRÁMIDE POBLACIONAL 
 // ============================================================================
 const PiramidePoblacional = ({ idCanvas, datos, colorHombres = '#005C46', colorMujeres = '#D4C19C', mostrarTablas = true }) => {
     const { chartData, tableData, totalTotal } = useMemo(() => {
@@ -263,7 +374,7 @@ const PiramidePoblacional = ({ idCanvas, datos, colorHombres = '#005C46', colorM
 };
 
 // ============================================================================
-// 4. COMPONENTE: ACORDEÓN DE PROCESOS 
+// 5. COMPONENTE: ACORDEÓN DE PROCESOS 
 // ============================================================================
 const AcordeonProcesos = ({ prefijoId, datos, colorBase = "#005C46", titulo = "Análisis de Procesos Relacionados", mostrarTablas }) => {
     const [expandido, setExpandido] = useState(true); 
@@ -309,36 +420,6 @@ const AcordeonProcesos = ({ prefijoId, datos, colorBase = "#005C46", titulo = "A
 };
 
 // ============================================================================
-// 5. COMPONENTE: MODAL DE CARGA DE EXCEL 
-// ============================================================================
-const UploadModal = ({ isOpen, onClose, onSuccess }) => {
-    const [archivo, setArchivo] = useState(null);
-    const [subiendo, setSubiendo] = useState(false);
-    const [mensaje, setMensaje] = useState(null);
-    if (!isOpen) return null;
-    const handleUpload = async (e) => {
-        e.preventDefault(); if (!archivo) return; setSubiendo(true); setMensaje(null);
-        const formData = new FormData(); formData.append('archivo_excel', archivo);
-        try {
-            await axios.post('/api/subir_archivo.php', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-            setMensaje({ tipo: 'success', texto: '¡Cargado con éxito!' }); setTimeout(() => { onSuccess(); onClose(); setMensaje(null); setArchivo(null); }, 1500);
-        } catch { setMensaje({ tipo: 'error', texto: 'Error al subir.' }); } finally { setSubiendo(false); }
-    };
-    return (
-        <div className="fixed inset-0 bg-slate-900/50 z-[100] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in">
-                <div className="flex justify-between mb-4"><h3 className="font-bold flex gap-2"><UploadCloud/> Subir Archivo</h3><button onClick={onClose}><X size={18}/></button></div>
-                <form onSubmit={handleUpload} className="space-y-4">
-                    <input type="file" onChange={(e) => setArchivo(e.target.files[0])} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-emerald-50 file:text-[#005C46]"/>
-                    {mensaje && <div className={`p-2 text-xs rounded font-bold ${mensaje.tipo==='success'?'bg-emerald-100 text-[#005C46]':'bg-red-100 text-red-700'}`}>{mensaje.texto}</div>}
-                    <button disabled={!archivo || subiendo} className="w-full bg-[#005C46] text-white py-2 rounded-lg font-bold disabled:opacity-50 hover:bg-[#004A38] transition">{subiendo?'Subiendo...':'Procesar Excel'}</button>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-// ============================================================================
 // 6. APLICACIÓN PRINCIPAL (Layout Base)
 // ============================================================================
 function App() {
@@ -352,8 +433,7 @@ function App() {
   const [servicioSeleccionado, setServicioSeleccionado] = useState('todos');
   
   const [pestanaActiva, setPestanaActiva] = useState('general');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [isAdmin] = useState(false); 
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mostrarTablas, setMostrarTablas] = useState(true);
@@ -370,16 +450,8 @@ function App() {
               if (canvas) {
                   const imgData = canvas.toDataURL('image/png');
                   const base64Str = imgData.split(',')[1];
-                  
-                  const imageId = workbook.addImage({
-                      base64: base64Str,
-                      extension: 'png',
-                  });
-
-                  ws.addImage(imageId, {
-                      tl: { col: startCol, row: startRow },
-                      ext: { width: 450, height: 250 } 
-                  });
+                  const imageId = workbook.addImage({ base64: base64Str, extension: 'png' });
+                  ws.addImage(imageId, { tl: { col: startCol, row: startRow }, ext: { width: 450, height: 250 } });
               }
           };
 
@@ -394,23 +466,44 @@ function App() {
               ws.getCell(`B${startRow + 1}`).font = { color: { argb: 'FFFFFFFF' } };
 
               let cr = startRow + 2;
-              Object.entries(obj)
-                  .sort((a, b) => b[1] - a[1]) 
-                  .forEach(([k, v]) => {
-                      ws.getCell(`A${cr}`).value = k;
-                      ws.getCell(`B${cr}`).value = v;
-                      cr++;
-                  });
+              Object.entries(obj).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => {
+                  ws.getCell(`A${cr}`).value = k;
+                  ws.getCell(`B${cr}`).value = v;
+                  cr++;
+              });
 
-              if (canvasIdParaFoto) {
-                  attachChartImage(ws, canvasIdParaFoto, 3, startRow);
-              }
-
+              if (canvasIdParaFoto) attachChartImage(ws, canvasIdParaFoto, 3, startRow);
               return Math.max(cr + 2, startRow + 15); 
           };
 
+          const addSectionCategorias = (ws, title, obj, startRow, canvasIdParaFoto) => {
+              ws.getCell(`A${startRow}`).value = title;
+              ws.getCell(`A${startRow}`).font = { bold: true, size: 14, color: { argb: 'FF7A123A' } };
+              
+              const headers = ['A', 'B', 'C', 'D', 'E'];
+              const cols = ["Categoría", "Adversos", "Cuasi", "Centinelas", "Total"];
+              headers.forEach((h, i) => {
+                  ws.getCell(`${h}${startRow + 1}`).value = cols[i];
+                  ws.getCell(`${h}${startRow + 1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } };
+                  ws.getCell(`${h}${startRow + 1}`).font = { color: { argb: 'FFFFFFFF' } };
+              });
+
+              let cr = startRow + 2;
+              Object.entries(obj).sort((a, b) => b[1].total - a[1].total).forEach(([k, v]) => {
+                  ws.getCell(`A${cr}`).value = k;
+                  ws.getCell(`B${cr}`).value = v.adversos;
+                  ws.getCell(`C${cr}`).value = v.cuasi;
+                  ws.getCell(`D${cr}`).value = v.centinela;
+                  ws.getCell(`E${cr}`).value = v.total;
+                  cr++;
+              });
+
+              if (canvasIdParaFoto) attachChartImage(ws, canvasIdParaFoto, 6, startRow);
+              return Math.max(cr + 2, startRow + 15);
+          };
+
           let s = {
-              General: { Sexo: {}, Evento: {}, Turno: {}, Servicio: {}, Proceso: {} },
+              General: { Sexo: {}, Evento: {}, Turno: {}, Servicio: {}, Proceso: {}, Categoria: {} },
               Adverso: { Servicio: {}, Definicion: {}, Proceso: {} },
               Cuasi: { Servicio: {}, Definicion: {}, Proceso: {} },
               Centinela: { Servicio: {}, Definicion: {}, Proceso: {} }
@@ -423,6 +516,8 @@ function App() {
               let sv = (r.servicio || 'Sin Dato').trim();
               let def = (r.definicion || 'Sin Dato').trim();
               let pro = (r.proceso || 'Sin Dato').trim();
+              let cat = (r.categoria || 'Sin Dato').trim();
+              let evUpper = ev.toUpperCase();
 
               s.General.Sexo[sx] = (s.General.Sexo[sx] || 0) + 1;
               s.General.Evento[ev] = (s.General.Evento[ev] || 0) + 1;
@@ -430,7 +525,12 @@ function App() {
               s.General.Servicio[sv] = (s.General.Servicio[sv] || 0) + 1;
               s.General.Proceso[pro] = (s.General.Proceso[pro] || 0) + 1;
 
-              let evUpper = ev.toUpperCase();
+              if (!s.General.Categoria[cat]) s.General.Categoria[cat] = { adversos: 0, cuasi: 0, centinela: 0, total: 0 };
+              s.General.Categoria[cat].total++;
+              if (evUpper.includes('ADVERSO')) s.General.Categoria[cat].adversos++;
+              else if (evUpper.includes('CUASI')) s.General.Categoria[cat].cuasi++;
+              else if (evUpper.includes('CENTINELA')) s.General.Categoria[cat].centinela++;
+
               if (evUpper.includes('ADVERSO')) {
                   s.Adverso.Servicio[sv] = (s.Adverso.Servicio[sv] || 0) + 1;
                   s.Adverso.Definicion[def] = (s.Adverso.Definicion[def] || 0) + 1;
@@ -453,11 +553,15 @@ function App() {
           rowGen = addSection(wsG, "SEXO", s.General.Sexo, rowGen, 'gen_sexo');
           rowGen = addSection(wsG, "EVENTOS", s.General.Evento, rowGen, 'gen_evento');
           rowGen = addSection(wsG, "TURNOS", s.General.Turno, rowGen, 'gen_turno');
-          rowGen = addSection(wsG, "SERVICIOS", s.General.Servicio, rowGen, 'gen_servicio');
           
           wsG.getCell(`A${rowGen}`).value = "PIRÁMIDE POBLACIONAL";
           wsG.getCell(`A${rowGen}`).font = { bold: true, size: 14 };
           attachChartImage(wsG, 'gen_piramide', 0, rowGen + 1);
+          // Le sumamos 15 filas para dejarle espacio a la imagen de la pirámide
+          rowGen += 15; 
+          
+          rowGen = addSection(wsG, "SERVICIOS", s.General.Servicio, rowGen, 'gen_servicio');
+          rowGen = addSectionCategorias(wsG, "CATEGORÍA QUE REPORTA", s.General.Categoria, rowGen, 'gen_categorias');
 
           // Hoja 2: Adversos
           const wsA = workbook.addWorksheet('Adversos');
@@ -524,16 +628,12 @@ function App() {
   const dCuasi = datosFiltrados.filter(d => (d.evento||'').toUpperCase().includes('CUASI'));
   const dCentinela = datosFiltrados.filter(d => (d.evento||'').toUpperCase().includes('CENTINELA'));
 
-  const toggleAdmin = () => { if(isAdmin) setIsAdmin(false); else if(prompt("Contraseña de Admin:")==="admin123") setIsAdmin(true); };
-
   if (cargando) return <div className="h-screen flex flex-col items-center justify-center text-[#005C46] bg-slate-50 font-bold text-xl"><Activity className="animate-spin mb-4" size={40}/>Cargando Sistema VENCER...</div>;
   if (error) return <div className="h-screen flex items-center justify-center text-red-500 bg-slate-50 font-bold">{error}</div>;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: sidebarCollapsed ? '80px 1fr' : '260px 1fr', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f8fafc' }} className="text-slate-800 font-sans">
       
-      <UploadModal isOpen={showModal} onClose={() => setShowModal(false)} onSuccess={() => window.location.reload()} />
-
       {/* --- COLUMNA 1: SIDEBAR --- */}
       <div style={{ backgroundColor: '#005C46', zIndex: 20, height: '100%' }}>
         <Sidebar 
@@ -557,7 +657,6 @@ function App() {
           <div className="max-w-[1400px] mx-auto px-6 h-full flex items-center justify-between">
               <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 text-[#005C46] font-bold"><Filter size={18}/> Filtros:</div>
-                  {isAdmin && <button onClick={() => setShowModal(true)} className="hidden md:flex bg-[#005C46] text-white px-3 py-1.5 rounded-lg text-xs font-bold gap-2 hover:bg-[#004A38] transition"><UploadCloud size={16}/> Subir Excel</button>}
               </div>
 
               <div className="flex items-center gap-3">
@@ -584,7 +683,6 @@ function App() {
                           {serviciosDisponibles.map(s=><option key={s} value={s}>{s}</option>)}
                       </select>
                   </div>
-                  <button onClick={toggleAdmin} className="text-slate-400 hover:text-[#005C46] transition">{isAdmin ? <Unlock size={20}/> : <Lock size={20}/>}</button>
               </div>
           </div>
         </nav>
@@ -627,6 +725,9 @@ function App() {
               <div className="mb-6">
                   <SeccionGraficoTabla idCanvas="gen_servicio" titulo="Top Servicios" datos={dGeneral} campo="servicio" color="#005C46" limite={15} mostrarTablas={mostrarTablas} />
               </div>
+
+              {/* GRÁFICO MOVIDO DEBAJO DE TOP SERVICIOS */}
+              <AnalisisCategorias idCanvas="gen_categorias" datos={dGeneral} mostrarTablas={mostrarTablas} />
 
               <AcordeonProcesos prefijoId="gen" datos={dGeneral} colorBase="#005C46" titulo="Análisis de Procesos Relacionados (General)" mostrarTablas={mostrarTablas} />
           </div>
