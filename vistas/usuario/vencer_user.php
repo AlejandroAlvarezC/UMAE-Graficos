@@ -49,12 +49,8 @@ session_start();
                 <i class="fas fa-arrow-left me-2 fs-4 align-middle"></i> Regresar al Inicio
             </a>
 
-            <button type="button" id="btnAbrirDashboard" class="btn btn-lg shadow-lg px-5 py-3 text-white fw-bold" 
-                    style="background-color: #7a123a; border-radius: 50px; font-size: 1.2rem; transition: transform 0.2s;" 
-                    onmouseover="this.style.transform='scale(1.05)'" 
-                    onmouseout="this.style.transform='scale(1)'"
-                    onclick="window.open('/', '_blank')">
-                <span id="textoBtnDash"><i class="fas fa-spinner fa-spin me-2 fs-4 align-middle"></i> Cargando datos...</span>
+            <button type="button" class="btn btn-primary shadow" data-bs-toggle="modal" data-bs-target="#modalGraficos">
+                <i class="bi bi-bar-chart-fill me-2"></i> Ver Tablero de Gráficos
             </button>
             
         </div>
@@ -74,6 +70,18 @@ session_start();
         </table>
     </div>
 
+    <div class="modal fade" id="modalGraficos" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0 bg-transparent">
+                
+                <div class="modal-body p-0" style="overflow: hidden; height: 100vh; background-color: #f8fafc;">
+                    <iframe src="/graficos/index.html" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
     <?php require_once '../../includes/modal_graficos.php'; ?>
 
     <footer class="text-white text-center py-3 mt-auto w-100" style="background-color: #00664d; position: fixed; bottom: 0;">
@@ -91,7 +99,7 @@ session_start();
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-    <script src="../../js/vencer_v2.js?v=<?php echo time(); ?>"></script>
+    <script src="../../js/vencer.js?v=<?php echo time(); ?>"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

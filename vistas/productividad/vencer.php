@@ -80,10 +80,11 @@ if (!isset($_SESSION['admin_id'])) {
           </div>
           -->
           <div class="col-md d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
-            <a id="btnGrafico" href="/" target="_blank" class="btn btn-urgencia shadow-sm text-decoration-none">
-              📊 Ver Dashboard
-            </a>
+            <button type="button" id="btnNuevoDashboard" data-bs-toggle="modal" data-bs-target="#modalGraficos" class="btn btn-urgencia shadow-sm">
+                📊 Ver Dashboard
+            </button>
           </div>
+
         </div>
       </div>
 
@@ -138,7 +139,17 @@ if (!isset($_SESSION['admin_id'])) {
     <p class="mb-0">Derechos reservados &copy; IMSS <?= date('Y') ?></p>
   </footer>
 
-  <?php include '../../includes/modal_graficos.php'; ?>
+  <div class="modal fade" id="modalGraficos" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-fullscreen">
+          <div class="modal-content border-0 bg-transparent">
+              
+              <div class="modal-body p-0" style="overflow: hidden; height: 100vh; background-color: #f8fafc;">
+                  <iframe src="/graficos/index.html" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+              </div>
+              
+          </div>
+      </div>
+  </div>
 
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -148,7 +159,7 @@ if (!isset($_SESSION['admin_id'])) {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-  <script src="../../js/vencer.js"></script>
+  <script type="module" src="/js/vencer.js"></script>
 
 </body>
 </html>

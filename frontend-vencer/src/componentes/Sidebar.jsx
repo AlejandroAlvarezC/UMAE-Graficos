@@ -90,7 +90,7 @@ const Sidebar = ({ pestanaActiva, setPestanaActiva, conteos, sidebarCollapsed, s
         <button 
           style={{ borderRadius: 0 }}
           className={`w-full flex items-center px-6 py-5 bg-[#004A38] hover:bg-red-700 text-emerald-100 hover:text-white transition-colors outline-none border-0 ${sidebarCollapsed ? 'justify-center' : 'gap-3'}`}
-          title="Cerrar sesión"
+          title="Cerrar"
         >
           <LogOut size={22} className="shrink-0" />
           {!sidebarCollapsed && <span className="text-base font-bold whitespace-nowrap">Cerrar sesión</span>}
@@ -100,5 +100,25 @@ const Sidebar = ({ pestanaActiva, setPestanaActiva, conteos, sidebarCollapsed, s
     </aside>
   );
 };
+
+const handleRegresar = () => {
+        try {
+            // 1. Verificamos que React esté corriendo dentro de un iframe
+            if (window.parent !== window) {
+                // 2. Buscamos el elemento del modal en la página principal (PHP)
+                const modalPadre = window.parent.document.getElementById('modalGraficos');
+                
+                // 3. Le pedimos a Bootstrap que cierre el modal de forma nativa
+                if (modalPadre && window.parent.bootstrap) {
+                    const modalInstancia = window.parent.bootstrap.Modal.getInstance(modalPadre);
+                    if (modalInstancia) {
+                        modalInstancia.hide(); // Cierra con la animación suave
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error al comunicarse con la ventana principal:", error);
+        }
+    };
 
 export default Sidebar;
