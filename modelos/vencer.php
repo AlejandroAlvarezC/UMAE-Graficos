@@ -12,7 +12,7 @@ class Vencer {
     public function __construct() {
         $this->conexion = new Conexion();
         
-        // --- CORRECCIÓN 1: FORZAR UTF-8 (ADIÓS SÍMBOLOS RAROS) ---
+        // --- CORRECCIÓN 1: FORZAR UTF-8 ---
         $conn = $this->conexion->getConexion();
         
         // Detectamos si es MySQLi o PDO y aplicamos UTF-8
@@ -98,7 +98,22 @@ public static function listar() {
         $this->definicion       = trim($datos[13] ?? '');
         $this->descripcion      = trim($datos[14] ?? '');
         $this->estatus          = trim($datos[15] ?? '');
-        $this->anio             = (int)($datos[16] ?? 0);
+        
+        // --- CORRECCIÓN 3: EL EXTRACTOR DE AÑOS BLINDADO ---
+        $anioBruto = trim($datos[16] ?? '');
+        
+        // 1. Le quitamos todas las comillas, espacios y letras que Excel le haya pegado.
+        // Solo dejamos los números puros.
+        $anioLimpio = preg_replace('/[^0-9]/', '', $anioBruto);
+        $this->anio = (int)$anioLimpio;
+
+        // 2. EL SALVAVIDAS: Si a pesar de todo el año es 0, o la columna venía vacía en el Excel...
+        // ¡Lo sacamos automáticamente de la fecha del evento!
+        if ($this->anio === 0 && !empty($this->fecha_evento)) {
+            // Como tu función normalizarFecha ya lo dejó como YYYY-MM-DD, 
+            // solo tomamos los primeros 4 caracteres.
+            $this->anio = (int)substr($this->fecha_evento, 0, 4);
+        }
     }
 
     // --- NUEVA LÓGICA DE RANGOS DE EDAD ---
