@@ -427,10 +427,12 @@ function App() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   
+  // ESTADOS DE FILTROS
   const [anioSeleccionado, setAnioSeleccionado] = useState('todos');
   const [mesInicio, setMesInicio] = useState(0); 
   const [mesFin, setMesFin] = useState(11);      
   const [servicioSeleccionado, setServicioSeleccionado] = useState('todos');
+  const [procesoSeleccionado, setProcesoSeleccionado] = useState('todos'); // <-- NUEVO ESTADO DE PROCESO
   
   const [pestanaActiva, setPestanaActiva] = useState('general');
   const [isAdmin] = useState(false); 
@@ -557,7 +559,6 @@ function App() {
           wsG.getCell(`A${rowGen}`).value = "PIRÁMIDE POBLACIONAL";
           wsG.getCell(`A${rowGen}`).font = { bold: true, size: 14 };
           attachChartImage(wsG, 'gen_piramide', 0, rowGen + 1);
-          // Le sumamos 15 filas para dejarle espacio a la imagen de la pirámide
           rowGen += 15; 
           
           rowGen = addSection(wsG, "SERVICIOS", s.General.Servicio, rowGen, 'gen_servicio');
@@ -604,6 +605,7 @@ function App() {
       .catch(err => { setError("Error de conexión con el servidor"); setCargando(false); });
   }, []);
 
+  // LISTAS DESPLEGABLES PARA LOS FILTROS
   const aniosDisponibles = useMemo(() => [...new Set(datos.map(d => d.anio || (d.fecha_evento ? d.fecha_evento.split('-')[0] : null)).filter(a => a))].sort().reverse(), [datos]);
   
   const serviciosDisponibles = useMemo(() => {
@@ -611,6 +613,12 @@ function App() {
       return Array.from(servs).sort();
   }, [datos]);
 
+  const procesosDisponibles = useMemo(() => { // <-- NUEVA LISTA DE PROCESOS
+      const procs = new Set(datos.map(d => (d.proceso || 'Sin Dato').trim()));
+      return Array.from(procs).sort();
+  }, [datos]);
+
+  // APLICADOR DE FILTROS A LA DATA
   const datosFiltrados = useMemo(() => datos.filter(item => {
         if (!item.fecha_evento) return false;
         const [a, m] = item.fecha_evento.split('-');
@@ -619,9 +627,10 @@ function App() {
         const pasaAnio = anioSeleccionado === 'todos' || a === anioSeleccionado;
         const pasaMes = mesIdx >= mesInicio && mesIdx <= mesFin;
         const pasaServicio = servicioSeleccionado === 'todos' || (item.servicio || 'Sin Dato').trim() === servicioSeleccionado;
+        const pasaProceso = procesoSeleccionado === 'todos' || (item.proceso || 'Sin Dato').trim() === procesoSeleccionado; // <-- NUEVO
 
-        return pasaAnio && pasaMes && pasaServicio;
-  }), [datos, anioSeleccionado, mesInicio, mesFin, servicioSeleccionado]);
+        return pasaAnio && pasaMes && pasaServicio && pasaProceso;
+  }), [datos, anioSeleccionado, mesInicio, mesFin, servicioSeleccionado, procesoSeleccionado]);
 
   const dGeneral = datosFiltrados;
   const dAdversos = datosFiltrados.filter(d => (d.evento||'').toUpperCase().includes('ADVERSO'));
@@ -653,20 +662,26 @@ function App() {
       {/* --- COLUMNA 2: CONTENIDO DERECHO --- */}
       <div style={{ overflowY: 'auto', overflowX: 'hidden', minWidth: 0, height: '100%', position: 'relative', zIndex: 0 }}>
         
-        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm h-16 flex-shrink-0">
-          <div className="max-w-[1400px] mx-auto px-6 h-full flex items-center justify-between">
+        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm min-h-[64px] py-2 flex-shrink-0">
+          <div className="max-w-[1400px] mx-auto px-6 h-full flex flex-col md:flex-row items-center justify-between gap-2">
               <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 text-[#005C46] font-bold"><Filter size={18}/> Filtros:</div>
               </div>
 
+              {/* CONTENEDOR DE FILTROS CORREGIDO */}
               <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5 border border-slate-200 text-sm shadow-inner">
+                  <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5 border border-slate-200 text-sm shadow-inner flex-wrap justify-center">
+                      
+                      {/* FILTRO AÑO */}
                       <span className="font-bold text-slate-500 text-[10px] uppercase ml-1">Año:</span>
                       <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={anioSeleccionado} onChange={e=>setAnioSeleccionado(e.target.value)}>
                           <option value="todos">Todos</option>
                           {aniosDisponibles.map(a=><option key={a} value={a}>{a}</option>)}
                       </select>
+                      
                       <div className="w-px h-5 bg-slate-300 mx-1"></div>
+                      
+                      {/* FILTROS MESES */}
                       <span className="font-bold text-slate-500 text-[10px] uppercase">De:</span>
                       <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={mesInicio} onChange={e=>setMesInicio(Number(e.target.value))}>
                           {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
@@ -676,11 +691,21 @@ function App() {
                       <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={mesFin} onChange={e=>setMesFin(Number(e.target.value))}>
                           {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
                       </select>
-                      <div className="w-px h-5 bg-slate-300 mx-1 hidden lg:block"></div>
-                      <span className="font-bold text-slate-500 text-[10px] uppercase hidden lg:inline">Servicio:</span>
-                      <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer max-w-[120px] lg:max-w-[200px] truncate hidden md:inline" value={servicioSeleccionado} onChange={e=>setServicioSeleccionado(e.target.value)}>
+
+                      {/* FILTRO SERVICIO */}
+                      <div className="w-px h-5 bg-slate-300 mx-1 hidden sm:block"></div>
+                      <span className="font-bold text-slate-500 text-[10px] uppercase hidden sm:inline">Servicio:</span>
+                      <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer max-w-[120px] lg:max-w-[150px] truncate hidden sm:inline" value={servicioSeleccionado} onChange={e=>setServicioSeleccionado(e.target.value)}>
                           <option value="todos">Todos los servicios</option>
                           {serviciosDisponibles.map(s=><option key={s} value={s}>{s}</option>)}
+                      </select>
+
+                      {/* FILTRO PROCESO */}
+                      <div className="w-px h-5 bg-slate-300 mx-1 hidden sm:block"></div>
+                      <span className="font-bold text-slate-500 text-[10px] uppercase hidden sm:inline">Proceso:</span>
+                      <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer max-w-[120px] lg:max-w-[150px] truncate hidden sm:inline" value={procesoSeleccionado} onChange={e=>setProcesoSeleccionado(e.target.value)}>
+                          <option value="todos">Todos los procesos</option>
+                          {procesosDisponibles.map(p=><option key={p} value={p}>{p}</option>)}
                       </select>
                   </div>
               </div>
@@ -726,7 +751,6 @@ function App() {
                   <SeccionGraficoTabla idCanvas="gen_servicio" titulo="Top Servicios" datos={dGeneral} campo="servicio" color="#005C46" limite={15} mostrarTablas={mostrarTablas} />
               </div>
 
-              {/* GRÁFICO MOVIDO DEBAJO DE TOP SERVICIOS */}
               <AnalisisCategorias idCanvas="gen_categorias" datos={dGeneral} mostrarTablas={mostrarTablas} />
 
               <AcordeonProcesos prefijoId="gen" datos={dGeneral} colorBase="#005C46" titulo="Análisis de Procesos Relacionados (General)" mostrarTablas={mostrarTablas} />

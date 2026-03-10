@@ -231,3 +231,21 @@ CREATE TABLE IF NOT EXISTS personal (
     jefe_id INT, -- Este campo referencia al superior directo (puede ser NULL)
     FOREIGN KEY (jefe_id) REFERENCES personal(id) ON DELETE SET NULL
 ) ENGINE = InnoDB;
+
+-- TABLA NUEVA DE PRODUCTIVIDAD CONSULTA EXTERNA --
+
+CREATE TABLE productividad_externa (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    division VARCHAR(100) NOT NULL,
+    especialidad VARCHAR(150) NOT NULL,
+    matricula_medico VARCHAR(50) NOT NULL,
+    consultorio VARCHAR(50) NOT NULL,
+    fecha_atencion DATE NOT NULL,
+    mes INT NOT NULL,
+    anio INT NOT NULL,
+    turno VARCHAR(50) NOT NULL,
+    citado VARCHAR(20) NOT NULL,
+    primera_vez VARCHAR(20) NOT NULL,
+    diagnostico_principal VARCHAR(10) NOT NULL,
+    clave_presupuestal VARCHAR(100) NOT NULL
+);
