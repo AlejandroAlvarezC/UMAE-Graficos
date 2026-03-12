@@ -1,124 +1,71 @@
 import React from 'react';
-import { LayoutDashboard, AlertOctagon, ShieldAlert, Siren, LogOut, Menu, Table, BarChart, Download, Activity} from 'lucide-react';
+import { ShieldAlert, Activity, Siren, AlertOctagon, LayoutDashboard, ChevronLeft, ChevronRight, TableProperties, Download, BriefcaseMedical } from 'lucide-react';
 
+export default function Sidebar({ 
+    moduloActual, setModuloActual, 
+    pestanaActiva, setPestanaActiva, 
+    conteos, 
+    sidebarCollapsed, setSidebarCollapsed, 
+    mostrarTablas, setMostrarTablas, 
+    generarExcelReporte, descargandoExcel, hayDatos 
+}) {
 
-const Sidebar = ({ pestanaActiva, setPestanaActiva, conteos, sidebarCollapsed, setSidebarCollapsed, mostrarTablas, setMostrarTablas,generarExcelReporte, descargandoExcel, hayDatos }) => {
-  const menuOptions = [
-    { id: 'general', label: 'General', icon: LayoutDashboard, count: conteos?.general },
-    { id: 'adversos', label: 'Adversos', icon: AlertOctagon, count: conteos?.adversos },
-    { id: 'cuasi', label: 'Cuasifallas', icon: ShieldAlert, count: conteos?.cuasi },
-    { id: 'centinela', label: 'Centinelas', icon: Siren, count: conteos?.centinela }
-  ];
-
-  return (
-    <aside className="h-full w-full flex flex-col bg-[#005C46] text-white overflow-hidden">
-      
-      {/* Título y Botón de Colapsar */}
-      <div className={`h-16 flex items-center px-6 border-b border-[#004A38] shrink-0 ${sidebarCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
-        {!sidebarCollapsed && <span className="font-black text-2xl tracking-wider">VENCER</span>}
-        <button 
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
-          className="text-emerald-100 hover:text-white hover:bg-[#004A38] p-2 rounded-lg transition-colors outline-none"
-          title={sidebarCollapsed ? "Expandir menú" : "Contraer menú"}
-        >
-          <Menu size={24} />
-        </button>
-      </div>
-
-      {/* Opciones del menú */}
-      <div className="flex-1 overflow-y-auto py-4">
-        <ul className="list-none p-0 m-0 w-full flex flex-col">
-          {menuOptions.map((opcion) => {
-            const isActivo = pestanaActiva === opcion.id;
-            return (
-              <li key={opcion.id} className="w-full p-0 m-0 block">
-                <button 
-                  onClick={() => setPestanaActiva(opcion.id)}
-                  style={{ borderRadius: 0 }}
-                  className={`w-full flex items-center px-6 py-4 outline-none border-0 transition-colors ${
-                    sidebarCollapsed ? 'justify-center' : 'justify-between'
-                  } ${
-                    isActivo 
-                      ? 'bg-[#003B2D] border-l-4 border-white text-white' 
-                      : 'bg-transparent border-l-4 border-transparent text-emerald-100 hover:bg-[#003B2D] hover:text-white'
-                  }`}
-                  title={sidebarCollapsed ? opcion.label : ""}
-                >
-                  <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                    <opcion.icon size={22} className="shrink-0" />
-                    {!sidebarCollapsed && <span className="font-bold text-base whitespace-nowrap">{opcion.label}</span>}
-                  </div>
-                  
-                  {!sidebarCollapsed && opcion.count !== undefined && (
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${isActivo ? 'bg-white text-[#003B2D]' : 'bg-[#007A5E] text-white'}`}>
-                      {opcion.count}
-                    </span>
-                  )}
+    return (
+        <aside className="h-full flex flex-col text-white transition-all duration-300 relative">
+            {/* Logo / Encabezado */}
+            <div className="p-4 flex items-center justify-between border-b border-white/10 shrink-0 min-h-[64px]">
+                {!sidebarCollapsed && <h1 className="font-black text-xl tracking-wider text-emerald-50">UMAE 48</h1>}
+                <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                    {sidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
                 </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+            </div>
 
-      {/* Pie del menú: Botón de Tablas y Cerrar Sesión */}
-      <div className="border-t border-[#004A38] shrink-0 w-full flex flex-col">
-        {/* NUEVO: Botón para Ocultar/Mostrar Tablas */}
-        <button 
-          onClick={() => setMostrarTablas(!mostrarTablas)}
-          style={{ borderRadius: 0 }}
-          className={`w-full flex items-center px-6 py-4 bg-transparent hover:bg-[#003B2D] text-emerald-100 hover:text-white transition-colors outline-none border-0 ${sidebarCollapsed ? 'justify-center' : 'gap-3'}`}
-          title={mostrarTablas ? "Ocultar Tablas" : "Mostrar Tablas"}
-        >
-          {mostrarTablas ? <BarChart size={22} className="shrink-0"/> : <Table size={22} className="shrink-0 text-amber-300"/>}
-          {!sidebarCollapsed && <span className="text-sm font-bold whitespace-nowrap">{mostrarTablas ? "Solo ver gráficos" : "Mostrar tablas"}</span>}
-        </button>
-        
-        <button 
-            onClick={generarExcelReporte}
-            disabled={descargandoExcel || !hayDatos}
-            className={`w-full flex items-center p-3 mb-4 rounded-lg transition-colors font-bold text-sm
-                ${descargandoExcel || !hayDatos ? 'opacity-50 cursor-not-allowed bg-[#004A38] text-white/50' : 'hover:bg-[#004A38] text-emerald-100 hover:text-white'}
-                ${sidebarCollapsed ? 'justify-center' : 'justify-start gap-3'}
-            `}
-            title="Descargar Reporte Excel"
-        >
-            {descargandoExcel ? <Activity size={20} className="animate-spin" /> : <Download size={20} />}
-            {!sidebarCollapsed && <span>{descargandoExcel ? 'Generando...' : 'Descargar Excel'}</span>}
-        </button>
-
-        <button 
-          style={{ borderRadius: 0 }}
-          className={`w-full flex items-center px-6 py-5 bg-[#004A38] hover:bg-red-700 text-emerald-100 hover:text-white transition-colors outline-none border-0 ${sidebarCollapsed ? 'justify-center' : 'gap-3'}`}
-          title="Cerrar"
-        >
-          <LogOut size={22} className="shrink-0" />
-          {!sidebarCollapsed && <span className="text-base font-bold whitespace-nowrap">Cerrar sesión</span>}
-        </button>
-      </div>
-
-    </aside>
-  );
-};
-
-const handleRegresar = () => {
-        try {
-            // 1. Verificamos que React esté corriendo dentro de un iframe
-            if (window.parent !== window) {
-                // 2. Buscamos el elemento del modal en la página principal (PHP)
-                const modalPadre = window.parent.document.getElementById('modalGraficos');
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-6">
                 
-                // 3. Le pedimos a Bootstrap que cierre el modal de forma nativa
-                if (modalPadre && window.parent.bootstrap) {
-                    const modalInstancia = window.parent.bootstrap.Modal.getInstance(modalPadre);
-                    if (modalInstancia) {
-                        modalInstancia.hide(); // Cierra con la animación suave
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Error al comunicarse con la ventana principal:", error);
-        }
-    };
+                {/* 1. SECCIÓN DE MÓDULOS PRINCIPALES (El Semáforo) */}
 
-export default Sidebar;
+                {/* 2. SUB-MENÚ DE VENCER (Solo se muestra si el semáforo está en Vencer) */}
+                {moduloActual === 'vencer' && (
+                    <div className="space-y-1 animate-in fade-in slide-in-from-left-2 duration-300">
+                        {!sidebarCollapsed && <p className="px-3 text-[10px] font-bold text-emerald-200/60 uppercase tracking-widest mb-2">Vistas Vencer</p>}
+                        
+                        <button onClick={() => setPestanaActiva('general')} className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${pestanaActiva === 'general' ? 'bg-white/20 font-bold border border-white/30' : 'hover:bg-white/10 text-emerald-100/80 hover:text-white'}`} title="Panorama General">
+                            <div className="flex items-center"><LayoutDashboard size={18} className={sidebarCollapsed ? "mx-auto" : "mr-3"}/> {!sidebarCollapsed && <span>General</span>}</div>
+                            {!sidebarCollapsed && <span className="text-[10px] bg-[#003B2D] px-2 py-0.5 rounded-full">{conteos.general}</span>}
+                        </button>
+                        
+                        <button onClick={() => setPestanaActiva('adversos')} className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${pestanaActiva === 'adversos' ? 'bg-red-500/80 font-bold border border-red-400' : 'hover:bg-white/10 text-emerald-100/80 hover:text-white'}`} title="Eventos Adversos">
+                            <div className="flex items-center"><AlertOctagon size={18} className={sidebarCollapsed ? "mx-auto" : "mr-3"}/> {!sidebarCollapsed && <span>Adversos</span>}</div>
+                            {!sidebarCollapsed && <span className="text-[10px] bg-red-900/50 px-2 py-0.5 rounded-full">{conteos.adversos}</span>}
+                        </button>
+
+                        <button onClick={() => setPestanaActiva('cuasi')} className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${pestanaActiva === 'cuasi' ? 'bg-amber-500/80 font-bold border border-amber-400' : 'hover:bg-white/10 text-emerald-100/80 hover:text-white'}`} title="Cuasifallas">
+                            <div className="flex items-center"><Activity size={18} className={sidebarCollapsed ? "mx-auto" : "mr-3"}/> {!sidebarCollapsed && <span>Cuasifallas</span>}</div>
+                            {!sidebarCollapsed && <span className="text-[10px] bg-amber-900/50 px-2 py-0.5 rounded-full">{conteos.cuasi}</span>}
+                        </button>
+
+                        <button onClick={() => setPestanaActiva('centinela')} className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${pestanaActiva === 'centinela' ? 'bg-slate-800 font-bold border border-slate-600' : 'hover:bg-white/10 text-emerald-100/80 hover:text-white'}`} title="Eventos Centinela">
+                            <div className="flex items-center"><Siren size={18} className={sidebarCollapsed ? "mx-auto" : "mr-3"}/> {!sidebarCollapsed && <span>Centinelas</span>}</div>
+                            {!sidebarCollapsed && <span className="text-[10px] bg-slate-900 px-2 py-0.5 rounded-full">{conteos.centinela}</span>}
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Acciones Inferiores (Descargar Excel, etc. Solo en Vencer por ahora) */}
+            {moduloActual === 'vencer' && (
+                <div className="p-3 border-t border-white/10 bg-[#004a38] shrink-0 space-y-2">
+                    <button onClick={() => setMostrarTablas(!mostrarTablas)} className="w-full flex items-center p-3 rounded-xl hover:bg-white/10 transition-colors text-emerald-100 text-sm" title={mostrarTablas ? "Ocultar Tablas" : "Mostrar Tablas"}>
+                        <TableProperties size={18} className={sidebarCollapsed ? "mx-auto" : "mr-3"} />
+                        {!sidebarCollapsed && <span>{mostrarTablas ? "Ocultar Tablas" : "Mostrar Tablas"}</span>}
+                    </button>
+
+                    <button onClick={generarExcelReporte} disabled={!hayDatos || descargandoExcel} className={`w-full flex items-center p-3 rounded-xl transition-colors text-sm font-bold ${(!hayDatos || descargandoExcel) ? 'opacity-50 cursor-not-allowed bg-white/5 text-emerald-200' : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg'}`} title="Descargar Reporte">
+                        <Download size={18} className={`${sidebarCollapsed ? "mx-auto" : "mr-3"} ${descargandoExcel ? 'animate-bounce' : ''}`} />
+                        {!sidebarCollapsed && <span>{descargandoExcel ? "Generando..." : "Descargar Excel"}</span>}
+                    </button>
+                </div>
+            )}
+        </aside>
+    );
+}

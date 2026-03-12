@@ -156,54 +156,7 @@ session_start();
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
                     <!-- PRODUCTIVIDAD -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-white" href="#"
-                            data-bs-toggle="dropdown">Productividad</a>
-                        <ul class="dropdown-menu" data-bs-auto-close="outside">
-
-                            <!-- Consulta externa -->
-                            <li>
-                                <a class="dropdown-item dropdown-submenu-toggle">Consulta externa</a>
-                                <ul class="dropdown-submenu">
-                                    <li><a class="dropdown-item" href="../usuario/unidadesreportan_user.php">Productividad Total</a></li>
-                                    <li><a class="dropdown-item" href="../usuario/paramedicos_user.php">Paramédicos</a>
-                                    </li>
-
-                                    <!-- Especialidades -->
-                                    <li>
-                                        <a class="dropdown-item dropdown-submenu-toggle">Especialidades</a>
-                                        <ul class="dropdown-submenu">
-                                            <li><a class="dropdown-item"
-                                                    href="../usuario/especialidades_user.php">Especialidades</a>
-                                            </li>
-                                            <li><a class="dropdown-item"
-                                                    href="../usuario/EspecilidadOcas_user.php">Especialidad de
-                                                    ocasión</a></li>
-                                        </ul>
-                                    </li>
-
-                                </ul>
-                            </li>
-
-                            <!-- Hospitalización -->
-                            <li>
-                                <a class="dropdown-item dropdown-submenu-toggle">Hospitalización</a>
-                                <ul class="dropdown-submenu">
-                                    <li><a class="dropdown-item" href="../usuario/ingresos_user.php">Ingresos</a></li>
-                                    <li><a class="dropdown-item" href="../usuario/egresos_user.php">Egresos</a></li>
-                                    <li><a class="dropdown-item" href="../usuario/paciente_user.php">Días Paciente</a></li>
-                                    <li><a class="dropdown-item" href="#">Días Cama</a></li>
-                                </ul>
-                            </li>
-
-                            <!-- Cirugía -->
-                            <li><a class="dropdown-item" href="../usuario/cirugia_user.php">Cirugía</a></li>
-
-                            <!-- Urgencias -->
-                            <li><a class="dropdown-item" href="../usuario/urgencias_user.php">Urgencias</a></li>
-
-                        </ul>
-                    </li>
+                        <a class="nav-link dropdown-toggle text-white" href="/graficos/index.html?modulo=productividad">Productividad</a>
 
                     <!-- Organigrama -->
                     <li class="nav-item">
@@ -217,7 +170,7 @@ session_start();
 
                     <!-- Vencer -->
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="../usuario/vencer_user.php">Vencer</a>
+                        <a class="nav-link text-white" href="/graficos/index.html?modulo=vencer">Vencer</a>
                     </li>
 
                     <!-- Sitios de interés -->

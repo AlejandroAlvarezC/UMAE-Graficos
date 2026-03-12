@@ -241,54 +241,8 @@ $totalParamedicos = Paramedicos::contar();
 
                     <li class="nav-item"><a class="nav-link text-white" href="../admin/admin.php">INICIO</a></li>
 
-                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-white" href="#"
                             data-bs-toggle="dropdown">Productividad</a>
-                        <ul class="dropdown-menu" data-bs-auto-close="outside">
-
-                            <!-- Consulta externa -->
-                            <li>
-                                <a class="dropdown-item dropdown-submenu-toggle">Consulta externa</a>
-                                <ul class="dropdown-submenu">
-                                    <li><a class="dropdown-item" href="../productividad/unidades_que_reportan.php">Productividad Total</a></li>
-                                    <li><a class="dropdown-item" href="../productividad/paramedicos.php">Paramédicos</a>
-                                    </li>
-
-                                    <!-- Especialidades -->
-                                    <li>
-                                        <a class="dropdown-item dropdown-submenu-toggle">Especialidades</a>
-                                        <ul class="dropdown-submenu">
-                                            <li><a class="dropdown-item"
-                                                    href="../productividad/especialidades_inicio.php">Especialidades</a>
-                                            </li>
-                                            <li><a class="dropdown-item"
-                                                    href="../productividad/Especialidad_Ocasion.php">Especialidad de
-                                                    ocasión</a></li>
-                                        </ul>
-                                    </li>
-
-                                </ul>
-                            </li>
-
-                            <!-- Hospitalización -->
-                            <li>
-                                <a class="dropdown-item dropdown-submenu-toggle">Hospitalización</a>
-                                <ul class="dropdown-submenu">
-                                    <li><a class="dropdown-item" href="../hospitalizacion/ingresos_inicio.php">Ingresos</a></li>
-                                    <li><a class="dropdown-item" href="../hospitalizacion/egresos_inicio.php">Egresos</a></li>
-                                    <li><a class="dropdown-item" href="../hospitalizacion/pacientes_inicio.php">Días Paciente</a></li>
-                                    <li><a class="dropdown-item" href="#">Días Cama</a></li>
-                                </ul>
-                            </li>
-
-                            <!-- Cirugía -->
-                            <li><a class="dropdown-item" href="../cirugia/cirugia_inicio.php">Cirugía</a></li>
-
-                            <!-- Urgencias -->
-                            <li><a class="dropdown-item" href="../productividad/urgencias_inicio.php">Urgencias</a></li>
-
-                        </ul>
-                    </li>
 
                     <li class="nav-item">
                         <a class="nav-link text-white" href="#">Organigrama</a>
@@ -330,78 +284,6 @@ $totalParamedicos = Paramedicos::contar();
             </div>
         </div>
     </nav>
-
-    <div class="content">
-
-
-        <div class="content d-flex justify-content-center" style="padding: 40px 0; background-color: #eaeaea;">
-
-            <div class="container">
-
-                <div class="text-center mb-5">
-                    <h1 class="fw-bold">Sección de Consulta Externa</h1>
-                    <p class="text-muted">Aquí puedes seleccionar la opción de tu preferencia: especialidad de ocasión y especialidades totales.</p>
-                </div>
-
-                <div class="row g-4 justify-content-center">
-
-                    <!-- Total Especialidades -->
-                    <div class="col-md-6 col-lg-6">
-                        <div class="card custom-card h-100 border-0">
-                            <div class="card-body text-center">
-                                <a href="../productividad/especialidades_inicio.php"><i class="fas fa-list-alt icon-style" style="color: rgb(34, 117, 112);"></i></a>
-                                <h5 class="card-title">Especialidades Total</h5>
-                                <p>Actualmente hay <span class="card-counter" style="color: rgb(34, 117, 112);"><?= $totalEspecialidad_Ocasion; ?></span> registros.</p>
-                                <a href="../productividad/especialidades_inicio.php" class="btn btn-especialidad-total w-50">Ver</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Especialidad de ocasión -->
-                    <div class="col-md-6 col-lg-6">
-                        <div class="card custom-card h-100 border-0">
-                            <div class="card-body text-center">
-                                <a href="../productividad/Especialidad_Ocasion.php"><i class="fas fa-stethoscope icon-style" style="color: #495057;"></i></a>
-                                <h5 class="card-title">Especialidad de Ocasión</h5>
-                                <p>Actualmente hay <span class="card-counter" style="color: #495057;"><?= $totalEspecialidad_Ocasion; ?></span> registros.</p>
-                                <a href="../productividad/Especialidad_Ocasion.php" class="btn btn-especialidad-ocasion w-50">Ver</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Paramédicos -->
-                    <div class="col-md-6 col-lg-6">
-                        <div class="card custom-card h-100 border-0">
-                            <div class="card-body text-center">
-                                <i class="fas fa-user-md icon-style" style="color: rgb(9, 104, 14);"></i>
-                                <h5 class="card-title">Paramédicos</h5>
-                                <p>Actualmente hay <span class="card-counter" style="color: rgb(9, 104, 14);"><?= $totalParamedicos; ?></span> registros.</p>
-                                <a href="../productividad/paramedicos.php" class="btn btn-paramedicos w-50">Ver</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Unidades que Reportan -->
-                    <div class="col-md-6 col-lg-6">
-                        <div class="card custom-card h-100 border-0">
-                            <div class="card-body text-center">
-                                <i class="fas fa-hospital icon-style" style="color: #293390ff;"></i>
-                                <h5 class="card-title">Productividad Total</h5>
-                                <p>Aquí podrás checar los registros.</p>
-                                <a href="./unidades_que_reportan.php" class="btn btn-unidades-reportan w-50">Ver</a>
-                            </div>
-                        </div>
-                    </div>
-
-
-                </div>
-
-            </div>
-        </div>
-
-
-    </div>
-
 
     <footer>
         <p>Derechos reservados &copy; IMSS 2025</p>

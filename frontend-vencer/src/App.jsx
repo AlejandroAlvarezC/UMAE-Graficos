@@ -4,6 +4,7 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Activity, AlertOctagon, ShieldAlert, Siren, Lock, Unlock, ChevronDown, ChevronUp, Settings, Filter, Download} from 'lucide-react';
 import Sidebar from './componentes/Sidebar';
+import DashboardProductividad from './componentes/dashboardProductividad'; // <-- NUEVO MÓDULO IMPORTADO
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -423,19 +424,23 @@ const AcordeonProcesos = ({ prefijoId, datos, colorBase = "#005C46", titulo = "A
 // 6. APLICACIÓN PRINCIPAL (Layout Base)
 // ============================================================================
 function App() {
+  const queryParams = new URLSearchParams(window.location.search);
+  const moduloInicial = queryParams.get('modulo') === 'productividad' ? 'productividad' : 'vencer';
+  
+  const [moduloActual, setModuloActual] = useState(moduloInicial);
+  
   const [datos, setDatos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   
-  // ESTADOS DE FILTROS
   const [anioSeleccionado, setAnioSeleccionado] = useState('todos');
   const [mesInicio, setMesInicio] = useState(0); 
   const [mesFin, setMesFin] = useState(11);      
   const [servicioSeleccionado, setServicioSeleccionado] = useState('todos');
-  const [procesoSeleccionado, setProcesoSeleccionado] = useState('todos'); // <-- NUEVO ESTADO DE PROCESO
+  const [procesoSeleccionado, setProcesoSeleccionado] = useState('todos');
   
   const [pestanaActiva, setPestanaActiva] = useState('general');
-  const [isAdmin] = useState(false); 
+  const [isAdmin] = useState(true); // <-- True temporalmente para que veas el botón de subir CSV en Productividad
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mostrarTablas, setMostrarTablas] = useState(true);
@@ -605,7 +610,6 @@ function App() {
       .catch(err => { setError("Error de conexión con el servidor"); setCargando(false); });
   }, []);
 
-  // LISTAS DESPLEGABLES PARA LOS FILTROS
   const aniosDisponibles = useMemo(() => [...new Set(datos.map(d => d.anio || (d.fecha_evento ? d.fecha_evento.split('-')[0] : null)).filter(a => a))].sort().reverse(), [datos]);
   
   const serviciosDisponibles = useMemo(() => {
@@ -613,12 +617,11 @@ function App() {
       return Array.from(servs).sort();
   }, [datos]);
 
-  const procesosDisponibles = useMemo(() => { // <-- NUEVA LISTA DE PROCESOS
+  const procesosDisponibles = useMemo(() => {
       const procs = new Set(datos.map(d => (d.proceso || 'Sin Dato').trim()));
       return Array.from(procs).sort();
   }, [datos]);
 
-  // APLICADOR DE FILTROS A LA DATA
   const datosFiltrados = useMemo(() => datos.filter(item => {
         if (!item.fecha_evento) return false;
         const [a, m] = item.fecha_evento.split('-');
@@ -627,7 +630,7 @@ function App() {
         const pasaAnio = anioSeleccionado === 'todos' || a === anioSeleccionado;
         const pasaMes = mesIdx >= mesInicio && mesIdx <= mesFin;
         const pasaServicio = servicioSeleccionado === 'todos' || (item.servicio || 'Sin Dato').trim() === servicioSeleccionado;
-        const pasaProceso = procesoSeleccionado === 'todos' || (item.proceso || 'Sin Dato').trim() === procesoSeleccionado; // <-- NUEVO
+        const pasaProceso = procesoSeleccionado === 'todos' || (item.proceso || 'Sin Dato').trim() === procesoSeleccionado;
 
         return pasaAnio && pasaMes && pasaServicio && pasaProceso;
   }), [datos, anioSeleccionado, mesInicio, mesFin, servicioSeleccionado, procesoSeleccionado]);
@@ -646,6 +649,8 @@ function App() {
       {/* --- COLUMNA 1: SIDEBAR --- */}
       <div style={{ backgroundColor: '#005C46', zIndex: 20, height: '100%' }}>
         <Sidebar 
+          moduloActual={moduloActual}               
+          setModuloActual={setModuloActual}         
           pestanaActiva={pestanaActiva} 
           setPestanaActiva={setPestanaActiva} 
           conteos={{ general: dGeneral.length, adversos: dAdversos.length, cuasi: dCuasi.length, centinela: dCentinela.length }}
@@ -662,180 +667,186 @@ function App() {
       {/* --- COLUMNA 2: CONTENIDO DERECHO --- */}
       <div style={{ overflowY: 'auto', overflowX: 'hidden', minWidth: 0, height: '100%', position: 'relative', zIndex: 0 }}>
         
-        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm min-h-[64px] py-2 flex-shrink-0">
-          <div className="max-w-[1400px] mx-auto px-6 h-full flex flex-col md:flex-row items-center justify-between gap-2">
-              <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-[#005C46] font-bold"><Filter size={18}/> Filtros:</div>
-              </div>
+        {moduloActual === 'vencer' ? (
+          <>
+            <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm min-h-[64px] py-2 flex-shrink-0">
+              <div className="max-w-[1400px] mx-auto px-6 h-full flex flex-col md:flex-row items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-[#005C46] font-bold"><Filter size={18}/> Filtros:</div>
+                  </div>
 
-              {/* CONTENEDOR DE FILTROS CORREGIDO */}
-              <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5 border border-slate-200 text-sm shadow-inner flex-wrap justify-center">
-                      
-                      {/* FILTRO AÑO */}
-                      <span className="font-bold text-slate-500 text-[10px] uppercase ml-1">Año:</span>
-                      <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={anioSeleccionado} onChange={e=>setAnioSeleccionado(e.target.value)}>
-                          <option value="todos">Todos</option>
-                          {aniosDisponibles.map(a=><option key={a} value={a}>{a}</option>)}
-                      </select>
-                      
-                      <div className="w-px h-5 bg-slate-300 mx-1"></div>
-                      
-                      {/* FILTROS MESES */}
-                      <span className="font-bold text-slate-500 text-[10px] uppercase">De:</span>
-                      <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={mesInicio} onChange={e=>setMesInicio(Number(e.target.value))}>
-                          {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                      </select>
-                      <span className="text-slate-400 font-bold">-</span>
-                      <span className="font-bold text-slate-500 text-[10px] uppercase">A:</span>
-                      <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={mesFin} onChange={e=>setMesFin(Number(e.target.value))}>
-                          {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                      </select>
+                  <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5 border border-slate-200 text-sm shadow-inner flex-wrap justify-center">
+                          
+                          {/* FILTRO AÑO */}
+                          <span className="font-bold text-slate-500 text-[10px] uppercase ml-1">Año:</span>
+                          <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={anioSeleccionado} onChange={e=>setAnioSeleccionado(e.target.value)}>
+                              <option value="todos">Todos</option>
+                              {aniosDisponibles.map(a=><option key={a} value={a}>{a}</option>)}
+                          </select>
+                          
+                          <div className="w-px h-5 bg-slate-300 mx-1"></div>
+                          
+                          {/* FILTROS MESES */}
+                          <span className="font-bold text-slate-500 text-[10px] uppercase">De:</span>
+                          <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={mesInicio} onChange={e=>setMesInicio(Number(e.target.value))}>
+                              {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                          </select>
+                          <span className="text-slate-400 font-bold">-</span>
+                          <span className="font-bold text-slate-500 text-[10px] uppercase">A:</span>
+                          <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer" value={mesFin} onChange={e=>setMesFin(Number(e.target.value))}>
+                              {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                          </select>
 
-                      {/* FILTRO SERVICIO */}
-                      <div className="w-px h-5 bg-slate-300 mx-1 hidden sm:block"></div>
-                      <span className="font-bold text-slate-500 text-[10px] uppercase hidden sm:inline">Servicio:</span>
-                      <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer max-w-[120px] lg:max-w-[150px] truncate hidden sm:inline" value={servicioSeleccionado} onChange={e=>setServicioSeleccionado(e.target.value)}>
-                          <option value="todos">Todos los servicios</option>
-                          {serviciosDisponibles.map(s=><option key={s} value={s}>{s}</option>)}
-                      </select>
+                          {/* FILTRO SERVICIO */}
+                          <div className="w-px h-5 bg-slate-300 mx-1 hidden sm:block"></div>
+                          <span className="font-bold text-slate-500 text-[10px] uppercase hidden sm:inline">Servicio:</span>
+                          <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer max-w-[120px] lg:max-w-[150px] truncate hidden sm:inline" value={servicioSeleccionado} onChange={e=>setServicioSeleccionado(e.target.value)}>
+                              <option value="todos">Todos los servicios</option>
+                              {serviciosDisponibles.map(s=><option key={s} value={s}>{s}</option>)}
+                          </select>
 
-                      {/* FILTRO PROCESO */}
-                      <div className="w-px h-5 bg-slate-300 mx-1 hidden sm:block"></div>
-                      <span className="font-bold text-slate-500 text-[10px] uppercase hidden sm:inline">Proceso:</span>
-                      <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer max-w-[120px] lg:max-w-[150px] truncate hidden sm:inline" value={procesoSeleccionado} onChange={e=>setProcesoSeleccionado(e.target.value)}>
-                          <option value="todos">Todos los procesos</option>
-                          {procesosDisponibles.map(p=><option key={p} value={p}>{p}</option>)}
-                      </select>
+                          {/* FILTRO PROCESO */}
+                          <div className="w-px h-5 bg-slate-300 mx-1 hidden sm:block"></div>
+                          <span className="font-bold text-slate-500 text-[10px] uppercase hidden sm:inline">Proceso:</span>
+                          <select className="bg-transparent font-bold text-[#005C46] outline-none cursor-pointer max-w-[120px] lg:max-w-[150px] truncate hidden sm:inline" value={procesoSeleccionado} onChange={e=>setProcesoSeleccionado(e.target.value)}>
+                              <option value="todos">Todos los procesos</option>
+                              {procesosDisponibles.map(p=><option key={p} value={p}>{p}</option>)}
+                          </select>
+                      </div>
                   </div>
               </div>
-          </div>
-        </nav>
+            </nav>
 
-        <main className="max-w-[1400px] mx-auto px-8 pt-8 pb-16 w-full transition-all duration-300 relative">
-          
-          {/* ===================================================
-              PESTAÑA: PANORAMA GENERAL
-          =================================================== */}
-          <div className={pestanaActiva === 'general' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Eventos</p>
-                      <p className="text-4xl font-black text-[#005C46] mt-2">{dGeneral.length}</p>
-                  </div>
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Adversos</p>
-                      <p className="text-4xl font-black text-red-600 mt-2">{dAdversos.length}</p>
-                  </div>
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cuasifallas</p>
-                      <p className="text-4xl font-black text-amber-500 mt-2">{dCuasi.length}</p>
-                  </div>
-                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Centinelas</p>
-                      <p className="text-4xl font-black text-slate-800 mt-2">{dCentinela.length}</p>
-                  </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                  <SeccionGraficoTabla idCanvas="gen_sexo" titulo="Distribución por Sexo" datos={dGeneral} campo="sexo" tipo="doughnut" color={['#005C46', '#D4C19C', '#003B2D']} mostrarTablas={mostrarTablas} />
-                  <SeccionGraficoTabla idCanvas="gen_evento" titulo="Clasificación de Eventos" datos={dGeneral} campo="evento" color="#007A5E" mostrarTablas={mostrarTablas} />
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                  <PiramidePoblacional idCanvas="gen_piramide" datos={dGeneral} mostrarTablas = {mostrarTablas} />
-                  <SeccionGraficoTabla idCanvas="gen_turno" titulo="Turnos" datos={dGeneral} campo="turno" color="#D4C19C" mostrarTablas={mostrarTablas} />
-              </div>
-
-              <div className="mb-6">
-                  <SeccionGraficoTabla idCanvas="gen_servicio" titulo="Top Servicios" datos={dGeneral} campo="servicio" color="#005C46" limite={15} mostrarTablas={mostrarTablas} />
-              </div>
-
-              <AnalisisCategorias idCanvas="gen_categorias" datos={dGeneral} mostrarTablas={mostrarTablas} />
-
-              <AcordeonProcesos prefijoId="gen" datos={dGeneral} colorBase="#005C46" titulo="Análisis de Procesos Relacionados (General)" mostrarTablas={mostrarTablas} />
-          </div>
-
-          {/* ===================================================
-              PESTAÑA: EVENTOS ADVERSOS
-          =================================================== */}
-          <div className={pestanaActiva === 'adversos' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
-              <div className="bg-red-50 border border-red-200 p-4 rounded-xl mb-6 flex gap-3 items-center text-red-800 shadow-sm">
-                  <AlertOctagon /> <h2 className="font-bold text-xl uppercase tracking-wider">Análisis de Eventos Adversos</h2>
-              </div>
+            <main className="max-w-[1400px] mx-auto px-8 pt-8 pb-16 w-full transition-all duration-300 relative">
               
-              {dAdversos.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Eventos Adversos con estos filtros.</div> : (
-                  <>
-                      {servicioSeleccionado !== 'todos' && (
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                              <PiramidePoblacional idCanvas="adv_piramide" datos={dAdversos} colorHombres="#ef4444" colorMujeres="#fca5a5" mostrarTablas = {mostrarTablas}/>
-                              <SeccionGraficoTabla idCanvas="adv_sexo" titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dAdversos} campo="sexo" tipo="doughnut" color={['#ef4444', '#fca5a5', '#b91c1c']} mostrarTablas={mostrarTablas} />
+              {/* ===================================================
+                  PESTAÑA: PANORAMA GENERAL
+              =================================================== */}
+              <div className={pestanaActiva === 'general' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                      <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Eventos</p>
+                          <p className="text-4xl font-black text-[#005C46] mt-2">{dGeneral.length}</p>
+                      </div>
+                      <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Adversos</p>
+                          <p className="text-4xl font-black text-red-600 mt-2">{dAdversos.length}</p>
+                      </div>
+                      <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cuasifallas</p>
+                          <p className="text-4xl font-black text-amber-500 mt-2">{dCuasi.length}</p>
+                      </div>
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Centinelas</p>
+                          <p className="text-4xl font-black text-slate-800 mt-2">{dCentinela.length}</p>
+                      </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                      <SeccionGraficoTabla idCanvas="gen_sexo" titulo="Distribución por Sexo" datos={dGeneral} campo="sexo" tipo="doughnut" color={['#005C46', '#D4C19C', '#003B2D']} mostrarTablas={mostrarTablas} />
+                      <SeccionGraficoTabla idCanvas="gen_evento" titulo="Clasificación de Eventos" datos={dGeneral} campo="evento" color="#007A5E" mostrarTablas={mostrarTablas} />
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                      <PiramidePoblacional idCanvas="gen_piramide" datos={dGeneral} mostrarTablas = {mostrarTablas} />
+                      <SeccionGraficoTabla idCanvas="gen_turno" titulo="Turnos" datos={dGeneral} campo="turno" color="#D4C19C" mostrarTablas={mostrarTablas} />
+                  </div>
+
+                  <div className="mb-6">
+                      <SeccionGraficoTabla idCanvas="gen_servicio" titulo="Top Servicios" datos={dGeneral} campo="servicio" color="#005C46" limite={15} mostrarTablas={mostrarTablas} />
+                  </div>
+
+                  <AnalisisCategorias idCanvas="gen_categorias" datos={dGeneral} mostrarTablas={mostrarTablas} />
+
+                  <AcordeonProcesos prefijoId="gen" datos={dGeneral} colorBase="#005C46" titulo="Análisis de Procesos Relacionados (General)" mostrarTablas={mostrarTablas} />
+              </div>
+
+              {/* ===================================================
+                  PESTAÑA: EVENTOS ADVERSOS
+              =================================================== */}
+              <div className={pestanaActiva === 'adversos' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
+                  <div className="bg-red-50 border border-red-200 p-4 rounded-xl mb-6 flex gap-3 items-center text-red-800 shadow-sm">
+                      <AlertOctagon /> <h2 className="font-bold text-xl uppercase tracking-wider">Análisis de Eventos Adversos</h2>
+                  </div>
+                  
+                  {dAdversos.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Eventos Adversos con estos filtros.</div> : (
+                      <>
+                          {servicioSeleccionado !== 'todos' && (
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                  <PiramidePoblacional idCanvas="adv_piramide" datos={dAdversos} colorHombres="#ef4444" colorMujeres="#fca5a5" mostrarTablas = {mostrarTablas}/>
+                                  <SeccionGraficoTabla idCanvas="adv_sexo" titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dAdversos} campo="sexo" tipo="doughnut" color={['#ef4444', '#fca5a5', '#b91c1c']} mostrarTablas={mostrarTablas} />
+                              </div>
+                          )}
+
+                          <AnalisisTopAreas prefijoId="adv" datos={dAdversos} colorArea="#ef4444" colorCausa="#b91c1c" mostrarTablas={mostrarTablas} />
+                          
+                          <div className="mb-6">
+                              <SeccionGraficoTabla idCanvas="adv_causas_globales" titulo="Causas Globales (Definición)" datos={dAdversos} campo="definicion" color="#991b1b" limite={10} mostrarTablas={mostrarTablas} />
                           </div>
-                      )}
-
-                      <AnalisisTopAreas prefijoId="adv" datos={dAdversos} colorArea="#ef4444" colorCausa="#b91c1c" mostrarTablas={mostrarTablas} />
-                      
-                      <div className="mb-6">
-                          <SeccionGraficoTabla idCanvas="adv_causas_globales" titulo="Causas Globales (Definición)" datos={dAdversos} campo="definicion" color="#991b1b" limite={10} mostrarTablas={mostrarTablas} />
-                      </div>
-                      <AcordeonProcesos prefijoId="adv" datos={dAdversos} colorBase="#ef4444" titulo="Procesos Relacionados (Adversos)" mostrarTablas={mostrarTablas} />
-                  </>
-              )}
-          </div>
-
-          {/* ===================================================
-              PESTAÑA: CUASIFALLAS
-          =================================================== */}
-          <div className={pestanaActiva === 'cuasi' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
-              <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 flex gap-3 items-center text-amber-800 shadow-sm">
-                  <ShieldAlert /> <h2 className="font-bold text-xl uppercase tracking-wider">Análisis de Cuasifallas</h2>
+                          <AcordeonProcesos prefijoId="adv" datos={dAdversos} colorBase="#ef4444" titulo="Procesos Relacionados (Adversos)" mostrarTablas={mostrarTablas} />
+                      </>
+                  )}
               </div>
-              
-              {dCuasi.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Cuasifallas con estos filtros.</div> : (
-                  <>
-                      {servicioSeleccionado !== 'todos' && (
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                              <PiramidePoblacional idCanvas="cuasi_piramide" datos={dCuasi} colorHombres="#f59e0b" colorMujeres="#fcd34d" mostrarTablas = {mostrarTablas}/>
-                              <SeccionGraficoTabla idCanvas="cuasi_sexo" titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dCuasi} campo="sexo" tipo="doughnut" color={['#f59e0b', '#fcd34d', '#d97706']} mostrarTablas={mostrarTablas} />
-                          </div>
-                      )}
 
-                      <AnalisisTopAreas prefijoId="cuasi" datos={dCuasi} colorArea="#f59e0b" colorCausa="#d97706" mostrarTablas={mostrarTablas} />
-                      
-                      <div className="mb-6">
-                          <SeccionGraficoTabla idCanvas="cuasi_causas_globales" titulo="Causas Globales (Definición)" datos={dCuasi} campo="definicion" color="#b45309" limite={10} mostrarTablas={mostrarTablas} />
-                      </div>
-                      <AcordeonProcesos prefijoId="cuasi" datos={dCuasi} colorBase="#f59e0b" titulo="Procesos Relacionados (Cuasifallas)" mostrarTablas={mostrarTablas} />
-                  </>
-              )}
-          </div>
-
-          {/* ===================================================
-              PESTAÑA: CENTINELAS
-          =================================================== */}
-          <div className={pestanaActiva === 'centinela' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
-              <div className="bg-slate-800 border border-slate-900 p-4 rounded-xl mb-6 flex gap-3 items-center text-white shadow-sm">
-                  <Siren /> <h2 className="font-bold text-xl uppercase tracking-wider">Eventos Centinela (Críticos)</h2>
-              </div>
-              
-              {dCentinela.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-16 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400">
-                      <Siren size={48} className="mb-4 text-emerald-400"/>
-                      <p className="font-bold text-lg text-slate-600">0 Eventos Centinela</p>
-                      <p className="text-sm">No se encontraron registros críticos con los filtros seleccionados.</p>
+              {/* ===================================================
+                  PESTAÑA: CUASIFALLAS
+              =================================================== */}
+              <div className={pestanaActiva === 'cuasi' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 flex gap-3 items-center text-amber-800 shadow-sm">
+                      <ShieldAlert /> <h2 className="font-bold text-xl uppercase tracking-wider">Análisis de Cuasifallas</h2>
                   </div>
-              ) : (
-                  <>
-                      <AnalisisTopAreas prefijoId="cen" datos={dCentinela} colorArea="#475569" colorCausa="#1e293b" mostrarTablas={mostrarTablas} />
-                      <div className="mb-6">
-                          <SeccionGraficoTabla idCanvas="cen_causas_globales" titulo="Causas Principales (Definición)" datos={dCentinela} campo="definicion" color="#0f172a" limite={10} mostrarTablas={mostrarTablas} />
-                      </div>
-                      <AcordeonProcesos prefijoId="cen" datos={dCentinela} colorBase="#475569" titulo="Procesos Relacionados (Centinelas)" mostrarTablas={mostrarTablas} />
-                  </>
-              )}
-          </div>
+                  
+                  {dCuasi.length === 0 ? <div className="text-center p-10 text-slate-400 font-bold">Sin registros de Cuasifallas con estos filtros.</div> : (
+                      <>
+                          {servicioSeleccionado !== 'todos' && (
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                  <PiramidePoblacional idCanvas="cuasi_piramide" datos={dCuasi} colorHombres="#f59e0b" colorMujeres="#fcd34d" mostrarTablas = {mostrarTablas}/>
+                                  <SeccionGraficoTabla idCanvas="cuasi_sexo" titulo={`Distribución por Sexo en ${servicioSeleccionado}`} datos={dCuasi} campo="sexo" tipo="doughnut" color={['#f59e0b', '#fcd34d', '#d97706']} mostrarTablas={mostrarTablas} />
+                              </div>
+                          )}
 
-        </main>
+                          <AnalisisTopAreas prefijoId="cuasi" datos={dCuasi} colorArea="#f59e0b" colorCausa="#d97706" mostrarTablas={mostrarTablas} />
+                          
+                          <div className="mb-6">
+                              <SeccionGraficoTabla idCanvas="cuasi_causas_globales" titulo="Causas Globales (Definición)" datos={dCuasi} campo="definicion" color="#b45309" limite={10} mostrarTablas={mostrarTablas} />
+                          </div>
+                          <AcordeonProcesos prefijoId="cuasi" datos={dCuasi} colorBase="#f59e0b" titulo="Procesos Relacionados (Cuasifallas)" mostrarTablas={mostrarTablas} />
+                      </>
+                  )}
+              </div>
+
+              {/* ===================================================
+                  PESTAÑA: CENTINELAS
+              =================================================== */}
+              <div className={pestanaActiva === 'centinela' ? 'block animate-in fade-in slide-in-from-bottom-4 duration-500' : 'absolute top-[-9999px] left-[-9999px] w-[1200px] invisible opacity-0'}>
+                  <div className="bg-slate-800 border border-slate-900 p-4 rounded-xl mb-6 flex gap-3 items-center text-white shadow-sm">
+                      <Siren /> <h2 className="font-bold text-xl uppercase tracking-wider">Eventos Centinela (Críticos)</h2>
+                  </div>
+                  
+                  {dCentinela.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center p-16 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400">
+                          <Siren size={48} className="mb-4 text-emerald-400"/>
+                          <p className="font-bold text-lg text-slate-600">0 Eventos Centinela</p>
+                          <p className="text-sm">No se encontraron registros críticos con los filtros seleccionados.</p>
+                      </div>
+                  ) : (
+                      <>
+                          <AnalisisTopAreas prefijoId="cen" datos={dCentinela} colorArea="#475569" colorCausa="#1e293b" mostrarTablas={mostrarTablas} />
+                          <div className="mb-6">
+                              <SeccionGraficoTabla idCanvas="cen_causas_globales" titulo="Causas Principales (Definición)" datos={dCentinela} campo="definicion" color="#0f172a" limite={10} mostrarTablas={mostrarTablas} />
+                          </div>
+                          <AcordeonProcesos prefijoId="cen" datos={dCentinela} colorBase="#475569" titulo="Procesos Relacionados (Centinelas)" mostrarTablas={mostrarTablas} />
+                      </>
+                  )}
+              </div>
+
+            </main>
+          </>
+        ) : (
+          <DashboardProductividad isAdmin={isAdmin} />
+        )}
+
       </div>
     </div>
   );
