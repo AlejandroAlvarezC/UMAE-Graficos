@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { UploadCloud, Activity, Users, CalendarCheck, Clock } from 'lucide-react';
+import { UploadCloud, Activity, Users, CalendarCheck, Clock, ArrowLeft, BarChart2, Database } from 'lucide-react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
@@ -8,6 +8,9 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 export default function DashboardProductividad({ isAdmin }) {
+    // ESTADO PARA CONTROLAR LA PANTALLA ACTUAL ('menu', 'dashboard', 'subir')
+    const [vistaActiva, setVistaActiva] = useState('menu');
+
     // Estados para la carga de archivos
     const [archivo, setArchivo] = useState(null);
     const [mensaje, setMensaje] = useState('');
@@ -15,19 +18,16 @@ export default function DashboardProductividad({ isAdmin }) {
 
     // Estados para los datos de la base de datos
     const [datos, setDatos] = useState([]);
-    const [cargandoDatos, setCargandoDatos] = useState(true);
+    const [cargandoDatos, setCargandoDatos] = useState(false);
     const [error, setError] = useState(null);
 
-    // Cargar datos al iniciar
+    // Cargar datos solo cuando entramos al dashboard
     const cargarDatos = () => {
         setCargandoDatos(true);
-        axios.get('/api/api_productividad.php') // Ajusta la ruta si es necesario
+        axios.get('/api/api_productividad.php') 
             .then(res => {
-                if (Array.isArray(res.data)) {
-                    setDatos(res.data);
-                } else {
-                    setDatos([]);
-                }
+                if (Array.isArray(res.data)) setDatos(res.data);
+                else setDatos([]);
                 setCargandoDatos(false);
             })
             .catch(err => {
@@ -36,9 +36,12 @@ export default function DashboardProductividad({ isAdmin }) {
             });
     };
 
+    // Si el usuario entra al dashboard, cargamos los datos automáticamente
     useEffect(() => {
-        cargarDatos();
-    }, []);
+        if (vistaActiva === 'dashboard') {
+            cargarDatos();
+        }
+    }, [vistaActiva]);
 
     // Manejador para subir el CSV
     const handleSubirArchivo = async (e) => {
@@ -49,7 +52,7 @@ export default function DashboardProductividad({ isAdmin }) {
         }
 
         setCargandoSubida(true);
-        setMensaje('Procesando datos y traduciendo especialidades...');
+        setMensaje('Procesando datos...');
 
         const formData = new FormData();
         formData.append('archivo_csv', archivo);
@@ -61,7 +64,7 @@ export default function DashboardProductividad({ isAdmin }) {
 
             if (respuesta.data.success) {
                 setMensaje(`✅ ¡Éxito! ${respuesta.data.message}`);
-                cargarDatos(); // Recargar las gráficas automáticamente
+                setArchivo(null);
             } else {
                 setMensaje(`❌ Error: ${respuesta.data.message}`);
             }
@@ -69,28 +72,22 @@ export default function DashboardProductividad({ isAdmin }) {
             setMensaje('❌ Error al conectar con el servidor.');
         } finally {
             setCargandoSubida(false);
-            setArchivo(null); // Limpiar el input
         }
     };
 
     // ==========================================
-    // PROCESAMIENTO DE DATOS PARA GRÁFICAS
+    // CÁLCULOS PARA GRÁFICAS
     // ==========================================
     const kpis = useMemo(() => {
-        let citados = 0;
-        let primeraVez = 0;
-        
+        let citados = 0, primeraVez = 0;
         datos.forEach(d => {
             if (d.citado === 'Citado') citados++;
             if (d.primera_vez === 'Primera Vez') primeraVez++;
         });
-
         return {
             total: datos.length,
-            citados,
-            espontaneos: datos.length - citados,
-            primeraVez,
-            subsecuentes: datos.length - primeraVez
+            citados, espontaneos: datos.length - citados,
+            primeraVez, subsecuentes: datos.length - primeraVez
         };
     }, [datos]);
 
@@ -100,14 +97,9 @@ export default function DashboardProductividad({ isAdmin }) {
             acc[div] = (acc[div] || 0) + 1;
             return acc;
         }, {});
-
         return {
             labels: Object.keys(conteo),
-            datasets: [{
-                data: Object.values(conteo),
-                backgroundColor: ['#005C46', '#D4C19C', '#003B2D', '#1e293b', '#64748b'],
-                borderWidth: 0
-            }]
+            datasets: [{ data: Object.values(conteo), backgroundColor: ['#005C46', '#D4C19C', '#003B2D', '#1e293b', '#64748b'], borderWidth: 0 }]
         };
     }, [datos]);
 
@@ -117,121 +109,138 @@ export default function DashboardProductividad({ isAdmin }) {
             acc[esp] = (acc[esp] || 0) + 1;
             return acc;
         }, {});
-
-        // Ordenar de mayor a menor y tomar el Top 10
         const ordenados = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 10);
-
         return {
             labels: ordenados.map(item => item[0].length > 25 ? item[0].substring(0,25)+'...' : item[0]),
-            datasets: [{
-                label: 'Consultas',
-                data: ordenados.map(item => item[1]),
-                backgroundColor: '#007A5E',
-                borderRadius: 4
-            }]
+            datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1]), backgroundColor: '#007A5E', borderRadius: 4 }]
         };
     }, [datos]);
 
     // ==========================================
-    // RENDERIZADO VISUAL
+    // COMPONENTES DE VISTAS
     // ==========================================
-    if (cargandoDatos) return <div className="h-screen flex items-center justify-center font-bold text-[#005C46]"><Activity className="animate-spin mr-2"/> Cargando Productividad...</div>;
-    if (error) return <div className="h-screen flex items-center justify-center font-bold text-red-600">{error}</div>;
+    
+    // 1. VISTA: MENÚ PRINCIPAL
+    if (vistaActiva === 'menu') {
+        return (
+            <div className="bg-slate-50 min-h-screen flex flex-col items-center pt-20 px-8">
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl font-black text-[#005C46] mb-2">Consulta Externa</h1>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Módulo de Productividad UMAE 48</p>
+                </div>
 
+                <div className="bg-red-500 text-white p-2 mb-4 rounded font-bold">
+                    DEBUG - ¿Es Admin?: {isAdmin ? 'SÍ' : 'NO'} | URL dice: {new URLSearchParams(window.location.search).get('rol')}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+                    
+                    {/* Botón 1: Ver Dashboard (Para todos) */}
+                    <button 
+                        onClick={() => setVistaActiva('dashboard')}
+                        className="bg-white p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-md hover:border-emerald-300 transition-all flex flex-col items-center text-center group"
+                    >
+                        <div className="bg-emerald-50 p-4 rounded-full mb-4 group-hover:bg-[#005C46] group-hover:text-white text-[#005C46] transition-colors">
+                            <BarChart2 size={40} />
+                        </div>
+                        <h2 className="text-xl font-black text-slate-800 mb-2">Tablero de Indicadores</h2>
+                        <p className="text-slate-500 text-sm">Visualiza las gráficas y estadísticas de productividad por división y especialidad.</p>
+                    </button>
+
+                    {/* Botón 2: Subir CSV (SOLO ADMINISTRADORES) */}
+                    {isAdmin && (
+                        <button 
+                            onClick={() => { setVistaActiva('subir'); setMensaje(''); }}
+                            className="bg-white p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-md hover:border-emerald-300 transition-all flex flex-col items-center text-center group"
+                        >
+                            <div className="bg-emerald-50 p-4 rounded-full mb-4 group-hover:bg-[#005C46] group-hover:text-white text-[#005C46] transition-colors">
+                                <Database size={40} />
+                            </div>
+                            <h2 className="text-xl font-black text-slate-800 mb-2">Actualizar Base de Datos</h2>
+                            <p className="text-slate-500 text-sm">Sube los archivos CSV generados por el sistema para actualizar las gráficas.</p>
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // 2. VISTA: SUBIR CSV
+    if (vistaActiva === 'subir') {
+        return (
+            <div className="bg-slate-50 min-h-screen p-8">
+                <button onClick={() => setVistaActiva('menu')} className="flex items-center text-emerald-700 hover:text-emerald-900 font-bold mb-8 transition-colors">
+                    <ArrowLeft size={20} className="mr-2" /> Volver al Menú
+                </button>
+
+                <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-emerald-100">
+                    <h2 className="text-2xl font-black text-[#005C46] mb-2 flex items-center gap-3">
+                        <UploadCloud size={28} /> Subir Productividad (CSV)
+                    </h2>
+                    <p className="text-slate-500 mb-8">Selecciona el archivo delimitado por comas con los registros de consulta externa.</p>
+                    
+                    <form onSubmit={handleSubirArchivo} className="flex flex-col gap-6">
+                        <input 
+                            type="file" accept=".csv" onChange={(e) => setArchivo(e.target.files[0])}
+                            className="block w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100 cursor-pointer border-2 border-dashed border-slate-200 rounded-xl p-4"
+                        />
+                        <button 
+                            type="submit" disabled={cargandoSubida || !archivo}
+                            className="bg-[#005C46] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#004a38] transition disabled:bg-slate-300 disabled:cursor-not-allowed w-full shadow-md"
+                        >
+                            {cargandoSubida ? 'Procesando archivo en el servidor...' : 'Cargar a Base de Datos'}
+                        </button>
+                    </form>
+
+                    {mensaje && (
+                        <div className={`mt-6 p-4 rounded-xl text-sm font-bold ${mensaje.includes('✅') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                            {mensaje}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // 3. VISTA: DASHBOARD DE GRÁFICAS
     return (
         <div className="bg-slate-50 min-h-screen">
-            
-            {/* ENCABEZADO */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm px-8 py-4 flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-black text-[#005C46]">Productividad Externa</h1>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Análisis de Consultas UMAE 48</p>
+                <div className="flex items-center gap-4">
+                    <button onClick={() => setVistaActiva('menu')} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-600" title="Volver al Menú">
+                        <ArrowLeft size={20} />
+                    </button>
+                    <div>
+                        <h1 className="text-2xl font-black text-[#005C46]">Tablero de Indicadores</h1>
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Productividad Externa</p>
+                    </div>
                 </div>
             </header>
 
-            <main className="max-w-[1400px] mx-auto px-8 pt-6 pb-16 w-full">
-                
-                {/* VISTA DE ADMINISTRADOR (Carga de Datos) */}
-                {isAdmin && (
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-emerald-200 mb-8 max-w-3xl">
-                        <h2 className="text-sm font-bold text-emerald-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
-                            <UploadCloud size={18} className="text-emerald-600" /> 
-                            Actualizar Base de Datos (CSV)
-                        </h2>
-                        
-                        <form onSubmit={handleSubirArchivo} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                            <input 
-                                type="file" 
-                                accept=".csv"
-                                onChange={(e) => setArchivo(e.target.files[0])}
-                                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded-lg"
-                            />
-                            <button 
-                                type="submit" 
-                                disabled={cargandoSubida || !archivo}
-                                className="bg-[#005C46] text-white font-bold py-2.5 px-6 rounded-lg hover:bg-[#004a38] transition disabled:bg-slate-300 disabled:cursor-not-allowed whitespace-nowrap shadow-sm"
-                            >
-                                {cargandoSubida ? 'Procesando...' : 'Subir Archivo'}
-                            </button>
-                        </form>
-
-                        {mensaje && (
-                            <div className={`mt-4 p-3 rounded-lg text-sm font-bold ${mensaje.includes('✅') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                                {mensaje}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* TARJETAS KPI */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                        <div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/> <h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3></div>
-                        <p className="text-4xl font-black text-[#005C46]">{kpis.total.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                        <div className="flex items-center gap-3 text-slate-500 mb-2"><CalendarCheck size={18}/> <h3 className="text-xs font-bold uppercase tracking-widest">Citados</h3></div>
-                        <p className="text-4xl font-black text-blue-600">{kpis.citados.toLocaleString()}</p>
-                        <p className="text-xs font-bold text-slate-400 mt-1">Vs {kpis.espontaneos} Espontáneos</p>
-                    </div>
-                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                        <div className="flex items-center gap-3 text-slate-500 mb-2"><Clock size={18}/> <h3 className="text-xs font-bold uppercase tracking-widest">Primera Vez</h3></div>
-                        <p className="text-4xl font-black text-amber-500">{kpis.primeraVez.toLocaleString()}</p>
-                        <p className="text-xs font-bold text-slate-400 mt-1">Vs {kpis.subsecuentes} Subsecuentes</p>
-                    </div>
-                </div>
-
-                {/* GRÁFICAS */}
-                {datos.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Gráfica de Pastel (Divisiones) */}
-                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-1 flex flex-col">
-                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por División</h3>
-                            <div className="flex-1 relative min-h-[300px]">
-                                <Doughnut 
-                                    data={chartDivisiones} 
-                                    options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} 
-                                />
-                            </div>
-                        </div>
-
-                        {/* Gráfica de Barras (Top Especialidades) */}
-                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col">
-                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 10 Especialidades</h3>
-                            <div className="flex-1 relative min-h-[300px]">
-                                <Bar 
-                                    data={chartEspecialidades} 
-                                    options={{ indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} 
-                                />
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="text-center p-16 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 mt-8">
+            <main className="max-w-[1400px] mx-auto px-8 pt-8 pb-16 w-full">
+                {cargandoDatos ? (
+                    <div className="flex justify-center items-center py-20 text-emerald-700 font-bold"><Activity className="animate-spin mr-3"/> Calculando estadísticas...</div>
+                ) : error ? (
+                    <div className="text-red-600 font-bold text-center py-20">{error}</div>
+                ) : datos.length === 0 ? (
+                    <div className="text-center p-16 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400">
                         <Activity size={48} className="mx-auto mb-4 opacity-50" />
                         <p className="font-bold text-lg">No hay datos de productividad</p>
-                        <p className="text-sm">Sube un archivo CSV usando el panel de administrador para comenzar.</p>
+                        <p className="text-sm">Pídele al administrador que suba el archivo CSV.</p>
                     </div>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3></div><p className="text-4xl font-black text-[#005C46]">{kpis.total.toLocaleString()}</p></div>
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div className="flex items-center gap-3 text-slate-500 mb-2"><CalendarCheck size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Citados</h3></div><p className="text-4xl font-black text-blue-600">{kpis.citados.toLocaleString()}</p><p className="text-xs font-bold text-slate-400 mt-1">Vs {kpis.espontaneos} Espontáneos</p></div>
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div className="flex items-center gap-3 text-slate-500 mb-2"><Clock size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Primera Vez</h3></div><p className="text-4xl font-black text-amber-500">{kpis.primeraVez.toLocaleString()}</p><p className="text-xs font-bold text-slate-400 mt-1">Vs {kpis.subsecuentes} Subsecuentes</p></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-1 flex flex-col"><h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por División</h3><div className="flex-1 relative min-h-[300px]"><Doughnut data={chartDivisiones} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} /></div></div>
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col"><h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 10 Especialidades</h3><div className="flex-1 relative min-h-[300px]"><Bar data={chartEspecialidades} options={{ indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} /></div></div>
+                        </div>
+                    </>
                 )}
             </main>
         </div>

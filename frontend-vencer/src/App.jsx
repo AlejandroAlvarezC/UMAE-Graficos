@@ -424,11 +424,17 @@ const AcordeonProcesos = ({ prefijoId, datos, colorBase = "#005C46", titulo = "A
 // 6. APLICACIÓN PRINCIPAL (Layout Base)
 // ============================================================================
 function App() {
+  // 1. Leer la URL para ver qué módulo abrir
   const queryParams = new URLSearchParams(window.location.search);
   const moduloInicial = queryParams.get('modulo') === 'productividad' ? 'productividad' : 'vencer';
   
+  // 2. Leer la URL para saber si es Administrador
+  // Ajusta la palabra 'administrador' a como esté escrito exactamente en tu base de datos (ej. 'Admin', '1', etc.)
+  const rolEnUrl = queryParams.get('rol');
+  const esAdministrador = rolEnUrl === 'administrador'; 
+
+  // 3. Estados
   const [moduloActual, setModuloActual] = useState(moduloInicial);
-  
   const [datos, setDatos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -844,7 +850,7 @@ function App() {
             </main>
           </>
         ) : (
-          <DashboardProductividad isAdmin={isAdmin} />
+          <DashboardProductividad isAdmin={esAdministrador} />
         )}
 
       </div>
