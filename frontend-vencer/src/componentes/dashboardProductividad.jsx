@@ -1,14 +1,53 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { UploadCloud, Activity, Users, CalendarCheck, Clock, ArrowLeft, BarChart2, Database } from 'lucide-react';
+import { UploadCloud, Activity, Users, CalendarCheck, Clock, ArrowLeft, BarChart2, Database, TableProperties } from 'lucide-react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
 // Registrar componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
+// ==========================================
+// SUB-COMPONENTE: Tabla de Datos
+// ==========================================
+const TablaDatos = ({ titulo1, titulo2, labels, data, total = true }) => {
+    if (!labels || !data) return null;
+    return (
+        <div className="mt-4 border-t border-slate-100 pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="max-h-48 overflow-y-auto pr-2">
+                <table className="w-full text-left text-sm text-slate-600">
+                    <thead className="text-xs text-slate-400 uppercase bg-slate-50 sticky top-0 z-10">
+                        <tr>
+                            <th className="py-2 px-3 font-bold rounded-l-lg">{titulo1}</th>
+                            <th className="py-2 px-3 font-bold text-right rounded-r-lg">{titulo2}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {labels.map((label, index) => (
+                            <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                <td className="py-2 px-3">{label}</td>
+                                <td className="py-2 px-3 text-right font-bold">{data[index].toLocaleString()}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                    {total && (
+                        <tfoot className="bg-slate-50 font-bold sticky bottom-0 z-10">
+                            <tr>
+                                <td className="py-2 px-3 rounded-l-lg">Total</td>
+                                <td className="py-2 px-3 text-right rounded-r-lg">{data.reduce((a, b) => a + b, 0).toLocaleString()}</td>
+                            </tr>
+                        </tfoot>
+                    )}
+                </table>
+            </div>
+        </div>
+    );
+};
+
 export default function DashboardProductividad({ isAdmin }) {
     const [vistaActiva, setVistaActiva] = useState('menu');
+    const [mostrarTablas, setMostrarTablas] = useState(false); // <-- ESTADO DEL BOTÓN DE TABLAS
+
     const [archivo, setArchivo] = useState(null);
     const [mensaje, setMensaje] = useState('');
     const [cargandoSubida, setCargandoSubida] = useState(false);
@@ -122,7 +161,6 @@ export default function DashboardProductividad({ isAdmin }) {
         };
     }, [datos]);
 
-    // 👇 NUEVO: Top 10 Consultorios
     const chartConsultorios = useMemo(() => {
         const conteo = datos.reduce((acc, curr) => {
             const consultorio = curr.consultorio || 'Sin Asignar';
@@ -148,7 +186,6 @@ export default function DashboardProductividad({ isAdmin }) {
             datasets: [{ label: 'Frecuencia', data: ordenados.map(item => item[1]), backgroundColor: '#D4C19C', borderRadius: 4 }]
         };
     }, [datos]);
-
 
     // ==========================================
     // VISTAS
@@ -196,14 +233,29 @@ export default function DashboardProductividad({ isAdmin }) {
 
     return (
         <div className="bg-slate-50 min-h-screen">
+            {/* ENCABEZADO CON SWITCH DE TABLAS */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm px-8 py-4 flex justify-between items-center">
                 <div className="flex items-center gap-4">
                     <button onClick={() => setVistaActiva('menu')} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-600"><ArrowLeft size={20} /></button>
                     <div>
-                        <h1 className="text-2xl font-black text-[#005C46]">Tablero de Indicadores</h1>
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Productividad Externa</p>
+                        <h1 className="text-2xl font-black text-[#005C46]">Consulta Externa</h1>
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider"></p>
                     </div>
                 </div>
+                
+                {/* 👇 BOTÓN SWITCH MOSTRAR TABLAS 👇 */}
+                {datos.length > 0 && !cargandoDatos && !error && (
+                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl shadow-inner">
+                        <TableProperties size={18} className="text-slate-400" />
+                        <span className="text-sm font-bold text-slate-600 hidden sm:inline">Mostrar Tablas</span>
+                        <button 
+                            onClick={() => setMostrarTablas(!mostrarTablas)}
+                            className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${mostrarTablas ? 'bg-[#005C46]' : 'bg-slate-300'}`}
+                        >
+                            <span className={`w-4 h-4 bg-white rounded-full shadow-sm absolute transition-all ${mostrarTablas ? 'left-7' : 'left-1'}`} />
+                        </button>
+                    </div>
+                )}
             </header>
 
             <main className="max-w-[1400px] mx-auto px-8 pt-8 pb-16 w-full">
@@ -225,43 +277,44 @@ export default function DashboardProductividad({ isAdmin }) {
                         </div>
 
                         {/* BLOQUE 1: Divisiones y Especialidades */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-1 flex flex-col"><h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por División</h3><div className="flex-1 relative min-h-[300px]"><Doughnut data={chartDivisiones} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} /></div></div>
-                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col"><h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 10 Especialidades</h3><div className="flex-1 relative min-h-[300px]"><Bar data={chartEspecialidades} options={{ indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} /></div></div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-1 flex flex-col">
+                                <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por División</h3>
+                                <div className="relative min-h-[300px]"><Doughnut data={chartDivisiones} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} /></div>
+                                {mostrarTablas && <TablaDatos titulo1="División" titulo2="Consultas" labels={chartDivisiones.labels} data={chartDivisiones.datasets[0].data} />}
+                            </div>
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col">
+                                <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 10 Especialidades</h3>
+                                <div className="relative min-h-[300px]"><Bar data={chartEspecialidades} options={{ indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} /></div>
+                                {mostrarTablas && <TablaDatos titulo1="Especialidad" titulo2="Consultas" labels={chartEspecialidades.labels} data={chartEspecialidades.datasets[0].data} total={false} />}
+                            </div>
                         </div>
 
                         {/* BLOQUE 2: Turnos y Médicos */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-1 flex flex-col">
                                 <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Consultas por Turno</h3>
-                                <div className="flex-1 relative min-h-[300px]">
-                                    <Doughnut data={chartTurnos} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
-                                </div>
+                                <div className="relative min-h-[300px]"><Doughnut data={chartTurnos} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} /></div>
+                                {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Consultas" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} />}
                             </div>
                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-2 flex flex-col">
                                 <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 10 Médicos con más consultas</h3>
-                                <div className="flex-1 relative min-h-[300px]">
-                                    <Bar data={chartMedicos} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} />
-                                </div>
+                                <div className="relative min-h-[300px]"><Bar data={chartMedicos} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} /></div>
+                                {mostrarTablas && <TablaDatos titulo1="Matrícula" titulo2="Consultas" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} total={false} />}
                             </div>
                         </div>
 
-                        {/* BLOQUE 3: Consultorios y Diagnósticos (Modificado a 2 columnas) */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* 👇 NUEVO: Gráfica de Consultorios 👇 */}
+                        {/* BLOQUE 3: Consultorios y Diagnósticos */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
                                 <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 10 Consultorios más productivos</h3>
-                                <div className="flex-1 relative min-h-[350px]">
-                                    <Bar data={chartConsultorios} options={{ indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} />
-                                </div>
+                                <div className="relative min-h-[350px]"><Bar data={chartConsultorios} options={{ indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} /></div>
+                                {mostrarTablas && <TablaDatos titulo1="Consultorio" titulo2="Consultas" labels={chartConsultorios.labels} data={chartConsultorios.datasets[0].data} total={false} />}
                             </div>
-
-                            {/* Gráfica de Diagnósticos */}
                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
                                 <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 10 Diagnósticos Principales</h3>
-                                <div className="flex-1 relative min-h-[350px]">
-                                    <Bar data={chartDiagnosticos} options={{ indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} />
-                                </div>
+                                <div className="relative min-h-[350px]"><Bar data={chartDiagnosticos} options={{ indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }} /></div>
+                                {mostrarTablas && <TablaDatos titulo1="Diagnóstico" titulo2="Frecuencia" labels={chartDiagnosticos.labels} data={chartDiagnosticos.datasets[0].data} total={false} />}
                             </div>
                         </div>
                     </>
