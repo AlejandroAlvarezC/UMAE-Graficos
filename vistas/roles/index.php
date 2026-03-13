@@ -156,8 +156,8 @@ session_start();
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
                     <!-- PRODUCTIVIDAD -->
-                        <a href="/graficos/index.html?modulo=productividad&rol=<?php echo $_SESSION['rol']; ?>" class="btn btn-sm btn-success w-50">
-                            Consulta externa
+                        <a href="/graficos/index.html?modulo=productividad&rol=<?php echo $_SESSION['rol']; ?>">
+                            Productividad
                         </a>
 
                     <!-- Organigrama -->
