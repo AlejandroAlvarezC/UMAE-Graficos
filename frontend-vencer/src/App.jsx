@@ -4,7 +4,7 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Activity, AlertOctagon, ShieldAlert, Siren, Lock, Unlock, ChevronDown, ChevronUp, Settings, Filter, Download} from 'lucide-react';
 import Sidebar from './componentes/Sidebar';
-import DashboardProductividad from './componentes/dashboardProductividad'; // <-- NUEVO MÓDULO IMPORTADO
+import DashboardProductividad from './componentes/dashboardProductividad.jsx'; // <-- NUEVO MÓDULO IMPORTADO
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -92,7 +92,7 @@ const SeccionGraficoTabla = ({ idCanvas, titulo, datos, campo, tipo = 'bar', col
 };
 
 // ============================================================================
-// 2. NUEVO COMPONENTE: ANÁLISIS DE CATEGORÍAS (TOP 5 EN GRÁFICO, TODO EN TABLA)
+// 2. NUEVO COMPONENTE: ANÁLISIS DE CATEGORÍAS
 // ============================================================================
 const AnalisisCategorias = ({ idCanvas, datos, mostrarTablas = true }) => {
     const { chartData, tableData, totalTotal } = useMemo(() => {
@@ -115,12 +115,10 @@ const AnalisisCategorias = ({ idCanvas, datos, mostrarTablas = true }) => {
             totalGeneral++;
         });
 
-        // Ordenamos por la categoría que tenga el mayor total
         const ordenados = Object.entries(conteo)
             .map(([nombre, counts]) => ({ nombre, ...counts }))
             .sort((a, b) => b.total - a.total);
 
-        // EXTRAEMOS SOLO EL TOP 5 PARA QUE EL GRÁFICO SE VEA MÁS GRANDE Y LIMPIO
         const top5 = ordenados.slice(0, 5);
 
         return {
@@ -132,7 +130,7 @@ const AnalisisCategorias = ({ idCanvas, datos, mostrarTablas = true }) => {
                     { label: 'Centinelas', data: top5.map(i => i.centinelas), backgroundColor: '#1e293b', borderRadius: 4 }
                 ]
             },
-            tableData: ordenados, // LA TABLA SIGUE RECIBIENDO LA LISTA COMPLETA
+            tableData: ordenados, 
             totalTotal: totalGeneral
         };
     }, [datos]);
@@ -160,14 +158,12 @@ const AnalisisCategorias = ({ idCanvas, datos, mostrarTablas = true }) => {
             </div>
             
             <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5' : 'lg:grid-cols-1'} min-h-[300px]`}>
-                {/* GRÁFICA (Solo muestra el Top 5) */}
                 <div className={`p-4 col-span-1 ${mostrarTablas ? 'lg:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-100' : 'lg:col-span-1'} transition-all`}>
                     <div className="w-full h-full relative min-h-[250px]">
                         <Bar data={chartData} options={options} id={idCanvas} />
                     </div>
                 </div>
 
-                {/* TABLA MULTICOLUMNA (Muestra todas las categorías) */}
                 {mostrarTablas && (
                     <div className="bg-white col-span-1 lg:col-span-2 max-h-[300px] overflow-y-auto custom-scrollbar">
                         <table className="w-full text-[11px] text-left text-slate-600">
@@ -429,7 +425,6 @@ function App() {
   const moduloInicial = queryParams.get('modulo') === 'productividad' ? 'productividad' : 'vencer';
   
   // 2. Leer la URL para saber si es Administrador
-  // Ajusta la palabra 'administrador' a como esté escrito exactamente en tu base de datos (ej. 'Admin', '1', etc.)
   const rolEnUrl = queryParams.get('rol');
   const esAdministrador = rolEnUrl === 'administrador'; 
 
@@ -446,8 +441,6 @@ function App() {
   const [procesoSeleccionado, setProcesoSeleccionado] = useState('todos');
   
   const [pestanaActiva, setPestanaActiva] = useState('general');
-  const [isAdmin] = useState(true); // <-- True temporalmente para que veas el botón de subir CSV en Productividad
-
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mostrarTablas, setMostrarTablas] = useState(true);
 
@@ -611,10 +604,15 @@ function App() {
   };
 
   useEffect(() => {
-    axios.get('/api/api_vencer.php')
-      .then(res => { setDatos(Array.isArray(res.data) ? res.data : []); setCargando(false); })
-      .catch(err => { setError("Error de conexión con el servidor"); setCargando(false); });
-  }, []);
+    // Si la ruta es productividad, no hace falta que cargue la BD de VENCER al inicio
+    if (moduloActual !== 'productividad') {
+        axios.get('/api/api_vencer.php')
+          .then(res => { setDatos(Array.isArray(res.data) ? res.data : []); setCargando(false); })
+          .catch(err => { setError("Error de conexión con el servidor"); setCargando(false); });
+    } else {
+        setCargando(false); // Apagamos el switch de carga si no es vencer
+    }
+  }, [moduloActual]);
 
   const aniosDisponibles = useMemo(() => [...new Set(datos.map(d => d.anio || (d.fecha_evento ? d.fecha_evento.split('-')[0] : null)).filter(a => a))].sort().reverse(), [datos]);
   
@@ -649,6 +647,13 @@ function App() {
   if (cargando) return <div className="h-screen flex flex-col items-center justify-center text-[#005C46] bg-slate-50 font-bold text-xl"><Activity className="animate-spin mb-4" size={40}/>Cargando Sistema VENCER...</div>;
   if (error) return <div className="h-screen flex items-center justify-center text-red-500 bg-slate-50 font-bold">{error}</div>;
 
+  // EL INTERCEPTOR
+  // Si la URL dice productividad, renderiza SOLO el componente rojo mate y se olvida de lo demás.
+  if (moduloActual === 'productividad') {
+      return <DashboardProductividad isAdmin={esAdministrador} />;
+  }
+
+  // Si no, dibuja toda la interfaz original de Vencer
   return (
     <div style={{ display: 'grid', gridTemplateColumns: sidebarCollapsed ? '80px 1fr' : '260px 1fr', height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f8fafc' }} className="text-slate-800 font-sans">
       
@@ -673,7 +678,7 @@ function App() {
       {/* --- COLUMNA 2: CONTENIDO DERECHO --- */}
       <div style={{ overflowY: 'auto', overflowX: 'hidden', minWidth: 0, height: '100%', position: 'relative', zIndex: 0 }}>
         
-        {moduloActual === 'vencer' ? (
+        {moduloActual === 'vencer' && (
           <>
             <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm min-h-[64px] py-2 flex-shrink-0">
               <div className="max-w-[1400px] mx-auto px-6 h-full flex flex-col md:flex-row items-center justify-between gap-2">
@@ -849,8 +854,6 @@ function App() {
 
             </main>
           </>
-        ) : (
-          <DashboardProductividad isAdmin={esAdministrador} />
         )}
 
       </div>

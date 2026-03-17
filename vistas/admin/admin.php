@@ -270,8 +270,9 @@ $totalManuales = Manual::contarManuales();
                             <p>Aquí podrás ver lo que hay en productividad.</p>
                             <button class="btn btn-outline-success w-50 card-submenu-toggle">Ver más</button>
                             <div class="card-submenu mt-3">
-                                <a href="/graficos/index.html?modulo=productividad"
+                                <a href="/graficos/index.html?modulo=productividad&rol=administrador"
                                     class="btn btn-sm btn-success w-50">Consulta externa</a>
+                                    
                                 <a href="../hospitalizacion/opciones-hospitalizacion.php"
                                     class="btn btn-sm btn-success w-50">Hospitalización</a>
                                 <a href="#" class="btn btn-sm btn-success w-50">Cirugía</a><br>

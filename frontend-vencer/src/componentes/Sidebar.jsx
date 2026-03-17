@@ -14,7 +14,7 @@ export default function Sidebar({
         <aside className="h-full flex flex-col text-white transition-all duration-300 relative">
             {/* Logo / Encabezado */}
             <div className="p-4 flex items-center justify-between border-b border-white/10 shrink-0 min-h-[64px]">
-                {!sidebarCollapsed && <h1 className="font-black text-xl tracking-wider text-emerald-50">UMAE 48</h1>}
+                {!sidebarCollapsed && <h1 className="font-black text-xl tracking-wider text-emerald-50">Vencer</h1>}
                 <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
                     {sidebarCollapsed ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
                 </button>
