@@ -59,7 +59,7 @@ export default function DashboardProductividad({ isAdmin }) {
     const [mesInicio, setMesInicio] = useState(0); 
     const [mesFin, setMesFin] = useState(11); 
     const [divisionSeleccionada, setDivisionSeleccionada] = useState('todas');
-    const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState('todas'); // <-- NUEVO FILTRO
+    const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState('todas');
 
     // ESTADOS DE DATOS
     const [archivo, setArchivo] = useState(null);
@@ -69,15 +69,30 @@ export default function DashboardProductividad({ isAdmin }) {
     const [cargandoDatos, setCargandoDatos] = useState(false);
     const [error, setError] = useState(null);
 
+    // NUEVO: Estado para el Diccionario de Médicos
+    const [diccionarioMedicos, setDiccionarioMedicos] = useState({});
+
+// ==========================================
+    // CARGA DE DATOS PRINCIPALES
+    // ==========================================
     const cargarDatos = () => {
         setCargandoDatos(true);
         axios.get('/api/api_productividad.php') 
             .then(res => {
                 if (Array.isArray(res.data)) {
+                    // AQUÍ ES LA BARRERA DE ENTRADA ABSOLUTA
                     const datosLimpios = res.data.filter(d => {
                         const esp = (d.especialidad || '').toUpperCase();
-                        return !esp.includes('TOCO') && !esp.includes('PRIMER CONTACTO');
+                        
+                        // 1. Filtro original (Toco y Primer Contacto)
+                        const pasaFiltro1 = !esp.includes('TOCO') && !esp.includes('PRIMER CONTACTO');
+                        
+                        // 2. NUEVA REGLA DE EXCLUSIÓN: Usamos .includes() para atrapar "6900", "A6900" o "Cod: 6900"
+                        const pasaFiltro2 = !esp.includes('6900') && !esp.includes('5001');
+                        
+                        return pasaFiltro1 && pasaFiltro2;
                     });
+                    
                     setDatos(datosLimpios);
                 } else setDatos([]);
                 setCargandoDatos(false);
@@ -92,11 +107,50 @@ export default function DashboardProductividad({ isAdmin }) {
         if (vistaActiva === 'dashboard' && areaSidebar === 'consulta_externa') cargarDatos();
     }, [vistaActiva, areaSidebar]);
 
+    // ==========================================
+    // CARGA DEL DICCIONARIO DE MÉDICOS (Catálogo)
+    // ==========================================
+    useEffect(() => {
+        console.log("1. El useEffect de médicos se activó. Vista actual:", vistaActiva);
+
+        const cargarDiccionario = async () => {
+            console.log("2. Iniciando la petición Axios hacia /api/api_medicos.php...");
+            try {
+                const res = await axios.get('/api/api_medicos.php'); 
+                console.log("3. ¡El servidor respondió!", res.data);
+                
+                if (Array.isArray(res.data)) {
+                    const dicc = res.data.reduce((acc, medico) => {
+                        const mat = String(medico.matricula || '').trim();
+                        const nom = String(medico.nombre || '').trim();
+                        if (mat && nom) acc[mat] = nom;
+                        return acc;
+                    }, {});
+                    console.log("4. Diccionario armado en memoria:", dicc);
+                    setDiccionarioMedicos(dicc);
+                } else {
+                    console.warn("El servidor no devolvió un Arreglo. Devolvió:", res.data);
+                }
+            } catch (err) {
+                console.error("ERROR CRÍTICO: No se pudo hacer la petición Axios a médicos", err);
+            }
+        };
+
+        if (vistaActiva === 'dashboard') {
+            cargarDiccionario();
+        } else {
+            console.log("No se carga el diccionario porque no estamos en el dashboard aún.");
+        }
+    }, [vistaActiva]); 
+
     // RESETEAR ESPECIALIDAD CUANDO CAMBIA LA DIVISIÓN
     useEffect(() => {
         setEspecialidadSeleccionada('todas');
     }, [divisionSeleccionada]);
 
+    // ==========================================
+    // SUBIDA DE ARCHIVO (ETL)
+    // ==========================================
     const handleSubirArchivo = async (e) => {
         e.preventDefault();
         if (!archivo) { setMensaje('Por favor selecciona un archivo CSV.'); return; }
@@ -151,7 +205,7 @@ export default function DashboardProductividad({ isAdmin }) {
         return [...anios].sort().reverse();
     }, [datos]);
 
-    // CAPA 1: Filtro solo por Fecha (Base para rankings globales)
+    // CAPA 1: Filtro solo por Fecha
     const datosFiltradosFecha = useMemo(() => {
         return datos.filter(item => {
             let a = item.anio || item.Anio || item.ANIO || item.año || item.Año || item.AÑO;
@@ -189,7 +243,7 @@ export default function DashboardProductividad({ isAdmin }) {
         });
     }, [datos, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
 
-    // RANKING DE DIVISIONES (Global)
+    // RANKING DE DIVISIONES
     const rankingDivisiones = useMemo(() => {
         const conteo = {};
         datosFiltradosFecha.forEach(d => {
@@ -203,7 +257,7 @@ export default function DashboardProductividad({ isAdmin }) {
         return rankingDivisiones.map(item => item[0]).sort();
     }, [rankingDivisiones]);
 
-    // RANKING E INFO DE ESPECIALIDADES (Global)
+    // RANKING E INFO DE ESPECIALIDADES
     const infoEspecialidades = useMemo(() => {
         const conteo = {};
         const divMap = {};
@@ -211,7 +265,7 @@ export default function DashboardProductividad({ isAdmin }) {
             const esp = (d.especialidad || 'Desconocida').trim();
             const div = (d.division || 'Sin Asignar').trim();
             conteo[esp] = (conteo[esp] || 0) + 1;
-            if (!divMap[esp]) divMap[esp] = div; // Guardamos a qué división pertenece
+            if (!divMap[esp]) divMap[esp] = div; 
         });
         const ranking = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
         return { ranking, divMap };
@@ -226,7 +280,7 @@ export default function DashboardProductividad({ isAdmin }) {
         });
     }, [datosFiltradosFecha, divisionSeleccionada]);
 
-    // ESPECIALIDADES DISPONIBLES (En base a la división seleccionada)
+    // ESPECIALIDADES DISPONIBLES
     const especialidadesDisponibles = useMemo(() => {
         const setEsp = new Set();
         datosFiltradosDivision.forEach(d => {
@@ -235,15 +289,20 @@ export default function DashboardProductividad({ isAdmin }) {
         return [...setEsp].sort();
     }, [datosFiltradosDivision]);
 
-    // CAPA 3: Filtro Final por Especialidad
+    // CAPA 3: Filtro Final por Especialidad (CON EXCLUSIÓN LÓGICA DE A6900 Y 5001)
     const datosFiltrados = useMemo(() => {
         return datosFiltradosDivision.filter(item => {
+            const esp = (item.especialidad || 'Desconocida').trim().toUpperCase();
+
+            // REGLA DE NEGOCIO CORREGIDA: Exclusión Lógica permanente
+            if (esp === 'A6900' || esp === '5001') {
+                return false; 
+            }
+
             if (especialidadSeleccionada === 'todas') return true;
-            const esp = (item.especialidad || 'Desconocida').trim();
-            return esp === especialidadSeleccionada;
+            return esp === especialidadSeleccionada.toUpperCase();
         });
     }, [datosFiltradosDivision, especialidadSeleccionada]);
-
 
     // ==========================================
     // CÁLCULOS PARA GRÁFICAS
@@ -269,7 +328,13 @@ export default function DashboardProductividad({ isAdmin }) {
         }, {});
         return {
             labels: Object.keys(conteo),
-            datasets: [{ data: Object.values(conteo), backgroundColor: ['#822626', '#D4C19C', '#475569', '#1e293b', '#b45309'], borderWidth: 0 }]
+            datasets: [{ 
+                label: 'Consultas',
+                data: Object.values(conteo), 
+                backgroundColor: ['#822626', '#D4C19C', '#475569', '#1e293b', '#b45309'], 
+                borderWidth: 0,
+                borderRadius: 4
+            }]
         };
     }, [datosFiltrados]);
 
@@ -287,30 +352,59 @@ export default function DashboardProductividad({ isAdmin }) {
     }, [datosFiltrados]);
 
     const chartEspecialidades = useMemo(() => {
+        // La exclusión lógica ya se hizo en datosFiltrados, solo contamos
         const conteo = datosFiltrados.reduce((acc, curr) => {
             const esp = curr.especialidad || 'Desconocida';
             acc[esp] = (acc[esp] || 0) + 1;
             return acc;
         }, {});
+
         const ordenados = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+        
         return {
             labels: ordenados.map(item => item[0]),
-            datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1]), backgroundColor: '#334155', borderRadius: 4 }]
+            datasets: [{ 
+                label: 'Consultas', 
+                data: ordenados.map(item => item[1]), 
+                backgroundColor: '#334155', 
+                borderRadius: 4 
+            }]
         };
     }, [datosFiltrados]);
 
     const chartMedicos = useMemo(() => {
+        // Validación de seguridad visual
+        if (Object.keys(diccionarioMedicos).length === 0) {
+             console.log("Calculando grafica de médicos SIN diccionario (aún no carga)");
+        } else {
+             console.log("Calculando grafica de médicos CON diccionario cargado");
+        }
+
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            const medico = curr.matricula_medico || 'Sin Matrícula';
-            acc[medico] = (acc[medico] || 0) + 1;
+            const matriculaRaw = String(curr.matricula_medico || 'Sin Matrícula').trim();
+            
+            // Traducción con el Diccionario Dinámico
+            const nombreMedico = diccionarioMedicos[matriculaRaw] || `Matr. ${matriculaRaw}`;
+
+            acc[nombreMedico] = (acc[nombreMedico] || 0) + 1;
             return acc;
         }, {});
+        
         const ordenados = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+        
+        // Cortamos al Top 20 para no hacer una gráfica kilométrica
+        const top = ordenados.slice(0, 20);
+
         return {
-            labels: ordenados.map(item => `Matr. ${item[0]}`),
-            datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1]), backgroundColor: '#822626', borderRadius: 4 }]
+            labels: top.map(item => item[0]),
+            datasets: [{ 
+                label: 'Consultas', 
+                data: top.map(item => item[1]), 
+                backgroundColor: '#822626', 
+                borderRadius: 4 
+            }]
         };
-    }, [datosFiltrados]);
+    }, [datosFiltrados, diccionarioMedicos]); // <- Dependencia del diccionario inyectada
 
     const chartConsultorios = useMemo(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
@@ -319,9 +413,12 @@ export default function DashboardProductividad({ isAdmin }) {
             return acc;
         }, {});
         const ordenados = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+        
+        const top = ordenados.slice(0, 20);
+        
         return {
-            labels: ordenados.map(item => `Cons. ${item[0]}`),
-            datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1]), backgroundColor: '#b45309', borderRadius: 4 }]
+            labels: top.map(item => `Cons. ${item[0]}`),
+            datasets: [{ label: 'Consultas', data: top.map(item => item[1]), backgroundColor: '#b45309', borderRadius: 4 }]
         };
     }, [datosFiltrados]);
 
@@ -338,13 +435,14 @@ export default function DashboardProductividad({ isAdmin }) {
         };
     }, [datosFiltrados]);
 
-    const anchoDinamico = (cantidadItems) => Math.max(800, cantidadItems * 40); 
+    const anchoDinamico = (cantidadItems) => `max(100%, ${cantidadItems * 40}px)`;
+
     const chartOptionsVertical = {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
             x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, autoSkip: false } },
-            y: { grid: { display: true, color: '#f1f5f9' } }
+            y: { grid: { display: true, color: '#f1f5f9' }, beginAtZero: true }
         }
     };
 
@@ -474,9 +572,7 @@ export default function DashboardProductividad({ isAdmin }) {
                 {/* ENCABEZADO SUPERIOR LIMPIO CON FILTROS */}
                 <header className="bg-white border-b border-slate-200 shrink-0 px-4 md:px-8 py-3 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 z-10 transition-all duration-300 min-h-[70px]">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors hidden md:block" title={sidebarCollapsed ? "Expandir menú" : "Ocultar menú"}>
-                            <Menu size={20} />
-                        </button>
+
                         <div>
                             <h1 className="text-xl md:text-2xl font-black text-slate-800 capitalize">{areaSidebar.replace('_', ' ')}</h1>
                             <p className="text-xs text-slate-500 font-bold uppercase tracking-wider hidden sm:block">Tablero de Indicadores</p>
@@ -558,11 +654,44 @@ export default function DashboardProductividad({ isAdmin }) {
                                 <div className="max-w-[1600px] mx-auto w-full pb-8">
                                     
                                     {/* 1. KPIs PRINCIPALES */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-[#822626]"><div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3></div><p className="text-4xl font-black text-[#822626]">{kpis.total.toLocaleString()}</p></div>
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div className="flex items-center gap-3 text-slate-500 mb-2"><CalendarCheck size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Citados</h3></div><p className="text-4xl font-black text-slate-700">{kpis.citados.toLocaleString()}</p><p className="text-xs font-bold text-slate-400 mt-1">Vs {kpis.espontaneos} Espontáneos</p></div>
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div className="flex items-center gap-3 text-slate-500 mb-2"><Clock size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Primera Vez</h3></div><p className="text-4xl font-black text-[#c2410c]">{kpis.primeraVez.toLocaleString()}</p><p className="text-xs font-bold text-slate-400 mt-1">Vs {kpis.subsecuentes} Subsecuentes</p></div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    {/* Tarjeta 1: Total Consultas */}
+                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-[#822626]">
+                                        <div className="flex items-center gap-3 text-slate-500 mb-2">
+                                            <Users size={18}/>
+                                            <h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3>
+                                        </div>
+                                        <p className="text-4xl font-black text-[#822626]">{kpis.total.toLocaleString()}</p>
                                     </div>
+
+                                    {/* Tarjeta 2: Citados y Espontáneos */}
+                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                                        <div className="flex items-center gap-3 text-slate-500 mb-2">
+                                            <CalendarCheck size={18}/>
+                                            <h3 className="text-xs font-bold uppercase tracking-widest">Citados</h3>
+                                        </div>
+                                        <p className="text-4xl font-black text-slate-700">{kpis.citados.toLocaleString()}</p>
+                                        
+                                        <div className="flex flex-col mt-5 pt-4 border-t border-slate-100">
+                                            <p className="text-4xl font-black text-[#822626]">{kpis.espontaneos.toLocaleString()}</p>
+                                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Espontáneos</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Tarjeta 3: Primera Vez y Subsecuentes */}
+                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                                        <div className="flex items-center gap-3 text-slate-500 mb-2">
+                                            <Clock size={18}/>
+                                            <h3 className="text-xs font-bold uppercase tracking-widest">Primera Vez</h3>
+                                        </div>
+                                        <p className="text-4xl font-black text-[#c2410c]">{kpis.primeraVez.toLocaleString()}</p>
+                                        
+                                        <div className="flex flex-col mt-5 pt-4 border-t border-slate-100">
+                                            <p className="text-4xl font-black text-[#822626]">{kpis.subsecuentes.toLocaleString()}</p>
+                                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Subsecuentes</span>
+                                        </div>
+                                    </div>
+                                </div>
 
                                     {/* 2. FILA DE TARJETAS PREMIUM DE RANKING */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -647,20 +776,44 @@ export default function DashboardProductividad({ isAdmin }) {
 
                                     </div>
 
-                                    {/* 3. GRÁFICAS DE DONA (Se oculta Division si es != todas) */}
+                                    {/* 3. GRÁFICAS DE COMPARACIÓN (Barras para División, Dona para Turno) */}
                                     <div className={`grid grid-cols-1 ${divisionSeleccionada === 'todas' ? 'lg:grid-cols-2' : ''} gap-6 mb-6 items-start`}>
                                         
+                                        {/* Gráfica de Barras - Divisiones */}
                                         {divisionSeleccionada === 'todas' && (
                                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px]">
                                                 <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por División</h3>
-                                                <div className="relative flex-1 min-h-[220px]"><Doughnut data={chartDivisiones} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} /></div>
+                                                <div className="relative flex-1 min-h-[220px]">
+                                                    <Bar 
+                                                        data={chartDivisiones} 
+                                                        options={{ 
+                                                            maintainAspectRatio: false, 
+                                                            plugins: { 
+                                                                legend: { display: false } // Ocultamos la leyenda
+                                                            },
+                                                            scales: {
+                                                                y: { beginAtZero: true },
+                                                                x: { grid: { display: false } }
+                                                            }
+                                                        }} 
+                                                    />
+                                                </div>
                                                 {mostrarTablas && <TablaDatos titulo1="División" titulo2="Consultas" labels={chartDivisiones.labels} data={chartDivisiones.datasets[0].data} />}
                                             </div>
                                         )}
 
+                                        {/* Gráfica de Dona - Turnos */}
                                         <div className={`bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px] ${divisionSeleccionada !== 'todas' ? 'w-full lg:w-1/2 mx-auto' : ''}`}>
                                             <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Consultas por Turno</h3>
-                                            <div className="relative flex-1 min-h-[220px]"><Doughnut data={chartTurnos} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} /></div>
+                                            <div className="relative flex-1 min-h-[220px]">
+                                                <Doughnut 
+                                                    data={chartTurnos} 
+                                                    options={{ 
+                                                        maintainAspectRatio: false, 
+                                                        plugins: { legend: { position: 'bottom' } } 
+                                                    }} 
+                                                />
+                                            </div>
                                             {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Consultas" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} />}
                                         </div>
                                     </div>
@@ -668,7 +821,7 @@ export default function DashboardProductividad({ isAdmin }) {
                                     {/* 4. GRÁFICAS DE BARRAS VERTICALES CON SCROLL HORIZONTAL */}
                                     <div className="flex flex-col gap-6">
                                         
-                                        {/* Especialidades (Se oculta si ya seleccionaste una) */}
+                                        {/* Especialidades */}
                                         {especialidadSeleccionada === 'todas' && (
                                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
                                                 <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Especialidades</h3>
@@ -683,25 +836,25 @@ export default function DashboardProductividad({ isAdmin }) {
                                             </div>
                                         )}
 
-                                        {/* Médicos */}
+                                        {/* Médicos (Con Diccionario Inyectado) */}
                                         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Productividad por Médico (Matrícula)</h3>
+                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Productividad por Médico</h3>
                                             <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
                                                 <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
-                                                    <div style={{ width: `${anchoDinamico(chartMedicos.labels.length)}px`, height: '100%' }}>
+                                                    <div style={{ width: `${anchoDinamico(chartMedicos.labels.length)}`, height: '100%' }}>
                                                         <Bar data={chartMedicos} options={chartOptionsVertical} />
                                                     </div>
                                                 </div>
-                                                {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Matrícula" titulo2="Consultas" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} total={true} /></div>}
+                                                {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Médico" titulo2="Consultas" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} total={true} /></div>}
                                             </div>
                                         </div>
 
                                         {/* Consultorios */}
                                         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Productividad por Consultorio</h3>
+                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Productividad por Consultorio</h3>
                                             <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
                                                 <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
-                                                    <div style={{ width: `${anchoDinamico(chartConsultorios.labels.length)}px`, height: '100%' }}>
+                                                    <div style={{ width: `${anchoDinamico(chartConsultorios.labels.length)}`, height: '100%' }}>
                                                         <Bar data={chartConsultorios} options={chartOptionsVertical} />
                                                     </div>
                                                 </div>
@@ -714,7 +867,7 @@ export default function DashboardProductividad({ isAdmin }) {
                                             <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Diagnósticos Principales</h3>
                                             <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
                                                 <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
-                                                    <div style={{ width: `${anchoDinamico(chartDiagnosticos.labels.length)}px`, height: '100%' }}>
+                                                    <div style={{ width: `${anchoDinamico(chartDiagnosticos.labels.length)}`, height: '100%' }}>
                                                         <Bar data={chartDiagnosticos} options={chartOptionsVertical} />
                                                     </div>
                                                 </div>

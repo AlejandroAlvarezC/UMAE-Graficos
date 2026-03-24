@@ -18,13 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 // 4. INICIAR SESIÓN
 session_start();
 
-// OJO: Para pruebas locales, comentamos la seguridad temporalmente
-/*
-if (!isset($_SESSION['admin_id'])) {
-    echo json_encode(["error" => "No autorizado (Sesion cerrada)"]);
-    exit();
-}
-*/
 
 // 5. INTENTAR OBTENER LOS DATOS
 try {
