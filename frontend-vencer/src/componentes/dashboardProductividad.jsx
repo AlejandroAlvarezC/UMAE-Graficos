@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import localforage from 'localforage';
 import { UploadCloud, Activity, Users, CalendarCheck, Clock, ArrowLeft, BarChart2, Database, TableProperties, Stethoscope, Ambulance, Bed, Syringe, Siren, ChevronLeft, ChevronRight, Download, Filter, Menu, Award, Target } from 'lucide-react';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
@@ -10,13 +11,29 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointEleme
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 // ==========================================
+// CACHÉ GLOBAL EN MEMORIA (Patrón Singleton)
+// Mantiene los datos vivos aunque salgas del módulo
+// ==========================================
+let cacheDatosProductividad = [];
+let cacheDiccionarioMedicos = {};
+let cacheEstaCargada = false;
+
+// ==========================================
 // SUB-COMPONENTE: Tabla de Datos (ACTUALIZADO CON DESGLOSE)
+// ==========================================
+// ==========================================
+// SUB-COMPONENTE: Tabla de Datos (ACTUALIZADO CON ÍNDICE)
 // ==========================================
 const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, total = true }) => {
     if (!labels || !data) return null;
     
     // Si nos pasan los arreglos de PV y Sub, activamos las columnas extra
     const mostrarDesglose = dataPV && dataSub;
+
+    // Cálculos para los totales del tfoot (Pie de tabla)
+    const totalPV = mostrarDesglose ? dataPV.reduce((a, b) => a + b, 0) : 0;
+    const totalSub = mostrarDesglose ? dataSub.reduce((a, b) => a + b, 0) : 0;
+    const totalGeneral = data.reduce((a, b) => a + b, 0);
 
     return (
         <div className="mt-4 border-t border-slate-100 pt-4 animate-in fade-in slide-in-from-top-2 duration-300 h-full">
@@ -27,28 +44,49 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, total = t
                             <th className="py-2 px-3 font-bold rounded-l-lg">{titulo1}</th>
                             {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-[#c2410c]/70">1ra Vez</th>}
                             {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-[#822626]/70">Subsec.</th>}
+                            {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-slate-500" title="Índice de Subsecuencia (Subsecuentes / Primera Vez)">Índice</th>}
                             <th className="py-2 px-3 font-bold text-right rounded-r-lg">{titulo2}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {labels.map((label, index) => (
-                            <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                <td className="py-2 px-3">{label}</td>
-                                {/* Nuevas columnas de desglose */}
-                                {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-medium">{dataPV[index].toLocaleString()}</td>}
-                                {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-medium">{dataSub[index].toLocaleString()}</td>}
-                                
-                                <td className="py-2 px-3 text-right font-black text-slate-700">{data[index].toLocaleString()}</td>
-                            </tr>
-                        ))}
+                        {labels.map((label, index) => {
+                            // CÁLCULO SEGURO DEL ÍNDICE: Evitamos dividir entre cero
+                            let indice = '0.00';
+                            if (dataPV[index] > 0) {
+                                indice = (dataSub[index] / dataPV[index]).toFixed(2);
+                            } else if (dataSub[index] > 0) {
+                                indice = '∞'; // Infinito (Puros subsecuentes, cero primera vez)
+                            }
+
+                            return (
+                                <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                    <td className="py-2 px-3">{label}</td>
+                                    {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-medium">{dataPV[index].toLocaleString()}</td>}
+                                    {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-medium">{dataSub[index].toLocaleString()}</td>}
+                                    
+                                    {/* Nueva columna del Índice */}
+                                    {mostrarDesglose && <td className="py-2 px-3 text-center text-slate-500 font-bold bg-slate-50/50">{indice}</td>}
+                                    
+                                    <td className="py-2 px-3 text-right font-black text-slate-700">{data[index].toLocaleString()}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                     {total && (
                         <tfoot className="bg-slate-50 font-bold sticky bottom-0 z-10 shadow-sm">
                             <tr>
                                 <td className="py-2 px-3 rounded-l-lg text-slate-500 uppercase tracking-widest text-xs">Total General</td>
-                                {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-black">{dataPV.reduce((a, b) => a + b, 0).toLocaleString()}</td>}
-                                {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-black">{dataSub.reduce((a, b) => a + b, 0).toLocaleString()}</td>}
-                                <td className="py-2 px-3 text-right rounded-r-lg text-slate-800 font-black">{data.reduce((a, b) => a + b, 0).toLocaleString()}</td>
+                                {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-black">{totalPV.toLocaleString()}</td>}
+                                {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-black">{totalSub.toLocaleString()}</td>}
+                                
+                                {/* Índice Total del Pie de Página */}
+                                {mostrarDesglose && (
+                                    <td className="py-2 px-3 text-center text-slate-600 font-black bg-slate-100/50">
+                                        {totalPV > 0 ? (totalSub / totalPV).toFixed(2) : '0.00'}
+                                    </td>
+                                )}
+                                
+                                <td className="py-2 px-3 text-right rounded-r-lg text-slate-800 font-black">{totalGeneral.toLocaleString()}</td>
                             </tr>
                         </tfoot>
                     )}
@@ -60,7 +98,7 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, total = t
 
 export default function DashboardProductividad({ isAdmin }) {
     // ESTADOS DE NAVEGACIÓN
-    const [vistaActiva, setVistaActiva] = useState('menu');
+    const [vistaActiva, setVistaActiva] = useState('dashboard');
     const [areaSidebar, setAreaSidebar] = useState('consulta_externa'); 
     const [mostrarTablas, setMostrarTablas] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -86,57 +124,95 @@ export default function DashboardProductividad({ isAdmin }) {
     const [error, setError] = useState(null);
     const [diccionarioMedicos, setDiccionarioMedicos] = useState({});
 
+// ==========================================
+    // CARGA DE DATOS (Stale-While-Revalidate)
     // ==========================================
-    // CARGA DE DATOS PRINCIPALES (BARRERA DE EXCLUSIÓN)
+// ==========================================
+    // CARGA DE DATOS (Stale-While-Revalidate con IndexedDB / Big Data)
     // ==========================================
-    const cargarDatos = () => {
-        setCargandoDatos(true);
-        axios.get('/api/api_productividad.php') 
-            .then(res => {
-                if (Array.isArray(res.data)) {
-                    const datosLimpios = res.data.filter(d => {
+    const cargarDatos = async () => {
+        try {
+            // 1. BUSCAMOS EN EL CAJÓN GIGANTE (IndexedDB)
+            const datosLocales = await localforage.getItem('cache_productividad_vencer');
+            const versionLocal = await localforage.getItem('version_productividad_vencer') || "0";
+
+            if (datosLocales && datosLocales.length > 0) {
+                // ¡BAM! Gráficas dibujadas en 0ms desde la base de datos local del navegador
+                setDatos(datosLocales); 
+            } else {
+                // Solo si el disco duro local está totalmente vacío mostramos que está cargando
+                setCargandoDatos(true); 
+            }
+
+            // 2. PREGUNTAR AL SERVIDOR "¿HAY ALGO NUEVO?" (Ping de 5ms)
+            const resVersion = await axios.get('/api/api_check_update.php');
+            const versionServidor = String(resVersion.data.ultima_actualizacion);
+
+            // 3. SI EL SERVIDOR TIENE DATOS MÁS NUEVOS, DESCARGAMOS EL PESO PESADO
+            if (versionServidor !== versionLocal || !datosLocales) {
+                console.log("¡Hay datos nuevos en el servidor! Sincronizando en segundo plano...");
+                
+                const resDatos = await axios.get('/api/api_productividad.php');
+                
+                if (Array.isArray(resDatos.data)) {
+                    const datosLimpios = resDatos.data.filter(d => {
                         const esp = (d.especialidad || '').toUpperCase();
                         const pasaFiltro1 = !esp.includes('TOCO') && !esp.includes('PRIMER CONTACTO');
                         const pasaFiltro2 = !esp.includes('6900') && !esp.includes('5001') && !esp.includes('6300') && !esp.includes('6600');
                         return pasaFiltro1 && pasaFiltro2;
                     });
+                    
+                    // Actualizamos las gráficas silenciosamente frente al usuario
                     setDatos(datosLimpios);
-                } else setDatos([]);
-                setCargandoDatos(false);
-            })
-            .catch(err => {
-                setError("Error al cargar los datos de productividad.");
-                setCargandoDatos(false);
-            });
+                    
+                    // GUARDAMOS LA NUEVA VERSIÓN EN EL CAJÓN GRANDE
+                    await localforage.setItem('cache_productividad_vencer', datosLimpios);
+                    await localforage.setItem('version_productividad_vencer', versionServidor);
+                    console.log("Sincronización de Big Data completada y guardada localmente.");
+                }
+            } else {
+                console.log("El dashboard está sincronizado al 100%. No se usó ancho de banda.");
+            }
+        } catch (err) {
+            console.error("Error en la validación o descarga de datos:", err);
+            setError("Modo sin conexión. Mostrando últimos datos guardados.");
+        } finally {
+            setCargandoDatos(false);
+        }
     };
 
     useEffect(() => {
-        if (vistaActiva === 'dashboard' && areaSidebar === 'consulta_externa') cargarDatos();
-    }, [vistaActiva, areaSidebar]);
-
-    // ==========================================
-    // CARGA DEL DICCIONARIO DE MÉDICOS
-    // ==========================================
-    useEffect(() => {
-        const cargarDiccionario = async () => {
-            try {
-                const res = await axios.get('/api/api_medicos.php'); 
-                if (Array.isArray(res.data)) {
-                    const dicc = res.data.reduce((acc, medico) => {
-                        const mat = String(medico.matricula || '').trim();
-                        const nom = String(medico.nombre || '').trim();
-                        if (mat && nom) acc[mat] = nom;
-                        return acc;
-                    }, {});
-                    setDiccionarioMedicos(dicc);
-                }
-            } catch (err) {
-                console.error("No se pudo cargar el catálogo de médicos", err);
+            // Solo cargar si estamos en el dashboard y la memoria está VACÍA
+            if (vistaActiva === 'dashboard' && datos.length === 0) {
+                cargarDatos();
             }
-        };
+        }, [vistaActiva]); // Eliminamos areaSidebar para que no se recargue al cambiar de pestaña
 
-        if (vistaActiva === 'dashboard') cargarDiccionario();
-    }, [vistaActiva]); 
+    const cargarDiccionario = async () => {
+        // Revisar disco duro primero
+        const diccLocal = localStorage.getItem('cache_medicos_vencer');
+        if (diccLocal) {
+            setDiccionarioMedicos(JSON.parse(diccLocal));
+            return;
+        }
+
+        try {
+            const res = await axios.get('/api/api_medicos.php'); 
+            if (Array.isArray(res.data)) {
+                const dicc = res.data.reduce((acc, medico) => {
+                    const mat = String(medico.matricula || '').trim();
+                    const nom = String(medico.nombre || '').trim();
+                    if (mat && nom) acc[mat] = nom;
+                    return acc;
+                }, {});
+                
+                setDiccionarioMedicos(dicc);
+                localStorage.setItem('cache_medicos_vencer', JSON.stringify(dicc));
+            }
+        } catch (err) {
+            console.error("Error catálogo de médicos", err);
+        }
+    };
 
     // RESETEAR ESPECIALIDAD CUANDO CAMBIA LA DIVISIÓN
     useEffect(() => {
@@ -159,6 +235,12 @@ export default function DashboardProductividad({ isAdmin }) {
             if (respuesta.data.success) {
                 setMensaje(`✅ ¡Éxito! ${respuesta.data.message}`);
                 setArchivo(null);
+
+                await localforage.removeItem('cache_productividad_vencer');
+                
+                // Obligamos a descargar la nueva foto
+                cargarDatos();
+
             } else setMensaje(`❌ Error: ${respuesta.data.message}`);
         } catch (error) { setMensaje('❌ Error al conectar con el servidor.'); } 
         finally { setCargandoSubida(false); }
@@ -174,6 +256,53 @@ export default function DashboardProductividad({ isAdmin }) {
         }
         return null;
     };
+
+    // ==========================================
+    // CÁLCULO DE LA ÚLTIMA FECHA EN LA BD
+    // ==========================================
+    const ultimaFechaBD = useMemo(() => {
+        if (!datos || datos.length === 0) return 'No disponible';
+        
+        let maxDate = new Date(2000, 0, 1); // Fecha muy antigua de inicio
+        let found = false;
+
+        datos.forEach(d => {
+            let a = d.anio || d.Anio || d.ANIO || d.año || d.Año || d.AÑO;
+            let m = d.mes || d.Mes || d.MES;
+            let dia = 1;
+
+            const f = encontrarFecha(d); // Tu función que detecta 'fecha_atencion'
+            if (f) {
+                if (f.includes('-')) {
+                    const p = f.split('-');
+                    if (p[0].length === 4) { a = a || p[0]; m = m || p[1]; dia = p[2]; }
+                    else { a = a || p[2]; m = m || p[1]; dia = p[0]; }
+                } else if (f.includes('/')) {
+                    const p = f.split('/');
+                    if (p[0].length === 4) { a = a || p[0]; m = m || p[1]; dia = p[2]; }
+                    else { a = a || p[2]; m = m || p[1]; dia = p[0]; }
+                }
+            }
+
+            if (a && m) {
+                // En JavaScript los meses van de 0 a 11, por eso restamos 1 al mes
+                const currentDate = new Date(parseInt(a), parseInt(m) - 1, parseInt(dia));
+                if (currentDate > maxDate) {
+                    maxDate = currentDate;
+                    found = true;
+                }
+            }
+        });
+
+        if (!found) return 'No disponible';
+
+        // Formatear a dd/mm/aaaa
+        const dd = String(maxDate.getDate()).padStart(2, '0');
+        const mm = String(maxDate.getMonth() + 1).padStart(2, '0');
+        const yyyy = maxDate.getFullYear();
+
+        return `${dd}/${mm}/${yyyy}`;
+    }, [datos]);
 
     const aniosDisponibles = useMemo(() => {
         const anios = new Set();
@@ -283,7 +412,7 @@ export default function DashboardProductividad({ isAdmin }) {
     // ==========================================
     const chartMetas = useMemo(() => {
         const citasPorSemana = [0, 0, 0, 0, 0];
-        let metasPorSemana = [265, 265, 265, 265, 265];
+        let metasPorSemana = [2646, 2646, 2646, 2646, 2646];
         let labelsSemanas = ['Sem. 1 (Días 1-7)', 'Sem. 2 (Días 8-14)', 'Sem. 3 (Días 15-21)', 'Sem. 4 (Días 22-28)', 'Sem. 5 (Días 29+)'];
 
         const esEnero = Number(mesGraficoMeta) === 0; 
@@ -291,7 +420,7 @@ export default function DashboardProductividad({ isAdmin }) {
         if (esEnero) {
             labelsSemanas = ['Sem. 1 (26 Dic - 2 Ene)', 'Sem. 2 (3-9 Ene)', 'Sem. 3 (10-16 Ene)', 'Sem. 4 (17-23 Ene)', 'Sem. 5 (24-31 Ene)'];
             if(Number(anioGraficoMeta) === 2026) {
-                metasPorSemana = [114, 265, 265, 265, 265];
+                metasPorSemana = [1134, 2646, 2646, 2646, 2646];
             }
         }
 
@@ -640,9 +769,7 @@ export default function DashboardProductividad({ isAdmin }) {
                             <Menu size={20} />
                         </button>
                         <div>
-                            <h1 className="text-xl md:text-2xl font-black text-slate-800 capitalize">{areaSidebar.replace('_', ' ')}</h1>
-                            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider hidden sm:block">Tablero de Indicadores</p>
-                        </div>
+                            <h1 className="text-xl md:text-2xl font-black text-slate-800 capitalize">{areaSidebar.replace('_', ' ')}</h1>                        </div>
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
@@ -712,6 +839,13 @@ export default function DashboardProductividad({ isAdmin }) {
                                 </div>
                             ) : (
                                 <div className="max-w-[1600px] mx-auto w-full pb-8">
+
+                                    <div className="flex justify-end mb-4">
+                                        <p className="text-sm font-bold text-slate-500 bg-white shadow-sm px-4 py-2 rounded-lg border border-slate-200 inline-flex items-center gap-2 animate-in fade-in duration-500">
+                                            <Activity size={16} className="text-[#822626]" />
+                                            Actualizado hasta: <span className="text-[#822626] font-black">{ultimaFechaBD}</span>
+                                        </p>
+                                    </div>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-[#822626]">

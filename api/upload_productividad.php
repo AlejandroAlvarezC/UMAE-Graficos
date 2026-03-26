@@ -100,6 +100,8 @@ try {
             fclose($handle);
             
             $conteoDic = count($diccionario);
+            // Registramos la fecha y hora exacta (timestamp) de esta subida
+            file_put_contents('ultima_actualizacion.txt', time());
             echo json_encode(['success' => true, 'message' => "Se insertaron $registrosInsertados registros. (Catálogo cargado: $conteoDic especialidades)."]);
         }
     }
