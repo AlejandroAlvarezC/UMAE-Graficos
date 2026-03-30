@@ -1,14 +1,82 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import localforage from 'localforage';
-import { UploadCloud, Activity, Users, CalendarCheck, Clock, ArrowLeft, BarChart2, Database, TableProperties, Stethoscope, Ambulance, Bed, Syringe, Siren, ChevronLeft, ChevronRight, Download, Filter, Menu, Award, Target } from 'lucide-react';
+import { UploadCloud, Activity, Users, CalendarCheck, Clock, ArrowLeft, BarChart2, Database, TableProperties, Stethoscope, Ambulance, Bed, Syringe, Siren, ChevronLeft, ChevronRight, Download, Filter, Menu, Award, Target, BookOpen, MapPin, ClipboardList} from 'lucide-react';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-
+import AdministradorCatalogos from './AdministradorCatalogos';
+import MenuPrincipal from './MenuPrincipal';
 // Registrar componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement);
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+// ==========================================
+// ALGORITMO DE CALENDARIO OPERATIVO (Regla 26 al 25)
+// Genera semanas dinámicas cortando en Domingos
+// ==========================================
+const generarCalendarioIMSS = (mesSeleccionado, anioSeleccionado) => {
+    // Mes va de 0 (Enero) a 11 (Diciembre)
+    const anioAnterior = mesSeleccionado === 0 ? anioSeleccionado - 1 : anioSeleccionado;
+    const mesAnterior = mesSeleccionado === 0 ? 11 : mesSeleccionado - 1;
+
+    // Inicio el 26 del mes pasado, fin el 25 del actual
+    const fechaInicio = new Date(anioAnterior, mesAnterior, 26);
+    const fechaFin = new Date(anioSeleccionado, mesSeleccionado, 25, 23, 59, 59);
+
+    let semanas = [];
+    let fechaActual = new Date(fechaInicio);
+    let numeroSemana = 1;
+    let inicioSemana = new Date(fechaActual);
+
+    while (fechaActual <= fechaFin) {
+        // Si es Domingo (0) O es el último día del mes (25)
+        if (fechaActual.getDay() === 0 || fechaActual.getDate() === 25) {
+            
+            // Creamos el fin de semana a las 23:59 hrs para que atrape todas las consultas de ese día
+            const finDeSemana = new Date(fechaActual);
+            finDeSemana.setHours(23, 59, 59);
+
+            semanas.push({
+                semana: numeroSemana,
+                inicio: new Date(inicioSemana),
+                fin: finDeSemana
+            });
+            
+            numeroSemana++;
+            inicioSemana = new Date(fechaActual);
+            inicioSemana.setDate(inicioSemana.getDate() + 1); // El inicio de la siguiente es mañana (Lunes)
+        }
+        fechaActual.setDate(fechaActual.getDate() + 1);
+    }
+
+    // Regla de seguridad: Si matemáticamente salen 6 semanas, fusionamos la 6 con la 5
+    if (semanas.length > 5) {
+        semanas[4].fin = semanas[semanas.length - 1].fin;
+        semanas = semanas.slice(0, 5);
+    }
+    
+    // Si salen menos de 5, rellenamos para no romper la gráfica
+    while(semanas.length < 5) {
+         semanas.push({ semana: semanas.length + 1, vacia: true });
+    }
+
+    // Formatear etiquetas bonitas como "26-dic a 28-dic"
+    const nombresMeses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    semanas.forEach(s => {
+        if(!s.vacia) {
+            const d1 = String(s.inicio.getDate()).padStart(2, '0');
+            const m1 = nombresMeses[s.inicio.getMonth()];
+            const d2 = String(s.fin.getDate()).padStart(2, '0');
+            const m2 = nombresMeses[s.fin.getMonth()];
+            s.label = `S${s.semana} (${d1}-${m1} al ${d2}-${m2})`;
+        } else {
+            s.label = `S${s.semana} (N/A)`;
+        }
+    });
+
+    return semanas;
+};
 
 // ==========================================
 // CACHÉ GLOBAL EN MEMORIA (Patrón Singleton)
@@ -18,9 +86,8 @@ let cacheDatosProductividad = [];
 let cacheDiccionarioMedicos = {};
 let cacheEstaCargada = false;
 
-// ==========================================
-// SUB-COMPONENTE: Tabla de Datos (ACTUALIZADO CON DESGLOSE)
-// ==========================================
+let cacheDiccionarioCIE = {};
+
 // ==========================================
 // SUB-COMPONENTE: Tabla de Datos (ACTUALIZADO CON ÍNDICE)
 // ==========================================
@@ -123,6 +190,9 @@ export default function DashboardProductividad({ isAdmin }) {
     const [cargandoDatos, setCargandoDatos] = useState(false);
     const [error, setError] = useState(null);
     const [diccionarioMedicos, setDiccionarioMedicos] = useState({});
+    // Diccionario CIE
+    const [diccionarioCIE, setDiccionarioCIE] = useState({});
+
 
 // ==========================================
     // CARGA DE DATOS (Stale-While-Revalidate)
@@ -188,31 +258,97 @@ export default function DashboardProductividad({ isAdmin }) {
             }
         }, [vistaActiva]); // Eliminamos areaSidebar para que no se recargue al cambiar de pestaña
 
+// ==========================================
+    // CARGA DEL DICCIONARIO DE MÉDICOS (MODO DEBUG NUCLEAR)
+    // ==========================================
     const cargarDiccionario = async () => {
-        // Revisar disco duro primero
-        const diccLocal = localStorage.getItem('cache_medicos_vencer');
-        if (diccLocal) {
-            setDiccionarioMedicos(JSON.parse(diccLocal));
-            return;
-        }
+        console.log("🛠️ 1. Iniciando carga de médicos (Caché ignorada por ahora)...");
 
         try {
+            console.log("📡 2. Pidiendo datos a /api/api_medicos.php...");
             const res = await axios.get('/api/api_medicos.php'); 
-            if (Array.isArray(res.data)) {
+            
+            console.log("📥 3. Respuesta del servidor recibida:", res.data);
+            
+            if (Array.isArray(res.data) && res.data.length > 0) {
                 const dicc = res.data.reduce((acc, medico) => {
-                    const mat = String(medico.matricula || '').trim();
+                    // TRUCO DE INGENIERÍA: A veces Excel exporta la matrícula como "12345.0"
+                    let mat = String(medico.matricula || '').trim().replace('.0', '').replace(/\s/g, '');
                     const nom = String(medico.nombre || '').trim();
+                    
                     if (mat && nom) acc[mat] = nom;
                     return acc;
                 }, {});
                 
+                console.log("✅ 4. Diccionario final construido. Total médicos:", Object.keys(dicc).length);
+                console.log("🔍 Muestra del diccionario:", dicc); // Aquí veremos si las matrículas se ven bien
+                
+                // Guardamos los datos
+                cacheDiccionarioMedicos = dicc;
                 setDiccionarioMedicos(dicc);
-                localStorage.setItem('cache_medicos_vencer', JSON.stringify(dicc));
+                await localforage.setItem('cache_medicos_vencer', dicc);
+                
+            } else {
+                console.error("❌ 3. ERROR: La API respondió, pero no es un arreglo válido o está vacío.");
             }
         } catch (err) {
-            console.error("Error catálogo de médicos", err);
+            console.error("❌ ERROR CRÍTICO al conectar con api_medicos.php:", err);
         }
     };
+
+    // ==========================================
+    // CARGA DEL DICCIONARIO CIE-10
+    // ==========================================
+    const cargarDiccionarioCIE = async () => {
+        // 1. Revisar caché de memoria
+        if (Object.keys(cacheDiccionarioCIE).length > 0) {
+            setDiccionarioCIE(cacheDiccionarioCIE);
+            return;
+        }
+
+        // 2. Revisar el cajón gigante (IndexedDB)
+        const diccLocal = await localforage.getItem('cache_cie_vencer');
+        if (diccLocal) {
+            cacheDiccionarioCIE = diccLocal;
+            setDiccionarioCIE(diccLocal);
+            return;
+        }
+
+        // 3. Si no existe, descargar de PHP
+        try {
+            const urlFiel = `/api/api_cie.php?t=${new Date().getTime()}`;
+            const res = await axios.get(urlFiel);
+            if (Array.isArray(res.data)) {
+                // Convertimos el arreglo [{codigo: 'J00', descripcion: 'Resfriado'}] 
+                // a un objeto diccionario {'J00': 'Resfriado'} para búsqueda en 0ms
+                const dicc = res.data.reduce((acc, item) => {
+                    const cod = String(item.codigo || '').trim().toUpperCase();
+                    const desc = String(item.descripcion || '').trim();
+                    if (cod && desc) acc[cod] = desc;
+                    return acc;
+                }, {});
+                
+                cacheDiccionarioCIE = dicc;
+                setDiccionarioCIE(dicc);
+                await localforage.setItem('cache_cie_vencer', dicc);
+            }
+        } catch (err) {
+            console.error("Error catálogo CIE", err);
+        }
+    };
+
+    // ==========================================
+    // 3. EL DISPARADOR MAESTRO (Hook de Montaje)
+    // ==========================================
+    useEffect(() => {
+        // Le decimos a React que arranque estas tres cosas en segundo plano
+        // al mismo tiempo en cuanto el usuario abra el tablero.
+        cargarDatos();
+        cargarDiccionario();
+        
+        cargarDiccionarioCIE(); 
+        
+    }, []);
 
     // RESETEAR ESPECIALIDAD CUANDO CAMBIA LA DIVISIÓN
     useEffect(() => {
@@ -408,22 +544,26 @@ export default function DashboardProductividad({ isAdmin }) {
     }, [datosFiltradosDivision, especialidadSeleccionada]);
 
     // ==========================================
-    // CÁLCULOS PARA GRÁFICAS Y METAS
+    // GRÁFICA DE METAS CON CALENDARIO DINÁMICO HISTÓRICO
     // ==========================================
     const chartMetas = useMemo(() => {
-        const citasPorSemana = [0, 0, 0, 0, 0];
-        let metasPorSemana = [2646, 2646, 2646, 2646, 2646];
-        let labelsSemanas = ['Sem. 1 (Días 1-7)', 'Sem. 2 (Días 8-14)', 'Sem. 3 (Días 15-21)', 'Sem. 4 (Días 22-28)', 'Sem. 5 (Días 29+)'];
-
-        const esEnero = Number(mesGraficoMeta) === 0; 
+        // 1. Obtenemos el calendario exacto de las 5 semanas para el mes/año seleccionado
+        const semanasOperativas = generarCalendarioIMSS(mesGraficoMeta, anioGraficoMeta);
         
-        if (esEnero) {
-            labelsSemanas = ['Sem. 1 (26 Dic - 2 Ene)', 'Sem. 2 (3-9 Ene)', 'Sem. 3 (10-16 Ene)', 'Sem. 4 (17-23 Ene)', 'Sem. 5 (24-31 Ene)'];
-            if(Number(anioGraficoMeta) === 2026) {
-                metasPorSemana = [1134, 2646, 2646, 2646, 2646];
-            }
+        // Extraemos solo los textos para la gráfica (ej. "S1 (26-dic al 28-dic)")
+        const labelsSemanas = semanasOperativas.map(s => s.label);
+        const citasPorSemana = [0, 0, 0, 0, 0];
+
+        // 2. Definimos las metas
+        let metasPorSemana = [2646, 2646, 2646, 2646, 2646];
+        
+        // Regla directiva específica para Enero de 2026 (Semana 1 = 114)
+
+        if (Number(mesGraficoMeta) === 0) {
+            metasPorSemana[0] = 1134; // Ajustamos solo la Semana 1 de Enero
         }
 
+        // 3. Agrupamos los datos reales en las "cubetas" (semanas) que generó el algoritmo
         datos.forEach(d => {
             const div = (d.division || 'Sin Asignar').trim();
             if (divisionSeleccionada !== 'todas' && div !== divisionSeleccionada) return;
@@ -431,6 +571,7 @@ export default function DashboardProductividad({ isAdmin }) {
             const esp = (d.especialidad || 'Desconocida').trim().toUpperCase();
             if (especialidadSeleccionada !== 'todas' && esp !== especialidadSeleccionada.toUpperCase()) return;
 
+            // Extraemos la fecha
             let a = d.anio || d.Anio || d.ANIO || d.año || d.Año || d.AÑO;
             let m = d.mes || d.Mes || d.MES;
             let dia = 1;
@@ -448,48 +589,24 @@ export default function DashboardProductividad({ isAdmin }) {
                 }
             }
 
-            const numDia = parseInt(dia, 10) || 1;
-            const numMes = parseInt(m, 10) - 1; 
-            const numAnio = parseInt(a, 10);
+            if (a && m && dia) {
+                // Creamos la fecha del registro a las 12:00 del día (seguro contra zonas horarias)
+                const fechaRegistro = new Date(parseInt(a), parseInt(m) - 1, parseInt(dia), 12, 0, 0);
 
-            let esDelGrafico = false;
-            let indiceSemana = -1;
-
-            if (esEnero) {
-                if (numAnio === anioGraficoMeta - 1 && numMes === 11 && numDia >= 26) {
-                    esDelGrafico = true;
-                    indiceSemana = 0; 
-                } 
-                else if (numAnio === anioGraficoMeta && numMes === 0) {
-                    esDelGrafico = true;
-                    if (numDia <= 2) indiceSemana = 0; 
-                    else if (numDia >= 3 && numDia <= 9) indiceSemana = 1; 
-                    else if (numDia >= 10 && numDia <= 16) indiceSemana = 2; 
-                    else if (numDia >= 17 && numDia <= 23) indiceSemana = 3; 
-                    else if (numDia >= 24) indiceSemana = 4; 
-                }
-            } else {
-                if (numAnio === anioGraficoMeta && numMes === mesGraficoMeta) {
-                    if (numMes === 11 && numDia >= 26) {
-                        // Ignoramos Diciembre 26-31
-                    } else {
-                        esDelGrafico = true;
-                        indiceSemana = Math.ceil(numDia / 7) - 1;
-                        if (indiceSemana > 4) indiceSemana = 4;
+                // Solo tomamos en cuenta los "Citados"
+                if (d.citado === 'Citado' || d.CITADO === 'Citado' || (d.citado && String(d.citado).toLowerCase() === 'citado')) {
+                    
+                    // ¿En qué semana operativa cae esta fecha?
+                    for (let i = 0; i < semanasOperativas.length; i++) {
+                        const sem = semanasOperativas[i];
+                        if (!sem.vacia && fechaRegistro >= sem.inicio && fechaRegistro <= sem.fin) {
+                            citasPorSemana[i]++;
+                            break; // Ya la acomodamos, salimos del ciclo de semanas
+                        }
                     }
                 }
             }
-
-            if (esDelGrafico && indiceSemana !== -1) {
-                if (d.citado === 'Citado' || d.CITADO === 'Citado' || (d.citado && String(d.citado).toLowerCase() === 'citado')) {
-                    citasPorSemana[indiceSemana]++;
-                }
-            }
         });
-
-        if (anioGraficoMeta < 2026) {
-            metasPorSemana = [0, 0, 0, 0, 0];
-        }
 
         return {
             labels: labelsSemanas,
@@ -605,10 +722,13 @@ export default function DashboardProductividad({ isAdmin }) {
         };
     }, [datosFiltrados]);
 
-    const chartMedicos = useMemo(() => {
+ const chartMedicos = useMemo(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            const matriculaRaw = String(curr.matricula_medico || 'Sin Matrícula').trim();
-            const nombreMedico = diccionarioMedicos[matriculaRaw] || `Matr. ${matriculaRaw}`;
+            // Limpiamos la matrícula cruda (quitamos espacios y el molesto ".0" de Excel)
+            const matriculaLimpia = String(curr.matricula_medico || 'Sin Matrícula').trim().replace('.0', '').replace(/\s/g, '');
+            
+            // Buscamos en el diccionario
+            const nombreMedico = diccionarioMedicos[matriculaLimpia] || `Matr. ${curr.matricula_medico}`;
             
             if (!acc[nombreMedico]) acc[nombreMedico] = { total: 0, pv: 0, sub: 0 };
             
@@ -625,7 +745,7 @@ export default function DashboardProductividad({ isAdmin }) {
             dataPV: top.map(item => item[1].pv),
             dataSub: top.map(item => item[1].sub)
         };
-    }, [datosFiltrados, diccionarioMedicos]); 
+    }, [datosFiltrados, diccionarioMedicos]);
 
     const chartConsultorios = useMemo(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
@@ -647,13 +767,19 @@ export default function DashboardProductividad({ isAdmin }) {
         };
     }, [datosFiltrados]);
 
-    const chartDiagnosticos = useMemo(() => {
+const chartDiagnosticos = useMemo(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            const diag = curr.diagnostico_principal || 'No Especificado';
-            if (!acc[diag]) acc[diag] = { total: 0, pv: 0, sub: 0 };
+            // Tomamos el código crudo del CSV (ej. "J00X")
+            const codigoRaw = String(curr.diagnostico_principal || 'No Especificado').trim().toUpperCase();
             
-            acc[diag].total++;
-            if (curr.primera_vez === 'Primera Vez') acc[diag].pv++; else acc[diag].sub++;
+            // TRADUCCIÓN MÁGICA: Buscamos el código en el diccionario CIE. 
+            // Si no lo encuentra, muestra el código original.
+            const nombreEnfermedad = diccionarioCIE[codigoRaw] || codigoRaw;
+            
+            if (!acc[nombreEnfermedad]) acc[nombreEnfermedad] = { total: 0, pv: 0, sub: 0 };
+            
+            acc[nombreEnfermedad].total++;
+            if (curr.primera_vez === 'Primera Vez') acc[nombreEnfermedad].pv++; else acc[nombreEnfermedad].sub++;
             return acc;
         }, {});
         
@@ -664,7 +790,7 @@ export default function DashboardProductividad({ isAdmin }) {
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
-    }, [datosFiltrados]);
+    }, [datosFiltrados, diccionarioCIE]); // <-- No olvides agregar diccionarioCIE a las dependencias del useMemo
 
     const anchoDinamico = (cantidadItems) => `max(100%, ${cantidadItems * 40}px)`; 
     
@@ -677,48 +803,30 @@ export default function DashboardProductividad({ isAdmin }) {
         }
     };
 
-    // ==========================================
-    // VISTAS DE RENDERIZADO
-    // ==========================================
-    if (vistaActiva === 'menu') {
+if (vistaActiva === 'menu') {
+    return (
+        <MenuPrincipal 
+            setVistaActiva={setVistaActiva} 
+            isAdmin={isAdmin} 
+            setMensaje={setMensaje} 
+        />
+    );
+}
+    //Vista subir CSV
+    if (vistaActiva === 'subir') {
         return (
-            <div className="bg-slate-50 min-h-screen flex flex-col items-center pt-20 px-8">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-black text-[#822626] mb-2">Módulo de Productividad</h1>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">UMAE 48 - Panel Central</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-                    <button onClick={() => setVistaActiva('dashboard')} className="bg-white p-8 rounded-2xl shadow-sm border border-red-100 hover:shadow-md hover:border-red-300 transition-all flex flex-col items-center text-center group">
-                        <div className="bg-red-50 p-4 rounded-full mb-4 group-hover:bg-[#822626] group-hover:text-white text-[#822626] transition-colors"><BarChart2 size={40} /></div>
-                        <h2 className="text-xl font-black text-slate-800 mb-2">Tableros de Indicadores</h2>
-                        <p className="text-slate-500 text-sm">Ingresa para visualizar las gráficas de Consulta Externa, Hospitalización, Cirugía y más.</p>
-                    </button>
-                    {isAdmin && (
-                        <button onClick={() => { setVistaActiva('subir'); setMensaje(''); }} className="bg-white p-8 rounded-2xl shadow-sm border border-red-100 hover:shadow-md hover:border-red-300 transition-all flex flex-col items-center text-center group">
-                            <div className="bg-red-50 p-4 rounded-full mb-4 group-hover:bg-[#822626] group-hover:text-white text-[#822626] transition-colors"><Database size={40} /></div>
-                            <h2 className="text-xl font-black text-slate-800 mb-2">Actualizar Base de Datos</h2>
-                            <p className="text-slate-500 text-sm">Sube el CSV de productividad para actualizar la información de las bases.</p>
-                        </button>
-                    )}
-                </div>
-            </div>
+            <ModuloCarga 
+                setVistaActiva={setVistaActiva} 
+                setMensaje={setMensaje} 
+                mensaje={mensaje} 
+                cargarDatos={cargarDatos} 
+            />
         );
     }
 
-    if (vistaActiva === 'subir') {
-        return (
-            <div className="bg-slate-50 min-h-screen p-8">
-                <button onClick={() => setVistaActiva('menu')} className="flex items-center text-[#822626] hover:text-[#5e1919] font-bold mb-8 transition-colors"><ArrowLeft size={20} className="mr-2" /> Volver al Menú</button>
-                <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-red-100">
-                    <h2 className="text-2xl font-black text-[#822626] mb-2 flex items-center gap-3"><UploadCloud size={28} /> Subir Productividad (CSV)</h2>
-                    <form onSubmit={handleSubirArchivo} className="flex flex-col gap-6 mt-6">
-                        <input type="file" accept=".csv" onChange={(e) => setArchivo(e.target.files[0])} className="block w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-red-50 file:text-red-900 hover:file:bg-red-100 cursor-pointer border-2 border-dashed border-slate-200 rounded-xl p-4"/>
-                        <button type="submit" disabled={cargandoSubida || !archivo} className="bg-[#822626] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#6b1f1f] transition disabled:bg-slate-300 disabled:cursor-not-allowed w-full shadow-md">{cargandoSubida ? 'Procesando archivo...' : 'Cargar a Base de Datos'}</button>
-                    </form>
-                    {mensaje && <div className={`mt-6 p-4 rounded-xl text-sm font-bold ${mensaje.includes('✅') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>{mensaje}</div>}
-                </div>
-            </div>
-        );
+    if (vistaActiva === 'catalogos') {
+        //llamar a todo el archivo separado
+        return <AdministradorCatalogos setVistaActiva={setVistaActiva} />;
     }
 
     return (

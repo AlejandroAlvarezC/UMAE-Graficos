@@ -5,7 +5,7 @@ header('Content-Type: application/json; charset=utf-8');
 $host = 'sql112.infinityfree.com';
 $dbname = 'if0_41125231_vencer'; 
 $username = 'if0_41125231';
-$password = 'DEtK59bqZzA'; // Tu contraseña real
+$password = 'DEtK59bqZzA';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
