@@ -307,31 +307,21 @@ export default function DashboardProductividad({ isAdmin }) {
         }
     };
 
-    // ==========================================
-    // CARGA DEL DICCIONARIO CIE-10
+// ==========================================
+    // CARGA DEL DICCIONARIO CIE-10 (CON AUTO-ACTUALIZACIÓN)
     // ==========================================
     const cargarDiccionarioCIE = async () => {
-        // 1. Revisar caché de memoria
-        if (Object.keys(cacheDiccionarioCIE).length > 0) {
-            setDiccionarioCIE(cacheDiccionarioCIE);
-            return;
-        }
-
-        // 2. Revisar el cajón gigante (IndexedDB)
-        const diccLocal = await localforage.getItem('cache_cie_vencer');
-        if (diccLocal) {
-            cacheDiccionarioCIE = diccLocal;
-            setDiccionarioCIE(diccLocal);
-            return;
-        }
-
-        // 3. Si no existe, descargar de PHP
         try {
+            // 1. Destruimos la caché atascada en el disco duro del navegador
+            await localforage.removeItem('cache_cie_vencer');
+            cacheDiccionarioCIE = {}; // Limpiamos la memoria RAM también
+
+            // 2. Obligamos a React a ir a PHP por los datos frescos
             const urlFiel = `/api/api_cie.php?t=${new Date().getTime()}`;
             const res = await axios.get(urlFiel);
+            
             if (Array.isArray(res.data)) {
-                // Convertimos el arreglo [{codigo: 'J00', descripcion: 'Resfriado'}] 
-                // a un objeto diccionario {'J00': 'Resfriado'} para búsqueda en 0ms
+                // 3. Reconstruimos el diccionario
                 const dicc = res.data.reduce((acc, item) => {
                     const cod = String(item.codigo || '').trim().toUpperCase();
                     const desc = String(item.descripcion || '').trim();
@@ -339,9 +329,11 @@ export default function DashboardProductividad({ isAdmin }) {
                     return acc;
                 }, {});
                 
+                // 4. Guardamos la nueva versión
                 cacheDiccionarioCIE = dicc;
                 setDiccionarioCIE(dicc);
                 await localforage.setItem('cache_cie_vencer', dicc);
+                console.log("✅ Diccionario CIE-10 Fresco descargado:", dicc);
             }
         } catch (err) {
             console.error("Error catálogo CIE", err);
