@@ -6,6 +6,7 @@ import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import AdministradorCatalogos from './AdministradorCatalogos';
 import MenuPrincipal from './MenuPrincipal';
+import TableroParamedicos from './TableroParamedicos';
 // Registrar componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement);
 
@@ -91,7 +92,10 @@ let cacheDiccionarioCIE = {};
 // ==========================================
 // SUB-COMPONENTE: Tabla de Datos (ACTUALIZADO CON ÍNDICE)
 // ==========================================
-const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, total = true }) => {
+// ==========================================
+// SUB-COMPONENTE: Tabla de Datos (ACTUALIZADO CON COLUMNA EXTRA)
+// ==========================================
+const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExtra, dataExtra, total = true }) => {
     if (!labels || !data) return null;
     
     // Si nos pasan los arreglos de PV y Sub, activamos las columnas extra
@@ -109,6 +113,10 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, total = t
                     <thead className="text-xs text-slate-400 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th className="py-2 px-3 font-bold rounded-l-lg">{titulo1}</th>
+                            
+                            {/* AQUÍ ESTÁ LA NUEVA COLUMNA EXTRA (Ej. Especialidad) */}
+                            {dataExtra && <th className="py-2 px-3 font-bold">{tituloExtra}</th>}
+
                             {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-[#c2410c]/70">1ra Vez</th>}
                             {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-[#822626]/70">Subsec.</th>}
                             {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-slate-500" title="Índice de Subsecuencia (Subsecuentes / Primera Vez)">Índice</th>}
@@ -117,23 +125,23 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, total = t
                     </thead>
                     <tbody>
                         {labels.map((label, index) => {
-                            // CÁLCULO SEGURO DEL ÍNDICE: Evitamos dividir entre cero
                             let indice = '0.00';
-                            if (dataPV[index] > 0) {
+                            if (dataPV && dataPV[index] > 0) {
                                 indice = (dataSub[index] / dataPV[index]).toFixed(2);
-                            } else if (dataSub[index] > 0) {
-                                indice = '∞'; // Infinito (Puros subsecuentes, cero primera vez)
+                            } else if (dataSub && dataSub[index] > 0) {
+                                indice = '∞'; 
                             }
 
                             return (
                                 <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                                     <td className="py-2 px-3">{label}</td>
+                                    
+                                    {/* DIBUJAMOS EL DATO EXTRA (Ej. CARDIOLOGÍA) */}
+                                    {dataExtra && <td className="py-2 px-3 text-xs font-bold text-slate-400">{dataExtra[index]}</td>}
+
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-medium">{dataPV[index].toLocaleString()}</td>}
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-medium">{dataSub[index].toLocaleString()}</td>}
-                                    
-                                    {/* Nueva columna del Índice */}
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-slate-500 font-bold bg-slate-50/50">{indice}</td>}
-                                    
                                     <td className="py-2 px-3 text-right font-black text-slate-700">{data[index].toLocaleString()}</td>
                                 </tr>
                             );
@@ -143,16 +151,17 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, total = t
                         <tfoot className="bg-slate-50 font-bold sticky bottom-0 z-10 shadow-sm">
                             <tr>
                                 <td className="py-2 px-3 rounded-l-lg text-slate-500 uppercase tracking-widest text-xs">Total General</td>
+                                
+                                {/* Espacio en blanco para cuadrar las columnas si hay dato extra */}
+                                {dataExtra && <td className="py-2 px-3"></td>}
+
                                 {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-black">{totalPV.toLocaleString()}</td>}
                                 {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-black">{totalSub.toLocaleString()}</td>}
-                                
-                                {/* Índice Total del Pie de Página */}
                                 {mostrarDesglose && (
                                     <td className="py-2 px-3 text-center text-slate-600 font-black bg-slate-100/50">
                                         {totalPV > 0 ? (totalSub / totalPV).toFixed(2) : '0.00'}
                                     </td>
                                 )}
-                                
                                 <td className="py-2 px-3 text-right rounded-r-lg text-slate-800 font-black">{totalGeneral.toLocaleString()}</td>
                             </tr>
                         </tfoot>
@@ -192,6 +201,8 @@ export default function DashboardProductividad({ isAdmin }) {
     const [diccionarioMedicos, setDiccionarioMedicos] = useState({});
     // Diccionario CIE
     const [diccionarioCIE, setDiccionarioCIE] = useState({});
+    // Diccionario Divisiones y Especialidades 
+    const [diccionarioEspecialidades, setDiccionarioEspecialidades] = useState({});
 
 
 // ==========================================
@@ -338,6 +349,38 @@ export default function DashboardProductividad({ isAdmin }) {
     };
 
     // ==========================================
+    // DICCIONARIO: ESPECIALIDADES Y DIVISIONES
+    // ==========================================
+    const cargarDiccionarioEspecialidades = async () => {
+        try {
+            // LA MAGIA: Destruimos la caché vieja obligatoriamente para forzar la actualización
+            await localforage.removeItem('cache_especialidades_vencer');
+
+            // Descargamos fresco de MySQL con un truco anti-caché HTTP
+            const res = await axios.get(`/api/api_crud_especialidades.php?t=${new Date().getTime()}`);
+            
+            if (Array.isArray(res.data)) {
+                const dicc = res.data.reduce((acc, item) => {
+                    const clave = String(item.clave).trim().toUpperCase();
+                    if (clave) {
+                        acc[clave] = {
+                            nombre: item.nombre,
+                            division: item.division
+                        };
+                    }
+                    return acc;
+                }, {});
+                
+                setDiccionarioEspecialidades(dicc);
+                await localforage.setItem('cache_especialidades_vencer', dicc);
+                console.log("✅ Diccionario de Especialidades ACTUALIZADO:", dicc);
+            }
+        } catch (error) {
+            console.error("Error al cargar el diccionario de especialidades:", error);
+        }
+    };
+
+    // ==========================================
     // 3. EL DISPARADOR MAESTRO (Hook de Montaje)
     // ==========================================
     useEffect(() => {
@@ -347,6 +390,7 @@ export default function DashboardProductividad({ isAdmin }) {
         cargarDiccionario();
         
         cargarDiccionarioCIE(); 
+        cargarDiccionarioEspecialidades();
         
     }, []);
 
@@ -703,13 +747,24 @@ export default function DashboardProductividad({ isAdmin }) {
         };
     }, [datosFiltrados]);
 
-    const chartEspecialidades = useMemo(() => {
+const chartEspecialidades = useMemo(() => {
+        if (!datosFiltrados || datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            const esp = curr.especialidad || 'Desconocida';
+            const nombreRaw = curr.especialidad || curr.ESPECIALIDAD || 'Desconocida';
+            const nombreLimpio = String(nombreRaw).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
+            
+            // LA MAGIA ESTÁ AQUÍ:
+            // Buscamos el nombre bonito oficial en MySQL. Si MySQL no lo tiene (porque aún no lo agregas en el CRUD), 
+            // simplemente usamos el nombre crudo que ya traía el archivo. ¡Cero errores!
+            let esp = diccionarioEspecialidades[nombreLimpio]?.nombre || nombreRaw; 
+
             if (!acc[esp]) acc[esp] = { total: 0, pv: 0, sub: 0 };
             
             acc[esp].total++;
-            if (curr.primera_vez === 'Primera Vez') acc[esp].pv++; else acc[esp].sub++;
+            if (curr.primera_vez === 'Primera Vez') acc[esp].pv++; 
+            else acc[esp].sub++;
+            
             return acc;
         }, {});
         
@@ -720,17 +775,23 @@ export default function DashboardProductividad({ isAdmin }) {
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
-    }, [datosFiltrados]);
+    }, [datosFiltrados, diccionarioEspecialidades]);
 
- const chartMedicos = useMemo(() => {
+const chartMedicos = useMemo(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            // Limpiamos la matrícula cruda (quitamos espacios y el molesto ".0" de Excel)
+            // Limpiamos la matrícula
             const matriculaLimpia = String(curr.matricula_medico || 'Sin Matrícula').trim().replace('.0', '').replace(/\s/g, '');
-            
-            // Buscamos en el diccionario
             const nombreMedico = diccionarioMedicos[matriculaLimpia] || `Matr. ${curr.matricula_medico}`;
             
-            if (!acc[nombreMedico]) acc[nombreMedico] = { total: 0, pv: 0, sub: 0 };
+            // LA MAGIA: Traducimos la especialidad de ESTE registro usando el diccionario
+            const espRaw = curr.especialidad || curr.ESPECIALIDAD || 'Desconocida';
+            const espLimpia = String(espRaw).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
+            const nombreEspecialidad = diccionarioEspecialidades[espLimpia]?.nombre || espRaw;
+
+            // Guardamos el médico y su especialidad
+            if (!acc[nombreMedico]) {
+                acc[nombreMedico] = { total: 0, pv: 0, sub: 0, especialidad: nombreEspecialidad };
+            }
             
             acc[nombreMedico].total++;
             if (curr.primera_vez === 'Primera Vez') acc[nombreMedico].pv++; else acc[nombreMedico].sub++;
@@ -739,13 +800,17 @@ export default function DashboardProductividad({ isAdmin }) {
         
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
         const top = ordenados.slice(0, 20);
+        
         return {
             labels: top.map(item => item[0]),
             datasets: [{ label: 'Consultas', data: top.map(item => item[1].total), backgroundColor: '#822626', borderRadius: 4 }],
             dataPV: top.map(item => item[1].pv),
-            dataSub: top.map(item => item[1].sub)
+            dataSub: top.map(item => item[1].sub),
+            // Mandamos el arreglo de especialidades a la tabla
+            dataExtra: top.map(item => item[1].especialidad) 
         };
-    }, [datosFiltrados, diccionarioMedicos]);
+    // CRÍTICO: Agregamos diccionarioEspecialidades a las dependencias
+    }, [datosFiltrados, diccionarioMedicos, diccionarioEspecialidades]);
 
     const chartConsultorios = useMemo(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
@@ -841,7 +906,7 @@ if (vistaActiva === 'menu') {
                 </div>
                 <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2 overflow-x-hidden custom-scrollbar">
                     <button onClick={() => setAreaSidebar('consulta_externa')} className={`w-full flex items-center rounded-xl transition-all ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'} ${areaSidebar === 'consulta_externa' ? 'bg-[#6b1f1f] text-white font-bold shadow-md border-l-4 border-white' : 'hover:bg-[#962e2e] text-red-100 border-l-4 border-transparent'}`}>
-                        <Stethoscope size={20} className="shrink-0" /> {!sidebarCollapsed && <span className="whitespace-nowrap">Consulta Externa</span>}
+                        <Stethoscope size={20} className="shrink-0" /> {!sidebarCollapsed && <span className="whitespace-nowrap">Consulta Externa Esp</span>}
                     </button>
                     <button onClick={() => setAreaSidebar('paramedicos')} className={`w-full flex items-center rounded-xl transition-all ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'} ${areaSidebar === 'paramedicos' ? 'bg-[#6b1f1f] text-white font-bold shadow-md border-l-4 border-white' : 'hover:bg-[#962e2e] text-red-100 border-l-4 border-transparent'}`}>
                         <Ambulance size={20} className="shrink-0" /> {!sidebarCollapsed && <span className="whitespace-nowrap">Paramédicos</span>}
@@ -1096,19 +1161,22 @@ if (vistaActiva === 'menu') {
                                                         <Bar data={chartMedicos} options={chartOptionsVertical} />
                                                     </div>
                                                 </div>
-                                                {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Médico" titulo2="Consultas" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} dataPV={chartMedicos.dataPV} dataSub={chartMedicos.dataSub} total={true} /></div>}
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Productividad por Consultorio</h3>
-                                            <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
-                                                <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
-                                                    <div style={{ width: anchoDinamico(chartConsultorios.labels.length), height: '100%' }}>
-                                                        <Bar data={chartConsultorios} options={chartOptionsVertical} />
+                                                {/* AQUÍ ESTÁ LA NUEVA TABLA CON LA ESPECIALIDAD INCLUIDA */}
+                                                {mostrarTablas && (
+                                                    <div className="lg:col-span-2 h-[400px] overflow-hidden">
+                                                        <TablaDatos 
+                                                            titulo1="Médico" 
+                                                            tituloExtra="Especialidad" 
+                                                            dataExtra={chartMedicos.dataExtra} 
+                                                            titulo2="Consultas" 
+                                                            labels={chartMedicos.labels} 
+                                                            data={chartMedicos.datasets[0].data} 
+                                                            dataPV={chartMedicos.dataPV} 
+                                                            dataSub={chartMedicos.dataSub} 
+                                                            total={true} 
+                                                        />
                                                     </div>
-                                                </div>
-                                                {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Consultorio" titulo2="Consultas" labels={chartConsultorios.labels} data={chartConsultorios.datasets[0].data} dataPV={chartConsultorios.dataPV} dataSub={chartConsultorios.dataSub} total={true} /></div>}
+                                                )}
                                             </div>
                                         </div>
 
@@ -1129,7 +1197,15 @@ if (vistaActiva === 'menu') {
                         </>
                     )}
 
-                    {areaSidebar !== 'consulta_externa' && (
+                    {/* MÓDULO PARAMÉDICOS INCRUSTADO */}
+                    {areaSidebar === 'paramedicos' && (
+                        <div className="max-w-[1600px] mx-auto w-full pb-8">
+                            <TableroParamedicos datos={datos} />
+                        </div>
+                    )}
+
+                    {/* MENSAJE DE EN CONSTRUCCIÓN (OCULTO PARA PARAMÉDICOS) */}
+                    {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 p-16 border-2 border-dashed border-slate-300 rounded-3xl bg-slate-100/50">
                             <Activity size={64} className="mb-6 opacity-40 text-[#822626]" />
                             <h2 className="text-2xl font-black text-slate-500 mb-2">Módulo en Construcción</h2>
