@@ -7,6 +7,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, 
 import AdministradorCatalogos from './AdministradorCatalogos';
 import MenuPrincipal from './MenuPrincipal';
 import TableroParamedicos from './TableroParamedicos';
+import TableroUrgencias from './TableroUrgencias';
 // Registrar componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement);
 
@@ -213,6 +214,8 @@ export default function DashboardProductividad({ isAdmin }) {
     // ==========================================
     const cargarDatos = async () => {
         try {
+            await localforage.removeItem('cache_productividad_vencer');
+            await localforage.removeItem('version_productividad_vencer');
             // 1. BUSCAMOS EN EL CAJÓN GIGANTE (IndexedDB)
             const datosLocales = await localforage.getItem('cache_productividad_vencer');
             const versionLocal = await localforage.getItem('version_productividad_vencer') || "0";
@@ -236,18 +239,10 @@ export default function DashboardProductividad({ isAdmin }) {
                 const resDatos = await axios.get('/api/api_productividad.php');
                 
                 if (Array.isArray(resDatos.data)) {
-                    const datosLimpios = resDatos.data.filter(d => {
-                        const esp = (d.especialidad || '').toUpperCase();
-                        const pasaFiltro1 = !esp.includes('TOCO') && !esp.includes('PRIMER CONTACTO');
-                        const pasaFiltro2 = !esp.includes('6900') && !esp.includes('5001') && !esp.includes('6300') && !esp.includes('6600');
-                        return pasaFiltro1 && pasaFiltro2;
-                    });
+                    // ¡Abrimos las compuertas! Guardamos el 100% de los datos
+                    setDatos(resDatos.data);
                     
-                    // Actualizamos las gráficas silenciosamente frente al usuario
-                    setDatos(datosLimpios);
-                    
-                    // GUARDAMOS LA NUEVA VERSIÓN EN EL CAJÓN GRANDE
-                    await localforage.setItem('cache_productividad_vencer', datosLimpios);
+                    await localforage.setItem('cache_productividad_vencer', resDatos.data);
                     await localforage.setItem('version_productividad_vencer', versionServidor);
                     console.log("Sincronización de Big Data completada y guardada localmente.");
                 }
@@ -476,6 +471,22 @@ export default function DashboardProductividad({ isAdmin }) {
         return `${dd}/${mm}/${yyyy}`;
     }, [datos]);
 
+    // ==========================================
+    // SEPARADOR DE ÁREAS (La clave de tu arquitectura)
+    // ==========================================
+    const datosConsultaExterna = useMemo(() => {
+        if (!datos || datos.length === 0) return [];
+        
+        // Las palabras clave que NO queremos ver en el tablero principal
+        const ignorar = ['TOCO', 'PRIMER CONTACTO', '5001', '6300', '6600', '6900', 'NUTRICION', 'INHALOTERAPIA', 'FONIATRIA'];
+        
+        return datos.filter(d => {
+            const esp = String(d.especialidad || d.ESPECIALIDAD || '').toUpperCase();
+            // Solo deja pasar a las que NO contienen las palabras a ignorar
+            return !ignorar.some(ignorada => esp.includes(ignorada));
+        });
+    }, [datos]);
+
     const aniosDisponibles = useMemo(() => {
         const anios = new Set();
         datos.forEach(d => {
@@ -499,7 +510,7 @@ export default function DashboardProductividad({ isAdmin }) {
     }, [datos]);
 
     const datosFiltradosFecha = useMemo(() => {
-        return datos.filter(item => {
+        return datosConsultaExterna.filter(item => {
             let a = item.anio || item.Anio || item.ANIO || item.año || item.Año || item.AÑO;
             let m = item.mes || item.Mes || item.MES;
 
@@ -533,7 +544,93 @@ export default function DashboardProductividad({ isAdmin }) {
 
             return pasaAnio && pasaMes;
         });
+    }, [datosConsultaExterna, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
+
+    // ==========================================
+    // FILTRO ESPECÍFICO: PARAMÉDICOS + FECHAS
+    // ==========================================
+    //Filtros de paramedicos
+    const datosParamedicosFiltrados = useMemo(() => {
+        // 1. Primero separamos solo a los paramédicos de la base de datos completa
+        const soloParamedicos = datos.filter(d => {
+            const esp = String(d.especialidad || d.ESPECIALIDAD || '').toUpperCase();
+            const criterios = ['6300', '6600', '6900', 'NUTRICION', 'INHALOTERAPIA', 'FONIATRIA', 'REHABILITACION'];
+            return criterios.some(c => esp.includes(c));
+        });
+
+        // 2. Luego les aplicamos el mismo filtro de fechas que usas en el dashboard principal
+        return soloParamedicos.filter(item => {
+            let a = item.anio || item.Anio || item.ANIO || item.año || item.Año || item.AÑO;
+            let m = item.mes || item.Mes || item.MES;
+
+            // Lógica para detectar fecha si no vienen columnas de año/mes
+            if (!a || !m) {
+                const f = encontrarFecha(item);
+                if (f) {
+                    const parts = f.includes('-') ? f.split('-') : f.split('/');
+                    if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; }
+                    else { a = a || parts[2]; m = m || parts[1]; }
+                }
+            }
+
+            const mesIdx = parseInt(m, 10) - 1;
+            const pasaAnio = anioSeleccionado === 'todos' || String(a) === String(anioSeleccionado);
+            
+            let pasaMes = true;
+            if (mesSeleccionado === 'rango') {
+                pasaMes = mesIdx >= mesInicio && mesIdx <= mesFin;
+            } else if (mesSeleccionado !== 'todos') {
+                pasaMes = mesIdx === Number(mesSeleccionado);
+            }
+
+            return pasaAnio && pasaMes;
+        });
     }, [datos, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
+
+    // ==========================================
+    // FILTRO ESPECÍFICO: URGENCIAS + FECHAS
+    // ==========================================
+    const datosUrgenciasFiltrados = useMemo(() => {
+        // 1. Separamos solo a Urgencias (Incluyendo A600 y 5001)
+        const soloUrgencias = datos.filter(d => {
+            const esp = String(d.especialidad || d.ESPECIALIDAD || '').toUpperCase();
+            
+            // AQUÍ ESTÁN TUS CLAVES EXACTAS:
+            const criterios = ['5100', 'A600'];
+            
+            return criterios.some(c => esp.includes(c));
+        }); 
+
+        // 2. Aplicamos el mismo filtro global de fechas para que funcione el selector de meses
+        return soloUrgencias.filter(item => {
+            let a = item.anio || item.Anio || item.ANIO || item.año || item.Año || item.AÑO;
+            let m = item.mes || item.Mes || item.MES;
+
+            if (!a || !m) {
+                const f = encontrarFecha(item);
+                if (f) {
+                    const parts = f.includes('-') ? f.split('-') : f.split('/');
+                    if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; }
+                    else { a = a || parts[2]; m = m || parts[1]; }
+                }
+            }
+
+            const mesIdx = parseInt(m, 10) - 1;
+            const pasaAnio = anioSeleccionado === 'todos' || String(a) === String(anioSeleccionado);
+            
+            let pasaMes = true;
+            if (mesSeleccionado === 'rango') {
+                pasaMes = mesIdx >= mesInicio && mesIdx <= mesFin;
+            } else if (mesSeleccionado !== 'todos') {
+                pasaMes = mesIdx === Number(mesSeleccionado);
+            }
+
+            return pasaAnio && pasaMes;
+        });
+    }, [datos, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
+
+    console.log("1. Total de datos en el sistema:", datos.length);
+    console.log("2. Total de Urgencias que pasaron el filtro:", datosUrgenciasFiltrados.length);
 
     const rankingDivisiones = useMemo(() => {
         const conteo = {};
@@ -600,7 +697,7 @@ export default function DashboardProductividad({ isAdmin }) {
         }
 
         // 3. Agrupamos los datos reales en las "cubetas" (semanas) que generó el algoritmo
-        datos.forEach(d => {
+        datosConsultaExterna.forEach(d => {
             const div = (d.division || 'Sin Asignar').trim();
             if (divisionSeleccionada !== 'todas' && div !== divisionSeleccionada) return;
 
@@ -938,7 +1035,7 @@ if (vistaActiva === 'menu') {
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-                        {areaSidebar === 'consulta_externa' && datos.length > 0 && !cargandoDatos && !error && (
+                        {(areaSidebar === 'consulta_externa' || areaSidebar === 'paramedicos' )&& datos.length > 0 && !cargandoDatos && !error && (
                             <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5 border border-slate-200 shadow-inner flex-wrap w-full xl:w-auto">
                                 <Filter size={14} className="text-[#822626] ml-2 hidden sm:block"/>
                                 
@@ -1192,16 +1289,28 @@ if (vistaActiva === 'menu') {
                     {/* MÓDULO PARAMÉDICOS INCRUSTADO */}
                     {areaSidebar === 'paramedicos' && (
                         <div className="max-w-[1600px] mx-auto w-full pb-8">
-                            <TableroParamedicos datos={datos} />
+                            <TableroParamedicos datos={datosParamedicosFiltrados} diccionarioMedicos={diccionarioMedicos} diccionarioCIE ={diccionarioCIE} mostrarTablas={mostrarTablas} />
                         </div>
                     )}
 
                     {/* MENSAJE DE EN CONSTRUCCIÓN (OCULTO PARA PARAMÉDICOS) */}
-                    {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && (
+                    {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && areaSidebar !== 'urgencias' (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 p-16 border-2 border-dashed border-slate-300 rounded-3xl bg-slate-100/50">
                             <Activity size={64} className="mb-6 opacity-40 text-[#822626]" />
                             <h2 className="text-2xl font-black text-slate-500 mb-2">Módulo en Construcción</h2>
                             <p className="text-center max-w-md">El área de <strong>{areaSidebar.replace('_', ' ')}</strong> está siendo preparada.</p>
+                        </div>
+                    )}
+
+                    {/* MÓDULO URGENCIAS INCRUSTADO */}
+                    {areaSidebar === 'urgencias' && (
+                        <div className="max-w-[1600px] mx-auto w-full pb-8 animate-in fade-in duration-500">
+                            <TableroUrgencias 
+                                datos={datosUrgenciasFiltrados} 
+                                diccionarioMedicos={diccionarioMedicos} 
+                                diccionarioCIE={diccionarioCIE}
+                                mostrarTablas={mostrarTablas} 
+                            />
                         </div>
                     )}
                 </main>

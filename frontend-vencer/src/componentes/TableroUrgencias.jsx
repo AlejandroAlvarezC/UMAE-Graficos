@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { Activity, Stethoscope, Users, CalendarCheck, Clock } from 'lucide-react';
+import { Activity, HeartPulse, Users, CalendarCheck, Clock } from 'lucide-react';
 import { Doughnut, Bar } from 'react-chartjs-2';
 
 // ==========================================
-// SUB-COMPONENTE: Tabla de Datos (Con soporte para columna extra)
+// SUB-COMPONENTE: Tabla de Datos
 // ==========================================
 const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExtra, dataExtra, total = true }) => {
     if (!labels || !data) return null;
@@ -62,27 +62,20 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
     );
 };
 
-// Utilidad para ajustar el ancho de las gráficas grandes
 const anchoDinamico = (cantidad) => cantidad > 15 ? `${cantidad * 40}px` : '100%';
 
 // ==========================================
-// COMPONENTE PRINCIPAL: TABLERO PARAMÉDICOS
+// COMPONENTE PRINCIPAL: TABLERO URGENCIAS
 // ==========================================
-export default function TableroParamedicos({ datos, diccionarioMedicos = {}, diccionarioCIE = {}, mostrarTablas = false }) {
+export default function TableroUrgencias({ datos, diccionarioMedicos = {}, diccionarioCIE = {}, mostrarTablas = false }) {
     
-// ==========================================
-    // 1. KPIs (Calculadora híbrida: Texto y Números)
-    // ==========================================
     const kpis = useMemo(() => {
         let citados = 0; let primeraVez = 0;
         if (!datos || datos.length === 0) return { total: 0, citados: 0, espontaneos: 0, primeraVez: 0, subsecuentes: 0 };
 
         datos.forEach(d => {
-            // Limpiamos y convertimos a minúsculas para atrapar todo
             const citadoVal = String(d.citado || d.CITADO || '0').trim().toLowerCase().replace('.0', '');
             const pvVal = String(d.primera_vez || d.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
-
-            // Atrapamos si es '1' o si dice 'citado' / 'primera vez'
             if (citadoVal === '1' || citadoVal === 'citado') citados++;
             if (pvVal === '1' || pvVal === 'primera vez') primeraVez++;
         });
@@ -90,57 +83,44 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
         return { total: datos.length, citados, espontaneos: datos.length - citados, primeraVez, subsecuentes: datos.length - primeraVez };
     }, [datos]);
 
-    // ==========================================
-    // 2. TURNOS
-    // ==========================================
     const chartTurnos = useMemo(() => {
         if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         const conteo = datos.reduce((acc, curr) => {
             const turno = curr.turno || curr.TURNO || 'Sin Asignar';
             if (!acc[turno]) acc[turno] = { total: 0, pv: 0, sub: 0 };
             acc[turno].total++;
-            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[turno].pv++; else acc[turno].sub++;
-            
             return acc;
         }, {});
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
         return {
             labels: ordenados.map(item => item[0]),
-            datasets: [{ data: ordenados.map(item => item[1].total), backgroundColor: ['#059669', '#10b981', '#34d399', '#475569', '#1e293b'], borderWidth: 0 }],
+            datasets: [{ data: ordenados.map(item => item[1].total), backgroundColor: ['#ea580c', '#f97316', '#fb923c', '#475569', '#1e293b'], borderWidth: 0 }],
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
     }, [datos]);
 
-    // ==========================================
-    // 3. ESPECIALIDADES (Áreas Paramédicas)
-    // ==========================================
     const chartEspecialidades = useMemo(() => {
         if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         const conteo = datos.reduce((acc, curr) => {
             const area = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área Registrada').trim().toUpperCase();
             if (!acc[area]) acc[area] = { total: 0, pv: 0, sub: 0 };
             acc[area].total++;
-            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[area].pv++; else acc[area].sub++;
-            
             return acc;
         }, {});
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
         return {
             labels: ordenados.map(item => item[0]),
-            datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1].total), backgroundColor: '#059669', borderRadius: 4 }],
+            datasets: [{ label: 'Atenciones', data: ordenados.map(item => item[1].total), backgroundColor: '#ea580c', borderRadius: 4 }],
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
     }, [datos]);
 
-    // ==========================================
-    // 4. MÉDICOS (Personal de apoyo)
-    // ==========================================
     const chartMedicos = useMemo(() => {
         if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         const conteo = datos.reduce((acc, curr) => {
@@ -148,25 +128,20 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
             const nombreMedico = diccionarioMedicos[matriculaLimpia] || `Matr. ${curr.matricula_medico || 'Desconocida'}`;
             if (!acc[nombreMedico]) acc[nombreMedico] = { total: 0, pv: 0, sub: 0 };
             acc[nombreMedico].total++;
-            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[nombreMedico].pv++; else acc[nombreMedico].sub++;
-            
             return acc;
         }, {});
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
         const top = ordenados.slice(0, 20);
         return {
             labels: top.map(item => item[0]),
-            datasets: [{ label: 'Atenciones', data: top.map(item => item[1].total), backgroundColor: '#10b981', borderRadius: 4 }],
+            datasets: [{ label: 'Atenciones', data: top.map(item => item[1].total), backgroundColor: '#f97316', borderRadius: 4 }],
             dataPV: top.map(item => item[1].pv),
             dataSub: top.map(item => item[1].sub)
         };
     }, [datos, diccionarioMedicos]);
 
-    // ==========================================
-    // 5. DIAGNÓSTICOS
-    // ==========================================
     const chartDiagnosticos = useMemo(() => {
         if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         const conteo = datos.reduce((acc, curr) => {
@@ -174,17 +149,15 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
             const nombreDiagnostico = diccionarioCIE[codigoLimpio] || codigoLimpio;
             if (!acc[nombreDiagnostico]) acc[nombreDiagnostico] = { total: 0, pv: 0, sub: 0 };
             acc[nombreDiagnostico].total++;
-            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[nombreDiagnostico].pv++; else acc[nombreDiagnostico].sub++;
-            
             return acc;
         }, {});
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
         const top = ordenados.slice(0, 20);
         return {
             labels: top.map(item => item[0]),
-            datasets: [{ label: 'Frecuencia', data: top.map(item => item[1].total), backgroundColor: '#047857', borderRadius: 4 }],
+            datasets: [{ label: 'Frecuencia', data: top.map(item => item[1].total), backgroundColor: '#c2410c', borderRadius: 4 }],
             dataPV: top.map(item => item[1].pv),
             dataSub: top.map(item => item[1].sub)
         };
@@ -197,45 +170,45 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
             {/* ENCABEZADO Y KPIs */}
             <div className="mb-8">
                 <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3">
-                    <span className="text-emerald-600 bg-emerald-100 p-2 rounded-xl"><Stethoscope size={28} /></span>
-                    Productividad Paramédica
+                    <span className="text-orange-600 bg-orange-100 p-2 rounded-xl"><HeartPulse size={28} /></span>
+                    Productividad de Urgencias
                 </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-emerald-500">
-                    <div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3></div>
-                    <p className="text-4xl font-black text-emerald-600">{kpis.total.toLocaleString()}</p>
+                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-orange-500">
+                    <div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Atenciones Totales</h3></div>
+                    <p className="text-4xl font-black text-orange-600">{kpis.total.toLocaleString()}</p>
                 </div>
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                    <div className="flex items-center gap-3 text-slate-500 mb-2"><CalendarCheck size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Citados</h3></div>
+                    <div className="flex items-center gap-3 text-slate-500 mb-2"><CalendarCheck size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Referidos / Citados</h3></div>
                     <p className="text-4xl font-black text-slate-700">{kpis.citados.toLocaleString()}</p>
-                    <div className="flex flex-col mt-5 pt-4 border-t border-slate-100"><span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Espontáneos</span><p className="text-4xl font-black text-emerald-600">{kpis.espontaneos.toLocaleString()}</p></div>
+                    <div className="flex flex-col mt-5 pt-4 border-t border-slate-100"><span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Espontáneos</span><p className="text-4xl font-black text-orange-600">{kpis.espontaneos.toLocaleString()}</p></div>
                 </div>
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                     <div className="flex items-center gap-3 text-slate-500 mb-2"><Clock size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Primera Vez</h3></div>
                     <p className="text-4xl font-black text-[#c2410c]">{kpis.primeraVez.toLocaleString()}</p>
-                    <div className="flex flex-col mt-5 pt-4 border-t border-slate-100"><span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Subsecuentes</span><p className="text-4xl font-black text-emerald-600">{kpis.subsecuentes.toLocaleString()}</p></div>
+                    <div className="flex flex-col mt-5 pt-4 border-t border-slate-100"><span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Subsecuentes / Revaloración</span><p className="text-4xl font-black text-orange-600">{kpis.subsecuentes.toLocaleString()}</p></div>
                 </div>
             </div>
 
             {/* GRÁFICAS Y TABLAS */}
             <div className={`grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-2' : ''} gap-6 mb-6 items-start`}>
                 <div className={`bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px] ${mostrarTablas ? '' : 'w-full lg:w-1/2 mx-auto'}`}>
-                    <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Consultas por Turno</h3>
+                    <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Atenciones por Turno</h3>
                     <div className="relative flex-1 min-h-[220px]">
                         <Doughnut data={chartTurnos} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
                     </div>
-                    {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Consultas" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} dataPV={chartTurnos.dataPV} dataSub={chartTurnos.dataSub} />}
+                    {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Atenciones" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} dataPV={chartTurnos.dataPV} dataSub={chartTurnos.dataSub} />}
                 </div>
 
                 {mostrarTablas && (
                     <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px]">
-                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Área Paramédica</h3>
+                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Área de Urgencias</h3>
                         <div className="relative flex-1 min-h-[220px]">
                             <Bar data={chartEspecialidades} options={chartOptionsVertical} />
                         </div>
-                        <TablaDatos titulo1="Área" titulo2="Consultas" labels={chartEspecialidades.labels} data={chartEspecialidades.datasets[0].data} dataPV={chartEspecialidades.dataPV} dataSub={chartEspecialidades.dataSub} />
+                        <TablaDatos titulo1="Área" titulo2="Atenciones" labels={chartEspecialidades.labels} data={chartEspecialidades.datasets[0].data} dataPV={chartEspecialidades.dataPV} dataSub={chartEspecialidades.dataSub} />
                     </div>
                 )}
             </div>
@@ -243,7 +216,7 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
             <div className="flex flex-col gap-6">
                 {!mostrarTablas && (
                     <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col mb-6">
-                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Área Paramédica</h3>
+                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Área de Urgencias</h3>
                         <div className="relative w-full overflow-x-auto custom-scrollbar pb-4" style={{ height: '400px' }}>
                             <div style={{ minWidth: anchoDinamico(chartEspecialidades.labels.length), height: '100%' }}>
                                 <Bar data={chartEspecialidades} options={chartOptionsVertical} />
@@ -253,14 +226,14 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                 )}
 
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                    <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Productividad por Personal</h3>
+                    <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Productividad por Médico de Guardia</h3>
                     <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
                         <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
                             <div style={{ minWidth: anchoDinamico(chartMedicos.labels.length), height: '100%' }}>
                                 <Bar data={chartMedicos} options={chartOptionsVertical} />
                             </div>
                         </div>
-                        {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Personal" titulo2="Atenciones" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} dataPV={chartMedicos.dataPV} dataSub={chartMedicos.dataSub} total={true} /></div>}
+                        {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Médico" titulo2="Atenciones" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} dataPV={chartMedicos.dataPV} dataSub={chartMedicos.dataSub} total={true} /></div>}
                     </div>
                 </div>
 
