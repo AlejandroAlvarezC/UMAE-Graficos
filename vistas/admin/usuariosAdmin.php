@@ -17,8 +17,9 @@ if (!isset($_SESSION['admin_id'])) {
     <link rel="icon" href="../../logo-imss.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
     <link rel="stylesheet" href="../../css/bootstrap.min.css">
+    <link rel="stylesheet" href="/graficos/assets/index-BMAo4cI-.css">
+    
     <style>
         body {
             background-color: #f5f5f5;
@@ -37,54 +38,6 @@ if (!isset($_SESSION['admin_id'])) {
             background-color: #7a123a;
         }
 
-        .table thead {
-            background-color: #00664d;
-            color: white;
-        }
-
-        .bg-verde {
-            background-color: #00664d;
-            color: white;
-            border-radius: 8px;
-        }
-
-        .bg-verde:hover {
-            background-color: #004d3a;
-            color: white;
-        }
-
-        .btn-dark-custom {
-            background-color: #212529;
-            color: white;
-            border-radius: 6px;
-        }
-
-        .btn-dark-custom:hover {
-            background-color: rgb(129, 13, 53);
-            color: white;
-        }
-
-        /* Paginación DataTables con Bootstrap 5 sin azul */
-        .dataTables_wrapper .dataTables_paginate .pagination .page-item .page-link {
-            background-color: #f5f5f5 !important;
-            color: #212529 !important;
-            border: 1px solid #212529 !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .pagination .page-item.active .page-link {
-            background-color: #7a123a !important;
-            /* guinda IMSS para el actual */
-            color: #fff !important;
-            border-color: #7a123a !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .pagination .page-item:hover .page-link {
-            background-color: #212529 !important;
-            /* gris oscuro al pasar */
-            color: #fff !important;
-            border-color: #212529 !important;
-        }
-
         /* hover nav */
         .nav-link {
             transition: color 0.3s;
@@ -92,7 +45,6 @@ if (!isset($_SESSION['admin_id'])) {
 
         .nav-link:hover {
             color: #9A7D0A !important;
-
         }
 
         .navbar-brand {
@@ -139,7 +91,6 @@ if (!isset($_SESSION['admin_id'])) {
         /* ----------------------------------------------
            Footer
         ------------------------------------------------*/
-
         footer {
             background-color: #7a123a;
             width: 100%;
@@ -147,17 +98,6 @@ if (!isset($_SESSION['admin_id'])) {
             color: white;
             font-weight: bold;
             padding: 10px 0;
-        }
-
-        .btn-outline-warning2 {
-            color: white;
-            background-color: #00796b;
-        }
-
-        .btn-outline-warning2:hover {
-            background-color: #00685cff;
-            color: white;
-            border-color: #00796b;
         }
     </style>
 </head>
@@ -179,32 +119,20 @@ if (!isset($_SESSION['admin_id'])) {
                         <a class="nav-link dropdown-toggle text-white" href="#"
                             data-bs-toggle="dropdown">Productividad</a>
                         <ul class="dropdown-menu" data-bs-auto-close="outside">
-
-                            <!-- Consulta externa -->
                             <li>
                                 <a class="dropdown-item dropdown-submenu-toggle">Consulta externa</a>
                                 <ul class="dropdown-submenu">
                                     <li><a class="dropdown-item" href="../productividad/unidades_que_reportan.php">Total Productividad</a></li>
-                                    <li><a class="dropdown-item" href="../productividad/paramedicos.php">Paramédicos</a>
-                                    </li>
-
-                                    <!-- Especialidades -->
+                                    <li><a class="dropdown-item" href="../productividad/paramedicos.php">Paramédicos</a></li>
                                     <li>
                                         <a class="dropdown-item dropdown-submenu-toggle">Especialidades</a>
                                         <ul class="dropdown-submenu">
-                                            <li><a class="dropdown-item"
-                                                    href="../productividad/especialidades_inicio.php">Especialidades</a>
-                                            </li>
-                                            <li><a class="dropdown-item" href="../productividad/Especialidad_Ocasion.php">Especialidad
-                                                    de
-                                                    ocasión</a></li>
+                                            <li><a class="dropdown-item" href="../productividad/especialidades_inicio.php">Especialidades</a></li>
+                                            <li><a class="dropdown-item" href="../productividad/Especialidad_Ocasion.php">Especialidad de ocasión</a></li>
                                         </ul>
                                     </li>
-
                                 </ul>
                             </li>
-
-                            <!-- Hospitalización -->
                             <li>
                                 <a class="dropdown-item dropdown-submenu-toggle">Hospitalización</a>
                                 <ul class="dropdown-submenu">
@@ -214,126 +142,55 @@ if (!isset($_SESSION['admin_id'])) {
                                     <li><a class="dropdown-item" href="#">Días Cama</a></li>
                                 </ul>
                             </li>
-
-                            <!-- Cirugía -->
                             <li><a class="dropdown-item" href="../cirugia/cirugia_inicio.php">Cirugía</a></li>
-
-                            <!-- Urgencias -->
                             <li><a class="dropdown-item" href="../productividad/urgencias_inicio.php">Urgencias</a></li>
-
                         </ul>
                     </li>
 
                     <li class="nav-item">
                         <a class="nav-link text-white" href="../admin/Personal/personal.php">Organigrama</a>
                     </li>
-
                     <li class="nav-item">
                         <a class="nav-link text-white" href="../productividad/vencer.php">Vencer</a>
                     </li>
-
-                    <!-- Normatividad -->
                     <li class="nav-item">
                         <a class="nav-link text-white" href="../normatividad/normatividad_inicio.php">Normatividad</a>
                     </li>
-
                     <li class="nav-item"><a class="nav-link text-white" href="../admin/usuariosAdmin.php">Usuario</a>
                     </li>
                 </ul>
 
                 <div class="d-flex align-items-center gap-2">
-                    <a href="../admin/admin.php" class="btn btn btn-outline-light"><i class="bi bi-arrow-left"
-                            title="Atrás"></i></a>
-
+                    <a href="../admin/admin.php" class="btn btn btn-outline-light"><i class="bi bi-arrow-left" title="Atrás"></i></a>
                     <div class="dropdown">
                         <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="../admin/usuariosAdmin.php"><i
-                                        class="fas fa-id-badge me-2"></i>Perfil</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item text-danger" href="../admin/logout.php"><i
-                                        class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" href="../admin/usuariosAdmin.php"><i class="fas fa-id-badge me-2"></i>Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="../admin/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
                         </ul>
                     </div>
                 </div>
             </div>
     </nav>
 
-
-    <!-- CONTENIDO -->
-    <div class="container my-4 p-4 bg-white rounded-4 shadow">
-        <a href="ingresarAdmin.php" class="btn btn-dark-custom">Ingresar nuevo</a>
-        <br><br>
-        <div class="table-responsive">
-            <table id="tablaUsuarios" class="table table-bordered align-middle text-center">
-                <thead>
-                    <tr>
-                        <th>Id</th>
-                        <th>Nombre</th>
-                        <th>Email</th>
-                        <th>Contraseña</th>
-                        <th>Editar</th>
-                        <th>Eliminar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach (Usuarios::listar() as $fila) { ?>
-                        <tr>
-                            <td><?= $fila[0] ?></td>
-                            <td><?= $fila[1] ?></td>
-                            <td><?= $fila[2] ?></td>
-                            <td><?= $fila[3] ?></td>
-                            <td>
-                                <a class="btn btn-dark-custom" href="editarUsersAdmin.php?id=<?= base64_encode($fila[0]) ?>">Editar</a>
-                            </td>
-                            <td>
-                                <a class="btn btn-dark-custom"
-                                    href="../../controladores/UsuariosAdmin.php?a=Eliminar&id=<?= base64_encode($fila[0]) ?>"
-                                    onclick="return confirm('¿Desea eliminar?')">Eliminar</a>
-                            </td>
-                        </tr>
-                    <?php } ?>
-                </tbody>
-            </table>
-        </div>
+    <div class="container-fluid my-4 px-4 pb-5 mb-5">
+        <div id="react-admin-usuarios"></div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="footer-fijo text-white text-center py-3" style="background-color: #7a123a;">
         <div class="container">
             <p class="mb-0">© <?= date("Y") ?> IMSS. Todos los derechos reservados.</p>
         </div>
     </footer>
 
-    <!-- SCRIPTS -->
     <script src="../../js/scripts.js" defer></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#tablaUsuarios').DataTable({
-                language: {
-                    lengthMenu: "Mostrar _MENU_ registros por página",
-                    zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando página _PAGE_ de _PAGES_",
-                    infoEmpty: "No hay registros disponibles",
-                    infoFiltered: "(filtrado de _MAX_ registros totales)",
-                    search: "Buscar:",
-                    paginate: {
-                        previous: "Anterior",
-                        next: "Siguiente"
-                    }
-                }
-            });
-        });
-    </script>
-
+    <script type="module" crossorigin src="/graficos/assets/index-Vp8sHihs.js"></script>
+    
     <script>
         document.querySelectorAll('.card-submenu-toggle').forEach(function(el) {
             el.addEventListener('click', function(e) {

@@ -15,7 +15,7 @@ export default function ModuloCarga({ setVistaActiva, setMensaje, mensaje, carga
         }
 
         const formData = new FormData();
-        formData.append('archivo', archivo);
+        formData.append('archivo_csv', archivo);
 
         setSubiendo(true);
         setMensaje("");
@@ -26,7 +26,7 @@ export default function ModuloCarga({ setVistaActiva, setMensaje, mensaje, carga
             });
 
             if (respuesta.data.success) {
-                setMensaje(`✅ ¡Éxito! ${respuesta.data.message}`);
+                setMensaje(`¡Éxito! ${respuesta.data.message}`);
                 setArchivo(null);
                 
                 // LIMPIEZA DE CACHÉ (IndexedDB)
@@ -38,11 +38,11 @@ export default function ModuloCarga({ setVistaActiva, setMensaje, mensaje, carga
                 if (cargarDatos) cargarDatos();
                 
             } else {
-                setMensaje(`❌ Error: ${respuesta.data.message}`);
+                setMensaje(`Error: ${respuesta.data.message}`);
             }
         } catch (error) {
             console.error("Error al subir:", error);
-            setMensaje("❌ Error crítico al conectar con el servidor.");
+            setMensaje("Error crítico al conectar con el servidor.");
         } finally {
             setSubiendo(false);
         }

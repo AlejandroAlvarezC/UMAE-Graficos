@@ -6,7 +6,7 @@ header('Content-Type: application/json; charset=utf-8');
 $host = 'sql112.infinityfree.com';
 $dbname = 'if0_41125231_vencer'; 
 $username = 'if0_41125231';
-$password = 'DEtK59bqZzA'; // <-- ¡Ponla aquí!
+$password = 'DEtK59bqZzA';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
@@ -103,7 +103,12 @@ try {
             // Registramos la fecha y hora exacta (timestamp) de esta subida
             file_put_contents('ultima_actualizacion.txt', time());
             echo json_encode(['success' => true, 'message' => "Se insertaron $registrosInsertados registros. (Catálogo cargado: $conteoDic especialidades)."]);
+        } else {
+            echo json_encode(['success' => false, 'message' => "Error al intentar leer el archivo subido."]);
         }
+    } else {
+        //  AQUÍ ESTÁ LA NUEVA RESPUESTA DE ERROR 
+        echo json_encode(['success' => false, 'message' => 'El servidor conectó, pero no recibió ningún archivo llamado "archivo_csv". Verifica tu código de React.']);
     }
 
 } catch (PDOException $e) {

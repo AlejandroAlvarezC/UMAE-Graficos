@@ -109,7 +109,7 @@ try {
 
 } catch (Throwable $e) {
     // Si algo falla, devolvemos error JSON (excepto en Eliminar que ya redirigió)
-    $respuesta = ['status' => 'error', 'message' => '🚨 ERROR SERVIDOR: ' . $e->getMessage()];
+    $respuesta = ['status' => 'error', 'message' => 'ERROR SERVIDOR: ' . $e->getMessage()];
 }
 
 // --- RESPUESTA FINAL JSON (Solo para CargarCSV o errores) ---

@@ -145,7 +145,9 @@ export default function TableroUrgencias({ datos, diccionarioMedicos = {}, dicci
     const chartDiagnosticos = useMemo(() => {
         if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         const conteo = datos.reduce((acc, curr) => {
-            const codigoLimpio = String(curr.diagnostico || curr.DIAGNOSTICO || curr.cie_10 || curr.CIE_10 || 'Sin Diagnóstico').trim().toUpperCase();
+           // Buscamos en todas las columnas posibles, incluyendo la nueva del CRUD
+            const codigoRaw = curr.diagnostico || curr.DIAGNOSTICO || curr.cie_10 || curr.CIE_10 || curr.diagnostico_principal || curr.DIAGNOSTICO_PRINCIPAL || 'Sin Diagnóstico';
+            const codigoLimpio = String(codigoRaw).trim().toUpperCase();
             const nombreDiagnostico = diccionarioCIE[codigoLimpio] || codigoLimpio;
             if (!acc[nombreDiagnostico]) acc[nombreDiagnostico] = { total: 0, pv: 0, sub: 0 };
             acc[nombreDiagnostico].total++;

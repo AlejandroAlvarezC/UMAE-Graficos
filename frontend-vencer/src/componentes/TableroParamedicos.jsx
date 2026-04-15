@@ -3,7 +3,7 @@ import { Activity, Stethoscope, Users, CalendarCheck, Clock } from 'lucide-react
 import { Doughnut, Bar } from 'react-chartjs-2';
 
 // ==========================================
-// SUB-COMPONENTE: Tabla de Datos (Con soporte para columna extra)
+// SUB-COMPONENTE: Tabla de Datos
 // ==========================================
 const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExtra, dataExtra, total = true }) => {
     if (!labels || !data) return null;
@@ -34,7 +34,10 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
 
                             return (
                                 <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                    <td className="py-2 px-3">{label}</td>
+                                    <td className="py-2 px-3">
+                                        {/* Reemplazo de Dr. a Lic. en la tabla */}
+                                        {label.toString().replace('Dr. ', 'Lic. ')}
+                                    </td>
                                     {dataExtra && <td className="py-2 px-3 text-xs font-bold text-slate-400">{dataExtra[index]}</td>}
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-medium">{dataPV[index].toLocaleString()}</td>}
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-medium">{dataSub[index].toLocaleString()}</td>}
@@ -62,47 +65,56 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
     );
 };
 
-// Utilidad para ajustar el ancho de las gráficas grandes
 const anchoDinamico = (cantidad) => cantidad > 15 ? `${cantidad * 40}px` : '100%';
+
+// Criterios de filtrado para áreas paramédicas
+const CRITERIOS_PARAMEDICOS = ['6300', '6600', '6900', 'NUTRICION', 'NUTRICIÓN', 'PSICOLOGIA', 'PSICOLOGÍA', 'TRABAJO SOCIAL', 'INHALOTERAPIA', 'FONIATRIA', 'REHABILITACION'];
 
 // ==========================================
 // COMPONENTE PRINCIPAL: TABLERO PARAMÉDICOS
 // ==========================================
 export default function TableroParamedicos({ datos, diccionarioMedicos = {}, diccionarioCIE = {}, mostrarTablas = false }) {
-    
-// ==========================================
-    // 1. KPIs (Calculadora híbrida: Texto y Números)
-    // ==========================================
+
+    // 1. FILTRO DE RAÍZ: Aislamos solo los datos de paramédicos
+    const datosFiltrados = useMemo(() => {
+        if (!datos || datos.length === 0) return [];
+        return datos.filter(d => {
+            const esp = String(d.especialidad || d.ESPECIALIDAD || '').toUpperCase();
+            return CRITERIOS_PARAMEDICOS.some(c => esp.includes(c));
+        });
+    }, [datos]);
+
+    // 2. KPIs (Usando datosFiltrados)
     const kpis = useMemo(() => {
         let citados = 0; let primeraVez = 0;
-        if (!datos || datos.length === 0) return { total: 0, citados: 0, espontaneos: 0, primeraVez: 0, subsecuentes: 0 };
+        if (datosFiltrados.length === 0) return { total: 0, citados: 0, espontaneos: 0, primeraVez: 0, subsecuentes: 0 };
 
-        datos.forEach(d => {
-            // Limpiamos y convertimos a minúsculas para atrapar todo
+        datosFiltrados.forEach(d => {
             const citadoVal = String(d.citado || d.CITADO || '0').trim().toLowerCase().replace('.0', '');
             const pvVal = String(d.primera_vez || d.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
 
-            // Atrapamos si es '1' o si dice 'citado' / 'primera vez'
             if (citadoVal === '1' || citadoVal === 'citado') citados++;
             if (pvVal === '1' || pvVal === 'primera vez') primeraVez++;
         });
 
-        return { total: datos.length, citados, espontaneos: datos.length - citados, primeraVez, subsecuentes: datos.length - primeraVez };
-    }, [datos]);
+        return { 
+            total: datosFiltrados.length, 
+            citados, 
+            espontaneos: datosFiltrados.length - citados, 
+            primeraVez, 
+            subsecuentes: datosFiltrados.length - primeraVez 
+        };
+    }, [datosFiltrados]);
 
-    // ==========================================
-    // 2. TURNOS
-    // ==========================================
+    // 3. TURNOS (Usando datosFiltrados)
     const chartTurnos = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
-        const conteo = datos.reduce((acc, curr) => {
+        if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+        const conteo = datosFiltrados.reduce((acc, curr) => {
             const turno = curr.turno || curr.TURNO || 'Sin Asignar';
             if (!acc[turno]) acc[turno] = { total: 0, pv: 0, sub: 0 };
             acc[turno].total++;
-            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[turno].pv++; else acc[turno].sub++;
-            
             return acc;
         }, {});
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
@@ -112,21 +124,17 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
-    }, [datos]);
+    }, [datosFiltrados]);
 
-    // ==========================================
-    // 3. ESPECIALIDADES (Áreas Paramédicas)
-    // ==========================================
+    // 4. ESPECIALIDADES (Áreas Paramédicas - Usando datosFiltrados)
     const chartEspecialidades = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
-        const conteo = datos.reduce((acc, curr) => {
-            const area = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área Registrada').trim().toUpperCase();
+        if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+        const conteo = datosFiltrados.reduce((acc, curr) => {
+            const area = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área').trim().toUpperCase();
             if (!acc[area]) acc[area] = { total: 0, pv: 0, sub: 0 };
             acc[area].total++;
-            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[area].pv++; else acc[area].sub++;
-            
             return acc;
         }, {});
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
@@ -136,48 +144,48 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
-    }, [datos]);
+    }, [datosFiltrados]);
 
-    // ==========================================
-    // 4. MÉDICOS (Personal de apoyo)
-    // ==========================================
+    // 5. PERSONAL (Usando datosFiltrados y reemplazo de Lic.)
     const chartMedicos = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
-        const conteo = datos.reduce((acc, curr) => {
+        if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+
+        const conteo = datosFiltrados.reduce((acc, curr) => {
             const matriculaLimpia = String(curr.matricula_medico || '').trim().replace('.0', '').replace(/\s/g, '');
-            const nombreMedico = diccionarioMedicos[matriculaLimpia] || `Matr. ${curr.matricula_medico || 'Desconocida'}`;
+            const nombreOriginal = diccionarioMedicos[matriculaLimpia] || `Matr. ${curr.matricula_medico || 'Desconocida'}`;
+            
+            // Forzamos el prefijo Lic.
+            const nombreMedico = nombreOriginal.replace('Dr. ', 'Lic. ');
+
             if (!acc[nombreMedico]) acc[nombreMedico] = { total: 0, pv: 0, sub: 0 };
             acc[nombreMedico].total++;
-            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[nombreMedico].pv++; else acc[nombreMedico].sub++;
-            
             return acc;
         }, {});
+
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
         const top = ordenados.slice(0, 20);
+
         return {
             labels: top.map(item => item[0]),
             datasets: [{ label: 'Atenciones', data: top.map(item => item[1].total), backgroundColor: '#10b981', borderRadius: 4 }],
             dataPV: top.map(item => item[1].pv),
             dataSub: top.map(item => item[1].sub)
         };
-    }, [datos, diccionarioMedicos]);
+    }, [datosFiltrados, diccionarioMedicos]);
 
-    // ==========================================
-    // 5. DIAGNÓSTICOS
-    // ==========================================
+    // 6. DIAGNÓSTICOS (Usando datosFiltrados)
     const chartDiagnosticos = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
-        const conteo = datos.reduce((acc, curr) => {
-            const codigoLimpio = String(curr.diagnostico || curr.DIAGNOSTICO || curr.cie_10 || curr.CIE_10 || 'Sin Diagnóstico').trim().toUpperCase();
+        if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+        const conteo = datosFiltrados.reduce((acc, curr) => {
+            const codigoRaw = curr.diagnostico || curr.DIAGNOSTICO || curr.cie_10 || curr.CIE_10 || curr.diagnostico_principal || curr.DIAGNOSTICO_PRINCIPAL || 'Sin Diagnóstico';
+            const codigoLimpio = String(codigoRaw).trim().toUpperCase();
             const nombreDiagnostico = diccionarioCIE[codigoLimpio] || codigoLimpio;
             if (!acc[nombreDiagnostico]) acc[nombreDiagnostico] = { total: 0, pv: 0, sub: 0 };
             acc[nombreDiagnostico].total++;
-            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[nombreDiagnostico].pv++; else acc[nombreDiagnostico].sub++;
-            
             return acc;
         }, {});
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
@@ -188,13 +196,13 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
             dataPV: top.map(item => item[1].pv),
             dataSub: top.map(item => item[1].sub)
         };
-    }, [datos, diccionarioCIE]);
+    }, [datosFiltrados, diccionarioCIE]);
 
     const chartOptionsVertical = { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } };
 
     return (
         <div className="w-full animate-in fade-in duration-500">
-            {/* ENCABEZADO Y KPIs */}
+            {/* ENCABEZADO */}
             <div className="mb-8">
                 <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3">
                     <span className="text-emerald-600 bg-emerald-100 p-2 rounded-xl"><Stethoscope size={28} /></span>
@@ -202,6 +210,7 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                 </h2>
             </div>
 
+            {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-emerald-500">
                     <div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3></div>

@@ -6,6 +6,7 @@ import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import AdministradorCatalogos from './AdministradorCatalogos';
 import MenuPrincipal from './MenuPrincipal';
+import ModuloCarga from './ModuloCarga'; // (Ajusta la ruta según dónde esté guardado)
 import TableroParamedicos from './TableroParamedicos';
 import TableroUrgencias from './TableroUrgencias';
 // Registrar componentes de Chart.js
@@ -135,7 +136,8 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
 
                             return (
                                 <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                    <td className="py-2 px-3">{label}</td>
+                                    {/* CORRECCIÓN: Replace Dr. por Lic. en la vista de tabla */}
+                                    <td className="py-2 px-3">{String(label).replace('Dr. ', 'Lic. ')}</td>
                                     
                                     {/* DIBUJAMOS EL DATO EXTRA (Ej. CARDIOLOGÍA) */}
                                     {dataExtra && <td className="py-2 px-3 text-xs font-bold text-slate-400">{dataExtra[index]}</td>}
@@ -206,9 +208,7 @@ export default function DashboardProductividad({ isAdmin }) {
     const [diccionarioEspecialidades, setDiccionarioEspecialidades] = useState({});
 
 
-// ==========================================
-    // CARGA DE DATOS (Stale-While-Revalidate)
-    // ==========================================
+
 // ==========================================
     // CARGA DE DATOS (Stale-While-Revalidate con IndexedDB / Big Data)
     // ==========================================
@@ -268,13 +268,11 @@ export default function DashboardProductividad({ isAdmin }) {
     // CARGA DEL DICCIONARIO DE MÉDICOS (MODO DEBUG NUCLEAR)
     // ==========================================
     const cargarDiccionario = async () => {
-        console.log("🛠️ 1. Iniciando carga de médicos (Caché ignorada por ahora)...");
+
 
         try {
-            console.log("📡 2. Pidiendo datos a /api/api_medicos.php...");
             const res = await axios.get('/api/api_medicos.php'); 
             
-            console.log("📥 3. Respuesta del servidor recibida:", res.data);
             
             if (Array.isArray(res.data) && res.data.length > 0) {
                 const dicc = res.data.reduce((acc, medico) => {
@@ -285,10 +283,7 @@ export default function DashboardProductividad({ isAdmin }) {
                     if (mat && nom) acc[mat] = nom;
                     return acc;
                 }, {});
-                
-                console.log("✅ 4. Diccionario final construido. Total médicos:", Object.keys(dicc).length);
-                console.log("🔍 Muestra del diccionario:", dicc); // Aquí veremos si las matrículas se ven bien
-                
+                 
                 // Guardamos los datos
                 cacheDiccionarioMedicos = dicc;
                 setDiccionarioMedicos(dicc);
@@ -328,7 +323,6 @@ export default function DashboardProductividad({ isAdmin }) {
                 cacheDiccionarioCIE = dicc;
                 setDiccionarioCIE(dicc);
                 await localforage.setItem('cache_cie_vencer', dicc);
-                console.log("✅ Diccionario CIE-10 Fresco descargado:", dicc);
             }
         } catch (err) {
             console.error("Error catálogo CIE", err);
@@ -360,7 +354,6 @@ export default function DashboardProductividad({ isAdmin }) {
                 
                 setDiccionarioEspecialidades(dicc);
                 await localforage.setItem('cache_especialidades_vencer', dicc);
-                console.log("✅ Diccionario de Especialidades ACTUALIZADO:", dicc);
             }
         } catch (error) {
             console.error("Error al cargar el diccionario de especialidades:", error);
@@ -382,9 +375,9 @@ export default function DashboardProductividad({ isAdmin }) {
     }, []);
 
     // RESETEAR ESPECIALIDAD CUANDO CAMBIA LA DIVISIÓN
-    useEffect(() => {
+useEffect(() => {
         setEspecialidadSeleccionada('todas');
-    }, [divisionSeleccionada]);
+    }, [divisionSeleccionada, areaSidebar]);
 
     const handleSubirArchivo = async (e) => {
         e.preventDefault();
@@ -400,7 +393,7 @@ export default function DashboardProductividad({ isAdmin }) {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             if (respuesta.data.success) {
-                setMensaje(`✅ ¡Éxito! ${respuesta.data.message}`);
+                setMensaje(`¡Éxito! ${respuesta.data.message}`);
                 setArchivo(null);
 
                 await localforage.removeItem('cache_productividad_vencer');
@@ -408,8 +401,8 @@ export default function DashboardProductividad({ isAdmin }) {
                 // Obligamos a descargar la nueva foto
                 cargarDatos();
 
-            } else setMensaje(`❌ Error: ${respuesta.data.message}`);
-        } catch (error) { setMensaje('❌ Error al conectar con el servidor.'); } 
+            } else setMensaje(`Error: ${respuesta.data.message}`);
+        } catch (error) { setMensaje('Error al conectar con el servidor.'); } 
         finally { setCargandoSubida(false); }
     };
 
@@ -588,30 +581,35 @@ export default function DashboardProductividad({ isAdmin }) {
     }, [datos, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
 
     // ==========================================
-    // FILTRO ESPECÍFICO: URGENCIAS + FECHAS
+    // FILTRO ESPECÍFICO: URGENCIAS + FECHAS (VERSIÓN BLINDADA)
     // ==========================================
     const datosUrgenciasFiltrados = useMemo(() => {
-        // 1. Separamos solo a Urgencias (Incluyendo A600 y 5001)
+        // 1. Separamos solo a Urgencias (Quitamos acentos para mayor seguridad)
         const soloUrgencias = datos.filter(d => {
-            const esp = String(d.especialidad || d.ESPECIALIDAD || '').toUpperCase();
+            const espRaw = String(d.especialidad || d.ESPECIALIDAD || d.servicio || '');
+            // Esta magia quita los acentos (ej. Cirugía -> Cirugia) y lo hace mayúsculas
+            const esp = espRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
             
-            // AQUÍ ESTÁN TUS CLAVES EXACTAS:
-            const criterios = ['5100', 'A600'];
-            
+            const criterios = ['5001', 'A600', 'URGENCIAS', 'ADMISION CONTINUA', 'OBSERVACION', 'CHOQUE'];
             return criterios.some(c => esp.includes(c));
-        }); 
+        });
 
-        // 2. Aplicamos el mismo filtro global de fechas para que funcione el selector de meses
+        // 2. Filtro de fechas (Ahora lee directamente 'fecha_atencion')
         return soloUrgencias.filter(item => {
-            let a = item.anio || item.Anio || item.ANIO || item.año || item.Año || item.AÑO;
-            let m = item.mes || item.Mes || item.MES;
+            let a = item.anio || item.Anio || item.año || item.Año;
+            let m = item.mes || item.Mes;
 
+            // Si no hay columnas separadas de año y mes, atacamos fecha_atencion
             if (!a || !m) {
-                const f = encontrarFecha(item);
+                // Buscamos fecha_atencion, o usamos la función global como plan B
+                const f = item.fecha_atencion || item.FECHA_ATENCION || (typeof encontrarFecha === 'function' ? encontrarFecha(item) : null);
                 if (f) {
                     const parts = f.includes('-') ? f.split('-') : f.split('/');
-                    if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; }
-                    else { a = a || parts[2]; m = m || parts[1]; }
+                    if (parts.length >= 2) {
+                        // Detectamos si el año está al principio (YYYY-MM-DD) o al final (DD-MM-YYYY)
+                        if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; } 
+                        else { a = a || parts[2]; m = m || parts[1]; }
+                    }
                 }
             }
 
@@ -628,9 +626,6 @@ export default function DashboardProductividad({ isAdmin }) {
             return pasaAnio && pasaMes;
         });
     }, [datos, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
-
-    console.log("1. Total de datos en el sistema:", datos.length);
-    console.log("2. Total de Urgencias que pasaron el filtro:", datosUrgenciasFiltrados.length);
 
     const rankingDivisiones = useMemo(() => {
         const conteo = {};
@@ -672,10 +667,61 @@ export default function DashboardProductividad({ isAdmin }) {
     const datosFiltrados = useMemo(() => {
         return datosFiltradosDivision.filter(item => {
             if (especialidadSeleccionada === 'todas') return true;
-            return (item.especialidad || 'Desconocida').trim().toUpperCase() === especialidadSeleccionada.toUpperCase();
+            
+            // LA MAGIA: Limpiamos y traducimos la especialidad de esta fila antes de comparar
+            const espRaw = String(item.especialidad || item.ESPECIALIDAD || 'Desconocida').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
+            const espTraducida = diccionarioEspecialidades[espRaw]?.nombre || espRaw;
+            
+            return espTraducida.toUpperCase() === especialidadSeleccionada.toUpperCase();
         });
-    }, [datosFiltradosDivision, especialidadSeleccionada]);
+    }, [datosFiltradosDivision, especialidadSeleccionada, diccionarioEspecialidades]);
 
+    const especialidadesParaMostrar = useMemo(() => {
+        let datosBase = [];
+        if (areaSidebar === 'consulta_externa') datosBase = datosFiltradosDivision;
+        else if (areaSidebar === 'paramedicos') datosBase = datosParamedicosFiltrados;
+        else if (areaSidebar === 'urgencias') datosBase = datosUrgenciasFiltrados;
+
+        const setEsp = new Set();
+        datosBase.forEach(d => {
+            const espRaw = String(d.especialidad || d.ESPECIALIDAD || d.servicio || 'Desconocida').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
+            
+            // TRADUCCIÓN PARA EL MENÚ: Usamos tu catálogo para mostrar el nombre bonito
+            const espTraducida = diccionarioEspecialidades[espRaw]?.nombre || espRaw;
+            setEsp.add(espTraducida);
+        });
+        
+        const listaUnica = [...setEsp].sort();
+
+        // Filtro visual de seguridad
+        if (areaSidebar === 'paramedicos') {
+            const criterios = ['TRABAJO SOCIAL', 'NUTRICIÓN', 'NUTRICION', 'PSICOLOGIA', 'PSICOLOGÍA', 'REHABILITACION', '6300', '6600', '6900'];
+            return listaUnica.filter(esp => criterios.some(c => esp.toUpperCase().includes(c)));
+        }
+
+        return listaUnica;
+    }, [areaSidebar, datosFiltradosDivision, datosParamedicosFiltrados, datosUrgenciasFiltrados, diccionarioEspecialidades]);
+
+    // ==========================================
+    // MOTORES DE FILTRO SECUNDARIOS (Conectan el menú superior con las pestañas)
+    // ==========================================
+    const paramedicosParaTablero = useMemo(() => {
+        return datosParamedicosFiltrados.filter(item => {
+            if (especialidadSeleccionada === 'todas') return true;
+            const espRaw = String(item.especialidad || item.ESPECIALIDAD || 'Desconocida').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
+            const espTraducida = diccionarioEspecialidades[espRaw]?.nombre || espRaw;
+            return espTraducida.toUpperCase() === especialidadSeleccionada.toUpperCase();
+        });
+    }, [datosParamedicosFiltrados, especialidadSeleccionada, diccionarioEspecialidades]);
+
+    const urgenciasParaTablero = useMemo(() => {
+        return datosUrgenciasFiltrados.filter(item => {
+            if (especialidadSeleccionada === 'todas') return true;
+            const espRaw = String(item.especialidad || item.ESPECIALIDAD || item.servicio || 'Desconocida').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
+            const espTraducida = diccionarioEspecialidades[espRaw]?.nombre || espRaw;
+            return espTraducida.toUpperCase() === especialidadSeleccionada.toUpperCase();
+        });
+    }, [datosUrgenciasFiltrados, especialidadSeleccionada, diccionarioEspecialidades]);
     // ==========================================
     // GRÁFICA DE METAS CON CALENDARIO DINÁMICO HISTÓRICO
     // ==========================================
@@ -983,6 +1029,14 @@ if (vistaActiva === 'menu') {
         return <AdministradorCatalogos setVistaActiva={setVistaActiva} />;
     }
 
+    // Vamos a buscar una fila de Urgencias o Paramédicos que esté cayendo en "Sin Diagnóstico"
+    const filaFantasma = datos.find(d => 
+        // Que sea de urgencias o paramédicos
+        (String(d.especialidad).toUpperCase().includes('URGENCIA') || String(d.especialidad).toUpperCase() === 'NUTRICION') && 
+        // Y que no tenga las columnas tradicionales
+        !d.diagnostico && !d.DIAGNOSTICO && !d.cie_10 && !d.CIE_10
+    );
+    
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
             
@@ -1077,10 +1131,17 @@ if (vistaActiva === 'menu') {
 
                                 <div className="w-px h-4 bg-slate-300 mx-1"></div>
                                 <span className="font-bold text-slate-500 text-[10px] uppercase">Especialidad:</span>
-                                <select className="bg-transparent font-bold text-[#822626] text-sm outline-none cursor-pointer pr-1 max-w-[100px] sm:max-w-[150px] truncate" value={especialidadSeleccionada} onChange={e=>setEspecialidadSeleccionada(e.target.value)}>
-                                    <option value="todas">Todas</option>
-                                    {especialidadesDisponibles.map(e=><option key={e} value={e}>{e}</option>)}
-                                </select>
+                                    <select 
+                                        className="bg-transparent font-bold text-[#822626] text-sm outline-none cursor-pointer pr-1 max-w-[100px] sm:max-w-[150px] truncate" 
+                                        value={especialidadSeleccionada} 
+                                        onChange={e => setEspecialidadSeleccionada(e.target.value)}
+                                    >
+                                        <option value="todas">Todas</option>
+                                        {/* Cambiamos especialidadesDisponibles por la nueva lista filtrada */}
+                                        {especialidadesParaMostrar.map(e => (
+                                            <option key={e} value={e}>{e}</option>
+                                        ))}
+                                    </select>
                             </div>
                         )}
                     </div>
@@ -1289,12 +1350,12 @@ if (vistaActiva === 'menu') {
                     {/* MÓDULO PARAMÉDICOS INCRUSTADO */}
                     {areaSidebar === 'paramedicos' && (
                         <div className="max-w-[1600px] mx-auto w-full pb-8">
-                            <TableroParamedicos datos={datosParamedicosFiltrados} diccionarioMedicos={diccionarioMedicos} diccionarioCIE ={diccionarioCIE} mostrarTablas={mostrarTablas} />
+                            <TableroParamedicos datos={paramedicosParaTablero} diccionarioMedicos={diccionarioMedicos} diccionarioCIE ={diccionarioCIE} mostrarTablas={mostrarTablas} />
                         </div>
                     )}
 
                     {/* MENSAJE DE EN CONSTRUCCIÓN (OCULTO PARA PARAMÉDICOS) */}
-                    {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && areaSidebar !== 'urgencias' (
+                    {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && areaSidebar !== 'urgencias' && (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 p-16 border-2 border-dashed border-slate-300 rounded-3xl bg-slate-100/50">
                             <Activity size={64} className="mb-6 opacity-40 text-[#822626]" />
                             <h2 className="text-2xl font-black text-slate-500 mb-2">Módulo en Construcción</h2>
@@ -1306,7 +1367,7 @@ if (vistaActiva === 'menu') {
                     {areaSidebar === 'urgencias' && (
                         <div className="max-w-[1600px] mx-auto w-full pb-8 animate-in fade-in duration-500">
                             <TableroUrgencias 
-                                datos={datosUrgenciasFiltrados} 
+                                datos={urgenciasParaTablero}
                                 diccionarioMedicos={diccionarioMedicos} 
                                 diccionarioCIE={diccionarioCIE}
                                 mostrarTablas={mostrarTablas} 
