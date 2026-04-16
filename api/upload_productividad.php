@@ -88,7 +88,7 @@ try {
                 if (!$fechaMysql) $fechaMysql = '2000-01-01';
 
                 $division = isset($diccionario[$claveEspecialidad]) ? $diccionario[$claveEspecialidad]['division'] : "Sin Asignar";
-                $especialidad = isset($diccionario[$claveEspecialidad]) ? $diccionario[$claveEspecialidad]['especialidad'] : "Cod: $claveEspecialidad";
+                $especialidad = isset($diccionario[$claveEspecialidad]) ? $diccionario[$claveEspecialidad]['especialidad'] : $claveEspecialidad;
                 
                 $turnoFinal = isset($mapTurno[trim($data[$colMap['TURNO']])]) ? $mapTurno[trim($data[$colMap['TURNO']])] : "Otro";
                 $citadoFinal = isset($mapCitado[trim($data[$colMap['CITADO']])]) ? $mapCitado[trim($data[$colMap['CITADO']])] : "Dato Raro";

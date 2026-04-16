@@ -6,9 +6,10 @@ import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import AdministradorCatalogos from './AdministradorCatalogos';
 import MenuPrincipal from './MenuPrincipal';
-import ModuloCarga from './ModuloCarga'; // (Ajusta la ruta según dónde esté guardado)
+import ModuloCarga from './ModuloCarga'; 
 import TableroParamedicos from './TableroParamedicos';
 import TableroUrgencias from './TableroUrgencias';
+
 // Registrar componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement);
 
@@ -16,14 +17,11 @@ const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "O
 
 // ==========================================
 // ALGORITMO DE CALENDARIO OPERATIVO (Regla 26 al 25)
-// Genera semanas dinámicas cortando en Domingos
 // ==========================================
 const generarCalendarioIMSS = (mesSeleccionado, anioSeleccionado) => {
-    // Mes va de 0 (Enero) a 11 (Diciembre)
     const anioAnterior = mesSeleccionado === 0 ? anioSeleccionado - 1 : anioSeleccionado;
     const mesAnterior = mesSeleccionado === 0 ? 11 : mesSeleccionado - 1;
 
-    // Inicio el 26 del mes pasado, fin el 25 del actual
     const fechaInicio = new Date(anioAnterior, mesAnterior, 26);
     const fechaFin = new Date(anioSeleccionado, mesSeleccionado, 25, 23, 59, 59);
 
@@ -33,10 +31,7 @@ const generarCalendarioIMSS = (mesSeleccionado, anioSeleccionado) => {
     let inicioSemana = new Date(fechaActual);
 
     while (fechaActual <= fechaFin) {
-        // Si es Domingo (0) O es el último día del mes (25)
         if (fechaActual.getDay() === 0 || fechaActual.getDate() === 25) {
-            
-            // Creamos el fin de semana a las 23:59 hrs para que atrape todas las consultas de ese día
             const finDeSemana = new Date(fechaActual);
             finDeSemana.setHours(23, 59, 59);
 
@@ -48,23 +43,20 @@ const generarCalendarioIMSS = (mesSeleccionado, anioSeleccionado) => {
             
             numeroSemana++;
             inicioSemana = new Date(fechaActual);
-            inicioSemana.setDate(inicioSemana.getDate() + 1); // El inicio de la siguiente es mañana (Lunes)
+            inicioSemana.setDate(inicioSemana.getDate() + 1); 
         }
         fechaActual.setDate(fechaActual.getDate() + 1);
     }
 
-    // Regla de seguridad: Si matemáticamente salen 6 semanas, fusionamos la 6 con la 5
     if (semanas.length > 5) {
         semanas[4].fin = semanas[semanas.length - 1].fin;
         semanas = semanas.slice(0, 5);
     }
     
-    // Si salen menos de 5, rellenamos para no romper la gráfica
     while(semanas.length < 5) {
          semanas.push({ semana: semanas.length + 1, vacia: true });
     }
 
-    // Formatear etiquetas bonitas como "26-dic a 28-dic"
     const nombresMeses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
     semanas.forEach(s => {
         if(!s.vacia) {
@@ -82,28 +74,20 @@ const generarCalendarioIMSS = (mesSeleccionado, anioSeleccionado) => {
 };
 
 // ==========================================
-// CACHÉ GLOBAL EN MEMORIA (Patrón Singleton)
-// Mantiene los datos vivos aunque salgas del módulo
+// CACHÉ GLOBAL EN MEMORIA
 // ==========================================
 let cacheDatosProductividad = [];
 let cacheDiccionarioMedicos = {};
 let cacheEstaCargada = false;
-
 let cacheDiccionarioCIE = {};
 
 // ==========================================
-// SUB-COMPONENTE: Tabla de Datos (ACTUALIZADO CON ÍNDICE)
-// ==========================================
-// ==========================================
-// SUB-COMPONENTE: Tabla de Datos (ACTUALIZADO CON COLUMNA EXTRA)
+// SUB-COMPONENTE: Tabla de Datos 
 // ==========================================
 const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExtra, dataExtra, total = true }) => {
     if (!labels || !data) return null;
     
-    // Si nos pasan los arreglos de PV y Sub, activamos las columnas extra
     const mostrarDesglose = dataPV && dataSub;
-
-    // Cálculos para los totales del tfoot (Pie de tabla)
     const totalPV = mostrarDesglose ? dataPV.reduce((a, b) => a + b, 0) : 0;
     const totalSub = mostrarDesglose ? dataSub.reduce((a, b) => a + b, 0) : 0;
     const totalGeneral = data.reduce((a, b) => a + b, 0);
@@ -115,10 +99,7 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
                     <thead className="text-xs text-slate-400 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th className="py-2 px-3 font-bold rounded-l-lg">{titulo1}</th>
-                            
-                            {/* AQUÍ ESTÁ LA NUEVA COLUMNA EXTRA (Ej. Especialidad) */}
                             {dataExtra && <th className="py-2 px-3 font-bold">{tituloExtra}</th>}
-
                             {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-[#c2410c]/70">1ra Vez</th>}
                             {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-[#822626]/70">Subsec.</th>}
                             {mostrarDesglose && <th className="py-2 px-3 font-bold text-center text-slate-500" title="Índice de Subsecuencia (Subsecuentes / Primera Vez)">Índice</th>}
@@ -136,12 +117,8 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
 
                             return (
                                 <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                    {/* CORRECCIÓN: Replace Dr. por Lic. en la vista de tabla */}
                                     <td className="py-2 px-3">{String(label).replace('Dr. ', 'Lic. ')}</td>
-                                    
-                                    {/* DIBUJAMOS EL DATO EXTRA (Ej. CARDIOLOGÍA) */}
                                     {dataExtra && <td className="py-2 px-3 text-xs font-bold text-slate-400">{dataExtra[index]}</td>}
-
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-medium">{dataPV[index].toLocaleString()}</td>}
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-medium">{dataSub[index].toLocaleString()}</td>}
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-slate-500 font-bold bg-slate-50/50">{indice}</td>}
@@ -154,10 +131,7 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
                         <tfoot className="bg-slate-50 font-bold sticky bottom-0 z-10 shadow-sm">
                             <tr>
                                 <td className="py-2 px-3 rounded-l-lg text-slate-500 uppercase tracking-widest text-xs">Total General</td>
-                                
-                                {/* Espacio en blanco para cuadrar las columnas si hay dato extra */}
                                 {dataExtra && <td className="py-2 px-3"></td>}
-
                                 {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-black">{totalPV.toLocaleString()}</td>}
                                 {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-black">{totalSub.toLocaleString()}</td>}
                                 {mostrarDesglose && (
@@ -201,56 +175,41 @@ export default function DashboardProductividad({ isAdmin }) {
     const [datos, setDatos] = useState([]);
     const [cargandoDatos, setCargandoDatos] = useState(false);
     const [error, setError] = useState(null);
+    
+    // DICCIONARIOS
     const [diccionarioMedicos, setDiccionarioMedicos] = useState({});
-    // Diccionario CIE
     const [diccionarioCIE, setDiccionarioCIE] = useState({});
-    // Diccionario Divisiones y Especialidades 
     const [diccionarioEspecialidades, setDiccionarioEspecialidades] = useState({});
 
-
-
-// ==========================================
-    // CARGA DE DATOS (Stale-While-Revalidate con IndexedDB / Big Data)
+    // ==========================================
+    // CARGA DE DATOS 
     // ==========================================
     const cargarDatos = async () => {
         try {
             await localforage.removeItem('cache_productividad_vencer');
             await localforage.removeItem('version_productividad_vencer');
-            // 1. BUSCAMOS EN EL CAJÓN GIGANTE (IndexedDB)
+            
             const datosLocales = await localforage.getItem('cache_productividad_vencer');
             const versionLocal = await localforage.getItem('version_productividad_vencer') || "0";
 
             if (datosLocales && datosLocales.length > 0) {
-                // ¡BAM! Gráficas dibujadas en 0ms desde la base de datos local del navegador
                 setDatos(datosLocales); 
             } else {
-                // Solo si el disco duro local está totalmente vacío mostramos que está cargando
                 setCargandoDatos(true); 
             }
 
-            // 2. PREGUNTAR AL SERVIDOR "¿HAY ALGO NUEVO?" (Ping de 5ms)
             const resVersion = await axios.get('/api/api_check_update.php');
             const versionServidor = String(resVersion.data.ultima_actualizacion);
 
-            // 3. SI EL SERVIDOR TIENE DATOS MÁS NUEVOS, DESCARGAMOS EL PESO PESADO
             if (versionServidor !== versionLocal || !datosLocales) {
-                console.log("¡Hay datos nuevos en el servidor! Sincronizando en segundo plano...");
-                
                 const resDatos = await axios.get('/api/api_productividad.php');
-                
                 if (Array.isArray(resDatos.data)) {
-                    // ¡Abrimos las compuertas! Guardamos el 100% de los datos
                     setDatos(resDatos.data);
-                    
                     await localforage.setItem('cache_productividad_vencer', resDatos.data);
                     await localforage.setItem('version_productividad_vencer', versionServidor);
-                    console.log("Sincronización de Big Data completada y guardada localmente.");
                 }
-            } else {
-                console.log("El dashboard está sincronizado al 100%. No se usó ancho de banda.");
             }
         } catch (err) {
-            console.error("Error en la validación o descarga de datos:", err);
             setError("Modo sin conexión. Mostrando últimos datos guardados.");
         } finally {
             setCargandoDatos(false);
@@ -258,68 +217,42 @@ export default function DashboardProductividad({ isAdmin }) {
     };
 
     useEffect(() => {
-            // Solo cargar si estamos en el dashboard y la memoria está VACÍA
-            if (vistaActiva === 'dashboard' && datos.length === 0) {
-                cargarDatos();
-            }
-        }, [vistaActiva]); // Eliminamos areaSidebar para que no se recargue al cambiar de pestaña
+        if (vistaActiva === 'dashboard' && datos.length === 0) {
+            cargarDatos();
+        }
+    }, [vistaActiva]);
 
-// ==========================================
-    // CARGA DEL DICCIONARIO DE MÉDICOS (MODO DEBUG NUCLEAR)
-    // ==========================================
     const cargarDiccionario = async () => {
-
-
         try {
             const res = await axios.get('/api/api_medicos.php'); 
-            
-            
             if (Array.isArray(res.data) && res.data.length > 0) {
                 const dicc = res.data.reduce((acc, medico) => {
-                    // TRUCO DE INGENIERÍA: A veces Excel exporta la matrícula como "12345.0"
                     let mat = String(medico.matricula || '').trim().replace('.0', '').replace(/\s/g, '');
                     const nom = String(medico.nombre || '').trim();
-                    
                     if (mat && nom) acc[mat] = nom;
                     return acc;
                 }, {});
-                 
-                // Guardamos los datos
                 cacheDiccionarioMedicos = dicc;
                 setDiccionarioMedicos(dicc);
                 await localforage.setItem('cache_medicos_vencer', dicc);
-                
-            } else {
-                console.error("❌ 3. ERROR: La API respondió, pero no es un arreglo válido o está vacío.");
             }
         } catch (err) {
-            console.error("❌ ERROR CRÍTICO al conectar con api_medicos.php:", err);
+            console.error("Error al cargar médicos", err);
         }
     };
 
-// ==========================================
-    // CARGA DEL DICCIONARIO CIE-10 (CON AUTO-ACTUALIZACIÓN)
-    // ==========================================
     const cargarDiccionarioCIE = async () => {
         try {
-            // 1. Destruimos la caché atascada en el disco duro del navegador
             await localforage.removeItem('cache_cie_vencer');
-            cacheDiccionarioCIE = {}; // Limpiamos la memoria RAM también
-
-            // 2. Obligamos a React a ir a PHP por los datos frescos
-            const urlFiel = `/api/api_cie.php?t=${new Date().getTime()}`;
-            const res = await axios.get(urlFiel);
-            
+            cacheDiccionarioCIE = {}; 
+            const res = await axios.get(`/api/api_cie.php?t=${new Date().getTime()}`);
             if (Array.isArray(res.data)) {
-                // 3. Reconstruimos el diccionario
                 const dicc = res.data.reduce((acc, item) => {
                     const cod = String(item.codigo || '').trim().toUpperCase();
                     const desc = String(item.descripcion || '').trim();
                     if (cod && desc) acc[cod] = desc;
                     return acc;
                 }, {});
-                
-                // 4. Guardamos la nueva versión
                 cacheDiccionarioCIE = dicc;
                 setDiccionarioCIE(dicc);
                 await localforage.setItem('cache_cie_vencer', dicc);
@@ -329,85 +262,71 @@ export default function DashboardProductividad({ isAdmin }) {
         }
     };
 
-    // ==========================================
-    // DICCIONARIO: ESPECIALIDADES Y DIVISIONES
-    // ==========================================
     const cargarDiccionarioEspecialidades = async () => {
         try {
-            // LA MAGIA: Destruimos la caché vieja obligatoriamente para forzar la actualización
             await localforage.removeItem('cache_especialidades_vencer');
-
-            // Descargamos fresco de MySQL con un truco anti-caché HTTP
             const res = await axios.get(`/api/api_crud_especialidades.php?t=${new Date().getTime()}`);
-            
             if (Array.isArray(res.data)) {
                 const dicc = res.data.reduce((acc, item) => {
                     const clave = String(item.clave).trim().toUpperCase();
                     if (clave) {
-                        acc[clave] = {
-                            nombre: item.nombre,
-                            division: item.division
-                        };
+                        acc[clave] = { nombre: item.nombre, division: item.division };
                     }
                     return acc;
                 }, {});
-                
                 setDiccionarioEspecialidades(dicc);
                 await localforage.setItem('cache_especialidades_vencer', dicc);
             }
         } catch (error) {
-            console.error("Error al cargar el diccionario de especialidades:", error);
+            console.error("Error especialidades", error);
         }
     };
 
-    // ==========================================
-    // 3. EL DISPARADOR MAESTRO (Hook de Montaje)
-    // ==========================================
     useEffect(() => {
-        // Le decimos a React que arranque estas tres cosas en segundo plano
-        // al mismo tiempo en cuanto el usuario abra el tablero.
         cargarDatos();
         cargarDiccionario();
-        
         cargarDiccionarioCIE(); 
         cargarDiccionarioEspecialidades();
-        
     }, []);
 
-    // RESETEAR ESPECIALIDAD CUANDO CAMBIA LA DIVISIÓN
-useEffect(() => {
+    // RESETEAR ESPECIALIDAD CUANDO CAMBIA LA DIVISIÓN O DE ÁREA
+    useEffect(() => {
         setEspecialidadSeleccionada('todas');
     }, [divisionSeleccionada, areaSidebar]);
 
-    const handleSubirArchivo = async (e) => {
-        e.preventDefault();
-        if (!archivo) { setMensaje('Por favor selecciona un archivo CSV.'); return; }
-        setCargandoSubida(true);
-        setMensaje('Procesando datos...');
 
-        const formData = new FormData();
-        formData.append('archivo_csv', archivo);
-
-        try {
-            const respuesta = await axios.post('/api/upload_productividad.php', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            if (respuesta.data.success) {
-                setMensaje(`¡Éxito! ${respuesta.data.message}`);
-                setArchivo(null);
-
-                await localforage.removeItem('cache_productividad_vencer');
-                
-                // Obligamos a descargar la nueva foto
-                cargarDatos();
-
-            } else setMensaje(`Error: ${respuesta.data.message}`);
-        } catch (error) { setMensaje('Error al conectar con el servidor.'); } 
-        finally { setCargandoSubida(false); }
+    // ==========================================
+    // TRADUCTOR GLOBAL (Vacunado contra el "COD:")
+    // ==========================================
+    const traducirEspecialidad = (valorCrudo) => {
+        if (!valorCrudo) return 'Desconocida';
+        
+        // 1. Lo pasamos a mayúsculas y le quitamos acentos
+        let espRaw = String(valorCrudo).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        // 2. ¡LA VACUNA! Le arrancamos la palabra "COD:" y los ".0"
+        espRaw = espRaw.replace('COD:', '').replace('COD: ', '').replace('.0', '').trim();
+        
+        // Seguro de vida
+        const respaldoInquebrantable = {
+            '6300': 'TRABAJO SOCIAL',
+            '6600': 'PSICOLOGIA',
+            '6900': 'NUTRICION',
+            '5001': 'CONSULTAS EN PRIMER CONTACTO',
+            'A600': 'URGENCIAS TOCO CIRUGIA'
+        };
+        
+        return diccionarioEspecialidades[espRaw]?.nombre || respaldoInquebrantable[espRaw] || espRaw;
     };
 
     // ==========================================
-    // LÓGICA INTELIGENTE DE FILTRADO
+    // FUNCIÓN DE NIVELACIÓN (Para comparar sin fallos)
+    // ==========================================
+    const nivelarTexto = (texto) => {
+        return String(texto || '').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    };
+    // ==========================================
+    // LÓGICA DE FILTRADO BASE
     // ==========================================
     const encontrarFecha = (obj) => {
         const keys = Object.keys(obj);
@@ -417,13 +336,9 @@ useEffect(() => {
         return null;
     };
 
-    // ==========================================
-    // CÁLCULO DE LA ÚLTIMA FECHA EN LA BD
-    // ==========================================
     const ultimaFechaBD = useMemo(() => {
         if (!datos || datos.length === 0) return 'No disponible';
-        
-        let maxDate = new Date(2000, 0, 1); // Fecha muy antigua de inicio
+        let maxDate = new Date(2000, 0, 1); 
         let found = false;
 
         datos.forEach(d => {
@@ -431,7 +346,7 @@ useEffect(() => {
             let m = d.mes || d.Mes || d.MES;
             let dia = 1;
 
-            const f = encontrarFecha(d); // Tu función que detecta 'fecha_atencion'
+            const f = encontrarFecha(d); 
             if (f) {
                 if (f.includes('-')) {
                     const p = f.split('-');
@@ -445,7 +360,6 @@ useEffect(() => {
             }
 
             if (a && m) {
-                // En JavaScript los meses van de 0 a 11, por eso restamos 1 al mes
                 const currentDate = new Date(parseInt(a), parseInt(m) - 1, parseInt(dia));
                 if (currentDate > maxDate) {
                     maxDate = currentDate;
@@ -455,30 +369,28 @@ useEffect(() => {
         });
 
         if (!found) return 'No disponible';
-
-        // Formatear a dd/mm/aaaa
         const dd = String(maxDate.getDate()).padStart(2, '0');
         const mm = String(maxDate.getMonth() + 1).padStart(2, '0');
         const yyyy = maxDate.getFullYear();
-
         return `${dd}/${mm}/${yyyy}`;
     }, [datos]);
 
     // ==========================================
-    // SEPARADOR DE ÁREAS (La clave de tu arquitectura)
+    // CUBETAS DE DATOS BASE (Separación Robusta)
     // ==========================================
     const datosConsultaExterna = useMemo(() => {
         if (!datos || datos.length === 0) return [];
-        
-        // Las palabras clave que NO queremos ver en el tablero principal
-        const ignorar = ['TOCO', 'PRIMER CONTACTO', '5001', '6300', '6600', '6900', 'NUTRICION', 'INHALOTERAPIA', 'FONIATRIA'];
-        
         return datos.filter(d => {
-            const esp = String(d.especialidad || d.ESPECIALIDAD || '').toUpperCase();
-            // Solo deja pasar a las que NO contienen las palabras a ignorar
-            return !ignorar.some(ignorada => esp.includes(ignorada));
+            const espCruda = String(d.especialidad || d.ESPECIALIDAD || '');
+            const espNivelada = nivelarTexto(espCruda);
+            const espTraducida = nivelarTexto(traducirEspecialidad(espCruda));
+            
+            // Si el nombre o el código pertenece a otra área, lo ignoramos de Consulta Externa
+            const ignorar = ['TOCO', 'PRIMER CONTACTO', '5001', '6300', '6600', '6900', 'NUTRICION', 'INHALOTERAPIA', 'FONIATRIA', 'TRABAJO SOCIAL', 'PSICOLOGIA', 'REHABILITACION', 'URGENCIAS', 'ADMISION CONTINUA', 'OBSERVACION', 'CHOQUE'];
+            
+            return !ignorar.some(ignorada => espNivelada.includes(ignorada) || espTraducida.includes(ignorada));
         });
-    }, [datos]);
+    }, [datos, diccionarioEspecialidades]);
 
     const aniosDisponibles = useMemo(() => {
         const anios = new Set();
@@ -489,36 +401,26 @@ useEffect(() => {
             } else {
                 const f = encontrarFecha(d);
                 if (f) {
-                    if (f.includes('-')) {
-                        const p = f.split('-');
-                        anios.add(p[0].length === 4 ? p[0] : p[2]);
-                    } else if (f.includes('/')) {
-                        const p = f.split('/');
-                        anios.add(p[0].length === 4 ? p[0] : p[2]);
-                    }
+                    const p = f.includes('-') ? f.split('-') : f.split('/');
+                    anios.add(p[0].length === 4 ? p[0] : p[2]);
                 }
             }
         });
         return [...anios].sort().reverse();
     }, [datos]);
 
-    const datosFiltradosFecha = useMemo(() => {
-        return datosConsultaExterna.filter(item => {
+    // FILTRO DE FECHAS
+    const aplicarFiltroFecha = (listaDatos) => {
+        return listaDatos.filter(item => {
             let a = item.anio || item.Anio || item.ANIO || item.año || item.Año || item.AÑO;
             let m = item.mes || item.Mes || item.MES;
 
             if (!a || !m) {
                 const f = encontrarFecha(item);
                 if (f) {
-                    if (f.includes('-')) {
-                        const parts = f.split('-');
-                        if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; }
-                        else { a = a || parts[2]; m = m || parts[1]; }
-                    } else if (f.includes('/')) {
-                        const parts = f.split('/');
-                        if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; }
-                        else { a = a || parts[2]; m = m || parts[1]; }
-                    }
+                    const parts = f.includes('-') ? f.split('-') : f.split('/');
+                    if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; }
+                    else { a = a || parts[2]; m = m || parts[1]; }
                 }
             }
 
@@ -537,96 +439,43 @@ useEffect(() => {
 
             return pasaAnio && pasaMes;
         });
-    }, [datosConsultaExterna, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
+    };
 
-    // ==========================================
-    // FILTRO ESPECÍFICO: PARAMÉDICOS + FECHAS
-    // ==========================================
-    //Filtros de paramedicos
+    const datosFiltradosFecha = useMemo(() => aplicarFiltroFecha(datosConsultaExterna), [datosConsultaExterna, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
+
     const datosParamedicosFiltrados = useMemo(() => {
-        // 1. Primero separamos solo a los paramédicos de la base de datos completa
         const soloParamedicos = datos.filter(d => {
             const esp = String(d.especialidad || d.ESPECIALIDAD || '').toUpperCase();
             const criterios = ['6300', '6600', '6900', 'NUTRICION', 'INHALOTERAPIA', 'FONIATRIA', 'REHABILITACION'];
             return criterios.some(c => esp.includes(c));
         });
-
-        // 2. Luego les aplicamos el mismo filtro de fechas que usas en el dashboard principal
-        return soloParamedicos.filter(item => {
-            let a = item.anio || item.Anio || item.ANIO || item.año || item.Año || item.AÑO;
-            let m = item.mes || item.Mes || item.MES;
-
-            // Lógica para detectar fecha si no vienen columnas de año/mes
-            if (!a || !m) {
-                const f = encontrarFecha(item);
-                if (f) {
-                    const parts = f.includes('-') ? f.split('-') : f.split('/');
-                    if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; }
-                    else { a = a || parts[2]; m = m || parts[1]; }
-                }
-            }
-
-            const mesIdx = parseInt(m, 10) - 1;
-            const pasaAnio = anioSeleccionado === 'todos' || String(a) === String(anioSeleccionado);
-            
-            let pasaMes = true;
-            if (mesSeleccionado === 'rango') {
-                pasaMes = mesIdx >= mesInicio && mesIdx <= mesFin;
-            } else if (mesSeleccionado !== 'todos') {
-                pasaMes = mesIdx === Number(mesSeleccionado);
-            }
-
-            return pasaAnio && pasaMes;
-        });
+        return aplicarFiltroFecha(soloParamedicos);
     }, [datos, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
 
-    // ==========================================
-    // FILTRO ESPECÍFICO: URGENCIAS + FECHAS (VERSIÓN BLINDADA)
-    // ==========================================
     const datosUrgenciasFiltrados = useMemo(() => {
-        // 1. Separamos solo a Urgencias (Quitamos acentos para mayor seguridad)
+        if (!datos || datos.length === 0) return [];
+
         const soloUrgencias = datos.filter(d => {
-            const espRaw = String(d.especialidad || d.ESPECIALIDAD || d.servicio || '');
-            // Esta magia quita los acentos (ej. Cirugía -> Cirugia) y lo hace mayúsculas
-            const esp = espRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            const espCruda = String(d.especialidad || d.ESPECIALIDAD || d.servicio || '').toUpperCase();
+            const espTraducida = traducirEspecialidad(espCruda);
             
-            const criterios = ['5001', 'A600', 'URGENCIAS', 'ADMISION CONTINUA', 'OBSERVACION', 'CHOQUE'];
-            return criterios.some(c => esp.includes(c));
+            // Criterios de búsqueda: si el nombre tiene alguna de estas palabras, entra a Urgencias
+            const criterios = [
+                '5001', 'A600', 'URGENCIAS TOCOCIRUGIA','CONSULTAS EN PRIMER CONTACTO'
+            ];
+            
+            return criterios.some(c => 
+                espTraducida.includes(c) || espCruda.includes(c)
+            );
         });
 
-        // 2. Filtro de fechas (Ahora lee directamente 'fecha_atencion')
-        return soloUrgencias.filter(item => {
-            let a = item.anio || item.Anio || item.año || item.Año;
-            let m = item.mes || item.Mes;
+        // Aplicamos el filtro de fecha (¡Ojo con el año seleccionado!)
+        return aplicarFiltroFecha(soloUrgencias);
+    }, [datos, anioSeleccionado, mesSeleccionado, mesInicio, mesFin, diccionarioEspecialidades]);
 
-            // Si no hay columnas separadas de año y mes, atacamos fecha_atencion
-            if (!a || !m) {
-                // Buscamos fecha_atencion, o usamos la función global como plan B
-                const f = item.fecha_atencion || item.FECHA_ATENCION || (typeof encontrarFecha === 'function' ? encontrarFecha(item) : null);
-                if (f) {
-                    const parts = f.includes('-') ? f.split('-') : f.split('/');
-                    if (parts.length >= 2) {
-                        // Detectamos si el año está al principio (YYYY-MM-DD) o al final (DD-MM-YYYY)
-                        if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; } 
-                        else { a = a || parts[2]; m = m || parts[1]; }
-                    }
-                }
-            }
-
-            const mesIdx = parseInt(m, 10) - 1;
-            const pasaAnio = anioSeleccionado === 'todos' || String(a) === String(anioSeleccionado);
-            
-            let pasaMes = true;
-            if (mesSeleccionado === 'rango') {
-                pasaMes = mesIdx >= mesInicio && mesIdx <= mesFin;
-            } else if (mesSeleccionado !== 'todos') {
-                pasaMes = mesIdx === Number(mesSeleccionado);
-            }
-
-            return pasaAnio && pasaMes;
-        });
-    }, [datos, anioSeleccionado, mesSeleccionado, mesInicio, mesFin]);
-
+    // ==========================================
+    // DIVISIONES Y ESPECIALIDADES
+    // ==========================================
     const rankingDivisiones = useMemo(() => {
         const conteo = {};
         datosFiltradosFecha.forEach(d => {
@@ -658,129 +507,124 @@ useEffect(() => {
         });
     }, [datosFiltradosFecha, divisionSeleccionada]);
 
-    const especialidadesDisponibles = useMemo(() => {
-        const setEsp = new Set();
-        datosFiltradosDivision.forEach(d => setEsp.add((d.especialidad || 'Desconocida').trim()));
-        return [...setEsp].sort();
-    }, [datosFiltradosDivision]);
-
+    // ==========================================
+    // MOTOR DE FILTRO PRINCIPAL
+    // ==========================================
     const datosFiltrados = useMemo(() => {
         return datosFiltradosDivision.filter(item => {
             if (especialidadSeleccionada === 'todas') return true;
             
-            // LA MAGIA: Limpiamos y traducimos la especialidad de esta fila antes de comparar
-            const espRaw = String(item.especialidad || item.ESPECIALIDAD || 'Desconocida').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
-            const espTraducida = diccionarioEspecialidades[espRaw]?.nombre || espRaw;
+            // 1. Traduce y limpia al paciente (quita el COD:)
+            const espTraducida = traducirEspecialidad(item.especialidad || item.ESPECIALIDAD);
             
-            return espTraducida.toUpperCase() === especialidadSeleccionada.toUpperCase();
+            // 2. Compara el paciente con lo que elegiste en el menú (ambos sin acentos)
+            return nivelarTexto(espTraducida) === nivelarTexto(especialidadSeleccionada);
         });
     }, [datosFiltradosDivision, especialidadSeleccionada, diccionarioEspecialidades]);
 
-    const especialidadesParaMostrar = useMemo(() => {
-        let datosBase = [];
-        if (areaSidebar === 'consulta_externa') datosBase = datosFiltradosDivision;
-        else if (areaSidebar === 'paramedicos') datosBase = datosParamedicosFiltrados;
-        else if (areaSidebar === 'urgencias') datosBase = datosUrgenciasFiltrados;
-
+   const especialidadesParaMostrar = useMemo(() => {
         const setEsp = new Set();
-        datosBase.forEach(d => {
-            const espRaw = String(d.especialidad || d.ESPECIALIDAD || d.servicio || 'Desconocida').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
-            
-            // TRADUCCIÓN PARA EL MENÚ: Usamos tu catálogo para mostrar el nombre bonito
-            const espTraducida = diccionarioEspecialidades[espRaw]?.nombre || espRaw;
-            setEsp.add(espTraducida);
-        });
         
-        const listaUnica = [...setEsp].sort();
+        // 1. Recorremos TODA tu base de datos (catálogo) en lugar de leer el Excel
+        Object.values(diccionarioEspecialidades).forEach(item => {
+            if (item && item.nombre) {
+                // Si el usuario eligió una División, solo metemos a la lista las especialidades de esa división
+                if (divisionSeleccionada !== 'todas') {
+                    const divItem = String(item.division || '').trim();
+                    if (divItem !== divisionSeleccionada) return; 
+                }
 
-        // Filtro visual de seguridad
-        if (areaSidebar === 'paramedicos') {
-            const criterios = ['TRABAJO SOCIAL', 'NUTRICIÓN', 'NUTRICION', 'PSICOLOGIA', 'PSICOLOGÍA', 'REHABILITACION', '6300', '6600', '6900'];
-            return listaUnica.filter(esp => criterios.some(c => esp.toUpperCase().includes(c)));
+                // Limpiamos el nombre para que el menú se vea impecable
+                const nombreLimpio = String(item.nombre).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                setEsp.add(nombreLimpio);
+            }
+        });
+
+        // Seguro de vida: Si la BD tarda en responder, forzamos la aparición de estas
+        if (Object.keys(diccionarioEspecialidades).length === 0) {
+            if (areaSidebar === 'paramedicos') {
+                ['TRABAJO SOCIAL', 'PSICOLOGIA', 'NUTRICION', 'REHABILITACION'].forEach(e => setEsp.add(e));
+            } else if (areaSidebar === 'urgencias') {
+                ['CONSULTAS EN PRIMER CONTACTO', 'URGENCIAS TOCOCIRUGIA'].forEach(e => setEsp.add(e));
+            }
         }
 
-        return listaUnica;
-    }, [areaSidebar, datosFiltradosDivision, datosParamedicosFiltrados, datosUrgenciasFiltrados, diccionarioEspecialidades]);
+        let listaCompleta = [...setEsp].sort();
+
+        // 2. Filtramos la lista visual dependiendo de en qué pestaña estemos
+        if (areaSidebar === 'paramedicos') {
+            const criterios = ['TRABAJO SOCIAL', 'NUTRICION', 'PSICOLOGIA'];
+            return listaCompleta.filter(esp => criterios.some(c => esp.includes(c)));
+        }
+
+        if (areaSidebar === 'urgencias') {
+            const criterios = ['URGENCIAS TOCOCIRUGIA', 'CONSULTAS EN PRIMER CONTACTO'];
+            return listaCompleta.filter(esp => criterios.some(c => esp.includes(c)));
+        }
+
+        // Si es consulta externa, limpiamos el menú ocultando lo que es de paramédicos o urgencias
+        const ignorar = ['TRABAJO SOCIAL', 'NUTRICION', 'PSICOLOGIA', 'URGENCIAS TOCOCIRUGIA','CONSULTAS EN PRIMER CONTACTO'];
+        return listaCompleta.filter(esp => !ignorar.some(ignorada => esp.includes(ignorada)));
+
+    }, [diccionarioEspecialidades, areaSidebar, divisionSeleccionada]);
 
     // ==========================================
-    // MOTORES DE FILTRO SECUNDARIOS (Conectan el menú superior con las pestañas)
+    // MOTORES DE FILTRO SECUNDARIOS (USANDO EL TRADUCTOR)
     // ==========================================
     const paramedicosParaTablero = useMemo(() => {
         return datosParamedicosFiltrados.filter(item => {
             if (especialidadSeleccionada === 'todas') return true;
-            const espRaw = String(item.especialidad || item.ESPECIALIDAD || 'Desconocida').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
-            const espTraducida = diccionarioEspecialidades[espRaw]?.nombre || espRaw;
-            return espTraducida.toUpperCase() === especialidadSeleccionada.toUpperCase();
+            const espTraducida = traducirEspecialidad(item.especialidad || item.ESPECIALIDAD);
+            return nivelarTexto(espTraducida) === nivelarTexto(especialidadSeleccionada);
         });
     }, [datosParamedicosFiltrados, especialidadSeleccionada, diccionarioEspecialidades]);
 
     const urgenciasParaTablero = useMemo(() => {
         return datosUrgenciasFiltrados.filter(item => {
             if (especialidadSeleccionada === 'todas') return true;
-            const espRaw = String(item.especialidad || item.ESPECIALIDAD || item.servicio || 'Desconocida').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
-            const espTraducida = diccionarioEspecialidades[espRaw]?.nombre || espRaw;
-            return espTraducida.toUpperCase() === especialidadSeleccionada.toUpperCase();
+            const espTraducida = traducirEspecialidad(item.especialidad || item.ESPECIALIDAD || item.servicio);
+            return nivelarTexto(espTraducida) === nivelarTexto(especialidadSeleccionada);
         });
     }, [datosUrgenciasFiltrados, especialidadSeleccionada, diccionarioEspecialidades]);
-    // ==========================================
+
+// ==========================================
     // GRÁFICA DE METAS CON CALENDARIO DINÁMICO HISTÓRICO
     // ==========================================
     const chartMetas = useMemo(() => {
-        // 1. Obtenemos el calendario exacto de las 5 semanas para el mes/año seleccionado
         const semanasOperativas = generarCalendarioIMSS(mesGraficoMeta, anioGraficoMeta);
-        
-        // Extraemos solo los textos para la gráfica (ej. "S1 (26-dic al 28-dic)")
         const labelsSemanas = semanasOperativas.map(s => s.label);
         const citasPorSemana = [0, 0, 0, 0, 0];
-
-        // 2. Definimos las metas
         let metasPorSemana = [2646, 2646, 2646, 2646, 2646];
         
-        // Regla directiva específica para Enero de 2026 (Semana 1 = 114)
+        if (Number(mesGraficoMeta) === 0) metasPorSemana[0] = 1134; 
 
-        if (Number(mesGraficoMeta) === 0) {
-            metasPorSemana[0] = 1134; // Ajustamos solo la Semana 1 de Enero
-        }
-
-        // 3. Agrupamos los datos reales en las "cubetas" (semanas) que generó el algoritmo
         datosConsultaExterna.forEach(d => {
             const div = (d.division || 'Sin Asignar').trim();
             if (divisionSeleccionada !== 'todas' && div !== divisionSeleccionada) return;
 
-            const esp = (d.especialidad || 'Desconocida').trim().toUpperCase();
-            if (especialidadSeleccionada !== 'todas' && esp !== especialidadSeleccionada.toUpperCase()) return;
+           // Nivelamos y comparamos para la gráfica de metas
+            const espTraducida = traducirEspecialidad(d.especialidad || d.ESPECIALIDAD);
+            if (especialidadSeleccionada !== 'todas' && nivelarTexto(espTraducida) !== nivelarTexto(especialidadSeleccionada)) return;
 
-            // Extraemos la fecha
             let a = d.anio || d.Anio || d.ANIO || d.año || d.Año || d.AÑO;
             let m = d.mes || d.Mes || d.MES;
             let dia = 1;
 
             const f = encontrarFecha(d);
             if (f) {
-                if (f.includes('-')) {
-                    const p = f.split('-');
-                    if (p[0].length === 4) { a = a || p[0]; m = m || p[1]; dia = p[2]; }
-                    else { a = a || p[2]; m = m || p[1]; dia = p[0]; }
-                } else if (f.includes('/')) {
-                    const p = f.split('/');
-                    if (p[0].length === 4) { a = a || p[0]; m = m || p[1]; dia = p[2]; }
-                    else { a = a || p[2]; m = m || p[1]; dia = p[0]; }
-                }
+                const p = f.includes('-') ? f.split('-') : f.split('/');
+                if (p[0].length === 4) { a = a || p[0]; m = m || p[1]; dia = p[2]; }
+                else { a = a || p[2]; m = m || p[1]; dia = p[0]; }
             }
 
             if (a && m && dia) {
-                // Creamos la fecha del registro a las 12:00 del día (seguro contra zonas horarias)
                 const fechaRegistro = new Date(parseInt(a), parseInt(m) - 1, parseInt(dia), 12, 0, 0);
-
-                // Solo tomamos en cuenta los "Citados"
                 if (d.citado === 'Citado' || d.CITADO === 'Citado' || (d.citado && String(d.citado).toLowerCase() === 'citado')) {
-                    
-                    // ¿En qué semana operativa cae esta fecha?
                     for (let i = 0; i < semanasOperativas.length; i++) {
                         const sem = semanasOperativas[i];
                         if (!sem.vacia && fechaRegistro >= sem.inicio && fechaRegistro <= sem.fin) {
                             citasPorSemana[i]++;
-                            break; // Ya la acomodamos, salimos del ciclo de semanas
+                            break; 
                         }
                     }
                 }
@@ -814,22 +658,17 @@ useEffect(() => {
                 }
             ]
         };
-    }, [datos, divisionSeleccionada, especialidadSeleccionada, mesGraficoMeta, anioGraficoMeta]);
+    // ¡AQUÍ ESTÁ LA MAGIA! Agregamos diccionarioEspecialidades a las dependencias
+    }, [datosConsultaExterna, divisionSeleccionada, especialidadSeleccionada, mesGraficoMeta, anioGraficoMeta, diccionarioEspecialidades]);
 
     const chartOptionsLine = {
         maintainAspectRatio: false,
-        plugins: {
-            legend: { position: 'top', labels: { usePointStyle: true } },
-            tooltip: { mode: 'index', intersect: false }
-        },
-        scales: {
-            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-            x: { grid: { display: false } }
-        }
+        plugins: { legend: { position: 'top', labels: { usePointStyle: true } }, tooltip: { mode: 'index', intersect: false } },
+        scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
     };
 
     // ==========================================
-    // KPIs y GRÁFICAS CON DESGLOSE (PV/SUB)
+    // KPIs y GRÁFICAS CON DESGLOSE
     // ==========================================
     const kpis = useMemo(() => {
         let citados = 0, primeraVez = 0;
@@ -848,7 +687,6 @@ useEffect(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
             const div = curr.division || 'Sin Asignar';
             if (!acc[div]) acc[div] = { total: 0, pv: 0, sub: 0 };
-            
             acc[div].total++;
             if (curr.primera_vez === 'Primera Vez') acc[div].pv++; else acc[div].sub++;
             return acc;
@@ -867,7 +705,6 @@ useEffect(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
             const turno = curr.turno || 'Sin Asignar';
             if (!acc[turno]) acc[turno] = { total: 0, pv: 0, sub: 0 };
-            
             acc[turno].total++;
             if (curr.primera_vez === 'Primera Vez') acc[turno].pv++; else acc[turno].sub++;
             return acc;
@@ -882,24 +719,16 @@ useEffect(() => {
         };
     }, [datosFiltrados]);
 
-const chartEspecialidades = useMemo(() => {
+    const chartEspecialidades = useMemo(() => {
         if (!datosFiltrados || datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
 
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            const nombreRaw = curr.especialidad || curr.ESPECIALIDAD || 'Desconocida';
-            const nombreLimpio = String(nombreRaw).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
-            
-            // LA MAGIA ESTÁ AQUÍ:
-            // Buscamos el nombre bonito oficial en MySQL. Si MySQL no lo tiene (porque aún no lo agregas en el CRUD), 
-            // simplemente usamos el nombre crudo que ya traía el archivo. ¡Cero errores!
-            let esp = diccionarioEspecialidades[nombreLimpio]?.nombre || nombreRaw; 
+            // USANDO EL TRADUCTOR TAMBIÉN PARA LA GRÁFICA
+            const esp = traducirEspecialidad(curr.especialidad || curr.ESPECIALIDAD); 
 
             if (!acc[esp]) acc[esp] = { total: 0, pv: 0, sub: 0 };
-            
             acc[esp].total++;
-            if (curr.primera_vez === 'Primera Vez') acc[esp].pv++; 
-            else acc[esp].sub++;
-            
+            if (curr.primera_vez === 'Primera Vez') acc[esp].pv++; else acc[esp].sub++;
             return acc;
         }, {});
         
@@ -912,21 +741,15 @@ const chartEspecialidades = useMemo(() => {
         };
     }, [datosFiltrados, diccionarioEspecialidades]);
 
-const chartMedicos = useMemo(() => {
+    const chartMedicos = useMemo(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            // Limpiamos la matrícula
             const matriculaLimpia = String(curr.matricula_medico || 'Sin Matrícula').trim().replace('.0', '').replace(/\s/g, '');
             const nombreMedico = diccionarioMedicos[matriculaLimpia] || `Matr. ${curr.matricula_medico}`;
             
-            // LA MAGIA: Traducimos la especialidad de ESTE registro usando el diccionario
-            const espRaw = curr.especialidad || curr.ESPECIALIDAD || 'Desconocida';
-            const espLimpia = String(espRaw).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace('.0', '');
-            const nombreEspecialidad = diccionarioEspecialidades[espLimpia]?.nombre || espRaw;
+            // USANDO EL TRADUCTOR
+            const nombreEspecialidad = traducirEspecialidad(curr.especialidad || curr.ESPECIALIDAD);
 
-            // Guardamos el médico y su especialidad
-            if (!acc[nombreMedico]) {
-                acc[nombreMedico] = { total: 0, pv: 0, sub: 0, especialidad: nombreEspecialidad };
-            }
+            if (!acc[nombreMedico]) acc[nombreMedico] = { total: 0, pv: 0, sub: 0, especialidad: nombreEspecialidad };
             
             acc[nombreMedico].total++;
             if (curr.primera_vez === 'Primera Vez') acc[nombreMedico].pv++; else acc[nombreMedico].sub++;
@@ -941,39 +764,13 @@ const chartMedicos = useMemo(() => {
             datasets: [{ label: 'Consultas', data: top.map(item => item[1].total), backgroundColor: '#822626', borderRadius: 4 }],
             dataPV: top.map(item => item[1].pv),
             dataSub: top.map(item => item[1].sub),
-            // Mandamos el arreglo de especialidades a la tabla
             dataExtra: top.map(item => item[1].especialidad) 
         };
-    // CRÍTICO: Agregamos diccionarioEspecialidades a las dependencias
     }, [datosFiltrados, diccionarioMedicos, diccionarioEspecialidades]);
 
-    const chartConsultorios = useMemo(() => {
+    const chartDiagnosticos = useMemo(() => {
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            const consultorio = curr.consultorio || 'Sin Asignar';
-            if (!acc[consultorio]) acc[consultorio] = { total: 0, pv: 0, sub: 0 };
-            
-            acc[consultorio].total++;
-            if (curr.primera_vez === 'Primera Vez') acc[consultorio].pv++; else acc[consultorio].sub++;
-            return acc;
-        }, {});
-        
-        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
-        const top = ordenados.slice(0, 20);
-        return {
-            labels: top.map(item => `Cons. ${item[0]}`),
-            datasets: [{ label: 'Consultas', data: top.map(item => item[1].total), backgroundColor: '#b45309', borderRadius: 4 }],
-            dataPV: top.map(item => item[1].pv),
-            dataSub: top.map(item => item[1].sub)
-        };
-    }, [datosFiltrados]);
-
-const chartDiagnosticos = useMemo(() => {
-        const conteo = datosFiltrados.reduce((acc, curr) => {
-            // Tomamos el código crudo del CSV (ej. "J00X")
             const codigoRaw = String(curr.diagnostico_principal || 'No Especificado').trim().toUpperCase();
-            
-            // TRADUCCIÓN MÁGICA: Buscamos el código en el diccionario CIE. 
-            // Si no lo encuentra, muestra el código original.
             const nombreEnfermedad = diccionarioCIE[codigoRaw] || codigoRaw;
             
             if (!acc[nombreEnfermedad]) acc[nombreEnfermedad] = { total: 0, pv: 0, sub: 0 };
@@ -990,7 +787,7 @@ const chartDiagnosticos = useMemo(() => {
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
-    }, [datosFiltrados, diccionarioCIE]); // <-- No olvides agregar diccionarioCIE a las dependencias del useMemo
+    }, [datosFiltrados, diccionarioCIE]);
 
     const anchoDinamico = (cantidadItems) => `max(100%, ${cantidadItems * 40}px)`; 
     
@@ -1003,39 +800,17 @@ const chartDiagnosticos = useMemo(() => {
         }
     };
 
-if (vistaActiva === 'menu') {
-    return (
-        <MenuPrincipal 
-            setVistaActiva={setVistaActiva} 
-            isAdmin={isAdmin} 
-            setMensaje={setMensaje} 
-        />
-    );
-}
-    //Vista subir CSV
+    if (vistaActiva === 'menu') {
+        return <MenuPrincipal setVistaActiva={setVistaActiva} isAdmin={isAdmin} setMensaje={setMensaje} />;
+    }
+
     if (vistaActiva === 'subir') {
-        return (
-            <ModuloCarga 
-                setVistaActiva={setVistaActiva} 
-                setMensaje={setMensaje} 
-                mensaje={mensaje} 
-                cargarDatos={cargarDatos} 
-            />
-        );
+        return <ModuloCarga setVistaActiva={setVistaActiva} setMensaje={setMensaje} mensaje={mensaje} cargarDatos={cargarDatos} />;
     }
 
     if (vistaActiva === 'catalogos') {
-        //llamar a todo el archivo separado
         return <AdministradorCatalogos setVistaActiva={setVistaActiva} />;
     }
-
-    // Vamos a buscar una fila de Urgencias o Paramédicos que esté cayendo en "Sin Diagnóstico"
-    const filaFantasma = datos.find(d => 
-        // Que sea de urgencias o paramédicos
-        (String(d.especialidad).toUpperCase().includes('URGENCIA') || String(d.especialidad).toUpperCase() === 'NUTRICION') && 
-        // Y que no tenga las columnas tradicionales
-        !d.diagnostico && !d.DIAGNOSTICO && !d.cie_10 && !d.CIE_10
-    );
     
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
@@ -1089,7 +864,7 @@ if (vistaActiva === 'menu') {
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-                        {(areaSidebar === 'consulta_externa' || areaSidebar === 'paramedicos' )&& datos.length > 0 && !cargandoDatos && !error && (
+                        {(areaSidebar === 'consulta_externa' || areaSidebar === 'paramedicos' || areaSidebar === 'urgencias') && datos.length > 0 && !cargandoDatos && !error && (
                             <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5 border border-slate-200 shadow-inner flex-wrap w-full xl:w-auto">
                                 <Filter size={14} className="text-[#822626] ml-2 hidden sm:block"/>
                                 
@@ -1137,7 +912,6 @@ if (vistaActiva === 'menu') {
                                         onChange={e => setEspecialidadSeleccionada(e.target.value)}
                                     >
                                         <option value="todas">Todas</option>
-                                        {/* Cambiamos especialidadesDisponibles por la nueva lista filtrada */}
                                         {especialidadesParaMostrar.map(e => (
                                             <option key={e} value={e}>{e}</option>
                                         ))}
@@ -1256,7 +1030,7 @@ if (vistaActiva === 'menu') {
                                                 </div>
                                                 <div className="mb-4">
                                                     <p className="text-sm text-slate-400 font-bold mb-1">{especialidadSeleccionada === 'todas' ? 'Especialidades en la vista' : 'Total Consultas en Especialidad'}</p>
-                                                    <p className="text-5xl font-black text-white drop-shadow-md">{especialidadSeleccionada === 'todas' ? especialidadesDisponibles.length : (infoEspecialidades.ranking.find(r => r[0] === especialidadSeleccionada)?.[1] || 0).toLocaleString()}</p>
+                                                    <p className="text-5xl font-black text-white drop-shadow-md">{especialidadSeleccionada === 'todas' ? especialidadesParaMostrar.length : (infoEspecialidades.ranking.find(r => r[0] === especialidadSeleccionada)?.[1] || 0).toLocaleString()}</p>
                                                 </div>
                                                 <div className="inline-block bg-slate-950/50 border border-slate-700 px-4 py-2 rounded-xl mt-auto w-full">
                                                     <p className="text-sm font-bold text-emerald-400 flex flex-col gap-1">
@@ -1268,7 +1042,6 @@ if (vistaActiva === 'menu') {
                                         </div>
                                     </div>
 
-                                    {/* COMPONENTES DE TABLA CON NUEVOS PROPS (dataPV, dataSub) */}
                                     <div className={`grid grid-cols-1 ${divisionSeleccionada === 'todas' ? 'lg:grid-cols-2' : ''} gap-6 mb-6 items-start`}>
                                         {divisionSeleccionada === 'todas' && (
                                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px]">
@@ -1311,7 +1084,6 @@ if (vistaActiva === 'menu') {
                                                         <Bar data={chartMedicos} options={chartOptionsVertical} />
                                                     </div>
                                                 </div>
-                                                {/* AQUÍ ESTÁ LA NUEVA TABLA CON LA ESPECIALIDAD INCLUIDA */}
                                                 {mostrarTablas && (
                                                     <div className="lg:col-span-2 h-[400px] overflow-hidden">
                                                         <TablaDatos 
@@ -1347,14 +1119,33 @@ if (vistaActiva === 'menu') {
                         </>
                     )}
 
-                    {/* MÓDULO PARAMÉDICOS INCRUSTADO */}
+                                    {/* MÓDULO PARAMÉDICOS INCRUSTADO */}
                     {areaSidebar === 'paramedicos' && (
                         <div className="max-w-[1600px] mx-auto w-full pb-8">
-                            <TableroParamedicos datos={paramedicosParaTablero} diccionarioMedicos={diccionarioMedicos} diccionarioCIE ={diccionarioCIE} mostrarTablas={mostrarTablas} />
+                            <TableroParamedicos 
+                                datos={paramedicosParaTablero} 
+                                diccionarioMedicos={diccionarioMedicos} 
+                                diccionarioCIE={diccionarioCIE} 
+                                diccionarioEspecialidades={diccionarioEspecialidades} /* <--- AQUÍ LO MANDAMOS */
+                                mostrarTablas={mostrarTablas} 
+                            />
                         </div>
                     )}
 
-                    {/* MENSAJE DE EN CONSTRUCCIÓN (OCULTO PARA PARAMÉDICOS) */}
+                    {/* MÓDULO URGENCIAS INCRUSTADO */}
+                    {areaSidebar === 'urgencias' && (
+                        <div className="max-w-[1600px] mx-auto w-full pb-8 animate-in fade-in duration-500">
+                            <TableroUrgencias 
+                                datos={urgenciasParaTablero} 
+                                diccionarioMedicos={diccionarioMedicos} 
+                                diccionarioCIE={diccionarioCIE}
+                                diccionarioEspecialidades={diccionarioEspecialidades} /* <--- AQUÍ LO MANDAMOS */
+                                mostrarTablas={mostrarTablas} 
+                            />
+                        </div>
+                    )}
+
+                    {/* MENSAJE DE EN CONSTRUCCIÓN (OCULTO PARA PARAMÉDICOS Y URGENCIAS) */}
                     {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && areaSidebar !== 'urgencias' && (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 p-16 border-2 border-dashed border-slate-300 rounded-3xl bg-slate-100/50">
                             <Activity size={64} className="mb-6 opacity-40 text-[#822626]" />
@@ -1363,17 +1154,6 @@ if (vistaActiva === 'menu') {
                         </div>
                     )}
 
-                    {/* MÓDULO URGENCIAS INCRUSTADO */}
-                    {areaSidebar === 'urgencias' && (
-                        <div className="max-w-[1600px] mx-auto w-full pb-8 animate-in fade-in duration-500">
-                            <TableroUrgencias 
-                                datos={urgenciasParaTablero}
-                                diccionarioMedicos={diccionarioMedicos} 
-                                diccionarioCIE={diccionarioCIE}
-                                mostrarTablas={mostrarTablas} 
-                            />
-                        </div>
-                    )}
                 </main>
             </div>
         </div>

@@ -73,7 +73,7 @@ const CRITERIOS_PARAMEDICOS = ['6300', '6600', '6900', 'NUTRICION', 'NUTRICIÓN'
 // ==========================================
 // COMPONENTE PRINCIPAL: TABLERO PARAMÉDICOS
 // ==========================================
-export default function TableroParamedicos({ datos, diccionarioMedicos = {}, diccionarioCIE = {}, mostrarTablas = false }) {
+export default function TableroParamedicos({ datos, diccionarioMedicos = {}, diccionarioCIE = {}, diccionarioEspecialidades = {}, mostrarTablas = false }) {
 
     // 1. FILTRO DE RAÍZ: Aislamos solo los datos de paramédicos
     const datosFiltrados = useMemo(() => {
@@ -126,26 +126,58 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
         };
     }, [datosFiltrados]);
 
-    // 4. ESPECIALIDADES (Áreas Paramédicas - Usando datosFiltrados)
+// 4. ESPECIALIDADES (Áreas Paramédicas)
     const chartEspecialidades = useMemo(() => {
-        if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+        if (!datosFiltrados || datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+        
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            const area = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área').trim().toUpperCase();
-            if (!acc[area]) acc[area] = { total: 0, pv: 0, sub: 0 };
-            acc[area].total++;
+            // 1. Extraemos el texto crudo original
+            let areaCruda = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área').trim().toUpperCase();
+            
+            // 2. ¡EL EXTERMINADOR DE BUGS! 
+            // Le arrancamos la palabra "COD:" y los ".0" si vienen pegados en los datos del paciente
+            areaCruda = areaCruda.replace('COD:', '').replace('COD: ', '').replace('.0', '').trim();
+
+            const respaldo = {
+                '6300': 'TRABAJO SOCIAL',
+                '6600': 'PSICOLOGIA',
+                '6900': 'NUTRICIÓN Y DIETETICA'
+            };
+
+            // 3. Ahora sí, hacemos el match con el diccionario limpio
+            let areaTraducida = areaCruda;
+            
+            if (diccionarioEspecialidades[areaCruda] && diccionarioEspecialidades[areaCruda].nombre) {
+                areaTraducida = String(diccionarioEspecialidades[areaCruda].nombre).toUpperCase();
+            } 
+            else if (respaldo[areaCruda]) {
+                areaTraducida = respaldo[areaCruda];
+            }
+
+            // 4. Agrupamos y contamos
+            if (!acc[areaTraducida]) acc[areaTraducida] = { total: 0, pv: 0, sub: 0 };
+            acc[areaTraducida].total++;
+            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
-            if (pvVal === '1' || pvVal === 'primera vez') acc[area].pv++; else acc[area].sub++;
+            if (pvVal === '1' || pvVal === 'primera vez') {
+                acc[areaTraducida].pv++; 
+            } else {
+                acc[areaTraducida].sub++;
+            }
+            
             return acc;
         }, {});
+
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
+        
         return {
             labels: ordenados.map(item => item[0]),
             datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1].total), backgroundColor: '#059669', borderRadius: 4 }],
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
-    }, [datosFiltrados]);
-
+    }, [datosFiltrados, diccionarioEspecialidades]);
+    
     // 5. PERSONAL (Usando datosFiltrados y reemplazo de Lic.)
     const chartMedicos = useMemo(() => {
         if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
