@@ -67,7 +67,7 @@ const anchoDinamico = (cantidad) => cantidad > 15 ? `${cantidad * 40}px` : '100%
 // ==========================================
 // COMPONENTE PRINCIPAL: TABLERO URGENCIAS
 // ==========================================
-export default function TableroUrgencias({ datos, diccionarioMedicos = {}, diccionarioCIE = {}, mostrarTablas = false }) {
+export default function TableroUrgencias({ datos, diccionarioMedicos = {}, diccionarioCIE = {}, mostrarTablas = false, diccionarioEspecialidades = {}}) {
     
     const kpis = useMemo(() => {
         let citados = 0; let primeraVez = 0;
@@ -121,49 +121,86 @@ export default function TableroUrgencias({ datos, diccionarioMedicos = {}, dicci
         };
     }, [datos]);
 
-    const chartMedicos = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
-        const conteo = datos.reduce((acc, curr) => {
-            const matriculaLimpia = String(curr.matricula_medico || '').trim().replace('.0', '').replace(/\s/g, '');
-            const nombreMedico = diccionarioMedicos[matriculaLimpia] || `Matr. ${curr.matricula_medico || 'Desconocida'}`;
-            if (!acc[nombreMedico]) acc[nombreMedico] = { total: 0, pv: 0, sub: 0 };
-            acc[nombreMedico].total++;
-            const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
-            if (pvVal === '1' || pvVal === 'primera vez') acc[nombreMedico].pv++; else acc[nombreMedico].sub++;
-            return acc;
-        }, {});
-        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
-        const top = ordenados.slice(0, 20);
-        return {
-            labels: top.map(item => item[0]),
-            datasets: [{ label: 'Atenciones', data: top.map(item => item[1].total), backgroundColor: '#f97316', borderRadius: 4 }],
-            dataPV: top.map(item => item[1].pv),
-            dataSub: top.map(item => item[1].sub)
-        };
-    }, [datos, diccionarioMedicos]);
+const chartMedicos = useMemo(() => {
+        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [], dataExtra: [] };
 
-    const chartDiagnosticos = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         const conteo = datos.reduce((acc, curr) => {
-           // Buscamos en todas las columnas posibles, incluyendo la nueva del CRUD
-            const codigoRaw = curr.diagnostico || curr.DIAGNOSTICO || curr.cie_10 || curr.CIE_10 || curr.diagnostico_principal || curr.DIAGNOSTICO_PRINCIPAL || 'Sin Diagnóstico';
-            const codigoLimpio = String(codigoRaw).trim().toUpperCase();
-            const nombreDiagnostico = diccionarioCIE[codigoLimpio] || codigoLimpio;
-            if (!acc[nombreDiagnostico]) acc[nombreDiagnostico] = { total: 0, pv: 0, sub: 0 };
-            acc[nombreDiagnostico].total++;
+            // 1. Identificamos al médico
+            const matricula = String(curr.matricula_medico || 'Sin Matrícula').trim().replace('.0', '');
+            const nombreMedico = diccionarioMedicos[matricula] || `Matr. ${matricula}`;
+            
+            // 2. Procesamos la especialidad (limpieza de códigos)
+            let areaCruda = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área').trim().toUpperCase();
+            areaCruda = areaCruda.replace('COD:', '').replace('COD: ', '').replace('.0', '').trim();
+            
+            // 3. Traducimos el nombre para la tabla
+            const nombreEspecialidad = diccionarioEspecialidades[areaCruda]?.nombre 
+                ? String(diccionarioEspecialidades[areaCruda].nombre).toUpperCase() 
+                : areaCruda;
+
+            // 4. Agrupamos datos por médico
+            if (!acc[nombreMedico]) {
+                acc[nombreMedico] = { total: 0, pv: 0, sub: 0, especialidad: nombreEspecialidad };
+            }
+
+            acc[nombreMedico].total++;
+            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
-            if (pvVal === '1' || pvVal === 'primera vez') acc[nombreDiagnostico].pv++; else acc[nombreDiagnostico].sub++;
+            if (pvVal === '1' || pvVal === 'primera vez') {
+                acc[nombreMedico].pv++; 
+            } else {
+                acc[nombreMedico].sub++;
+            }
+            
             return acc;
         }, {});
-        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
-        const top = ordenados.slice(0, 20);
+        
+        // Ordenamos por volumen de consultas y tomamos los primeros 20
+        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total).slice(0, 20);
+
         return {
-            labels: top.map(item => item[0]),
-            datasets: [{ label: 'Frecuencia', data: top.map(item => item[1].total), backgroundColor: '#c2410c', borderRadius: 4 }],
-            dataPV: top.map(item => item[1].pv),
-            dataSub: top.map(item => item[1].sub)
+            labels: ordenados.map(item => item[0]),
+            datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1].total), backgroundColor: '#822626', borderRadius: 4 }],
+            dataPV: ordenados.map(item => item[1].pv),
+            dataSub: ordenados.map(item => item[1].sub),
+            // Generamos la lista de especialidades para la columna extra de la tabla
+            dataExtra: ordenados.map(item => item[1].especialidad) 
         };
-    }, [datos, diccionarioCIE]);
+    }, [datos, diccionarioMedicos, diccionarioEspecialidades]);
+
+    // ==========================================
+    // MOTOR DE DIAGNÓSTICOS (Top 10)
+    // ==========================================
+    const chartDiagnosticos = useMemo(() => {
+        if (!datos || datos.length === 0) return { labels: [], datasets: [] };
+
+        const conteo = datos.reduce((acc, curr) => {
+            // Extraemos el diagnóstico, lo limpiamos y lo pasamos a mayúsculas
+            let diag = String(curr.diagnostico_principal || curr.DIAG_PRINCIPAL || 'SIN DIAGNÓSTICO').trim().toUpperCase();
+            if (diag === '') diag = 'SIN DIAGNÓSTICO';
+
+            if (!acc[diag]) acc[diag] = 0;
+            acc[diag]++;
+            
+            return acc;
+        }, {});
+
+        // Ordenamos de mayor a menor y sacamos el Top 10
+        const ordenados = Object.entries(conteo)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10); 
+
+        return {
+            labels: ordenados.map(item => item[0]),
+            datasets: [{
+                label: 'Casos',
+                data: ordenados.map(item => item[1]),
+                backgroundColor: '#b45309', // Color ámbar/naranja para que resalte
+                borderRadius: 4
+            }]
+        };
+    }, [datos]);
+
 
     const chartOptionsVertical = { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } };
 
@@ -247,7 +284,22 @@ export default function TableroUrgencias({ datos, diccionarioMedicos = {}, dicci
                                 <Bar data={chartDiagnosticos} options={chartOptionsVertical} />
                             </div>
                         </div>
-                        {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Diagnóstico" titulo2="Frecuencia" labels={chartDiagnosticos.labels} data={chartDiagnosticos.datasets[0].data} dataPV={chartDiagnosticos.dataPV} dataSub={chartDiagnosticos.dataSub} total={false} /></div>}
+                        {/* Sección de la tabla de Médicos en Urgencias */}
+                        {mostrarTablas && (
+                            <div className="lg:col-span-2 h-[400px] overflow-hidden">
+                                <TablaDatos 
+                                    titulo1="Médico" 
+                                    tituloExtra="Especialidad"                 /* Activa la columna central */
+                                    dataExtra={chartMedicos.dataExtra}         /* Pasa los nombres traducidos */
+                                    titulo2="Consultas" 
+                                    labels={chartMedicos.labels} 
+                                    data={chartMedicos.datasets[0].data} 
+                                    dataPV={chartMedicos.dataPV} 
+                                    dataSub={chartMedicos.dataSub} 
+                                    total={true} 
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

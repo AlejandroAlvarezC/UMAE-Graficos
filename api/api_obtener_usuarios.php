@@ -1,34 +1,44 @@
 <?php
-// 1. Configuramos el archivo para que responda en formato JSON puro
-header('Content-Type: application/json');
+// 1. Cabeceras estrictas para CORS (Permite que React lea los datos sin bloqueos)
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Content-Type: application/json; charset=UTF-8");
 
-// 2. Incluimos tu modelo de base de datos
-require_once '../../modelos/UsuariosAdmin.php'; // Asegúrate de que esta ruta sea correcta desde donde guardes este archivo
+// 2. Manejo de la pre-petición (OPTIONS) de los navegadores
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+// 3. Tus credenciales exactas de InfinityFree
+$host = 'sql112.infinityfree.com';
+$dbname = 'if0_41125231_vencer'; 
+$username = 'if0_41125231';
+$password = 'DEtK59bqZzA';
 
 try {
-    // 3. Obtenemos los usuarios usando tu método existente
-    $usuarios_db = Usuarios::listar();
+    // 4. Conexión a la base de datos con PDO
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // 5. La consulta SQL con el truco "AS" para traducir las columnas
+    // - Tu columna 'Names' se enviará a React como 'nombre'
+    // - Tu columna 'Email' se enviará a React como 'correo'
+    // - Inventamos 'Activo' as estado para que los puntitos verdes en React funcionen
+    $sql = "SELECT Id as id, Names as nombre, Email as correo, rol, 'Activo' as estado FROM admi";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
     
-    $usuarios_formateados = [];
+    // 6. Obtener los datos y convertirlos a formato JSON
+    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // 4. Transformamos los datos al formato exacto que React necesita
-    foreach ($usuarios_db as $fila) {
-        $usuarios_formateados[] = [
-            'id' => $fila[0],
-            'nombre' => $fila[1],
-            'correo' => $fila[2],
-            // En tu BD actual parece que no tienes 'rol' o 'estado', 
-            // así que por ahora les ponemos un valor por defecto o los ajustas si sí los tienes.
-            'rol' => 'viewer', 
-            'estado' => 'activo'
-        ];
-    }
-    
-    // 5. Enviamos los datos a React
-    echo json_encode($usuarios_formateados);
-    
-} catch (Exception $e) {
-    // Si hay error, le avisamos a React
-    echo json_encode(['error' => 'Error al obtener usuarios: ' . $e->getMessage()]);
+    // Enviamos el JSON limpio a React
+    echo json_encode($resultados);
+
+} catch (PDOException $e) {
+    // Si hay un error de conexión o de sintaxis SQL, lo reportamos
+    http_response_code(500);
+    echo json_encode(['error' => 'Error de BD: ' . $e->getMessage()]);
 }
 ?>

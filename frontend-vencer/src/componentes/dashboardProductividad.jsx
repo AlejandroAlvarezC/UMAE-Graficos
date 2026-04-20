@@ -1139,7 +1139,7 @@ export default function DashboardProductividad({ isAdmin }) {
                                 datos={urgenciasParaTablero} 
                                 diccionarioMedicos={diccionarioMedicos} 
                                 diccionarioCIE={diccionarioCIE}
-                                diccionarioEspecialidades={diccionarioEspecialidades} /* <--- AQUÍ LO MANDAMOS */
+                                diccionarioEspecialidades={diccionarioEspecialidades} 
                                 mostrarTablas={mostrarTablas} 
                             />
                         </div>

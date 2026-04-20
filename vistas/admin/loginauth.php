@@ -15,6 +15,9 @@ if (isset($_POST['btnLogin'])) {
             session_start();
             $_SESSION['admin_id'] = $admin['Id'];
             $_SESSION['admin_name'] = $admin['Names']; 
+            
+            // 👇 ¡AQUÍ ESTÁ LA LÍNEA MÁGICA QUE FALTABA! 👇
+            $_SESSION['rol'] = $admin['rol']; 
 
             header("Location: admin.php"); 
             exit();
@@ -30,6 +33,5 @@ if (isset($_POST['btnLogin'])) {
         header('Location: ./login.php'); 
         exit();
     }
-
 }
 ?>

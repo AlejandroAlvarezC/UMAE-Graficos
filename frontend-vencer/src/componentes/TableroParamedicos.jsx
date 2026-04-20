@@ -178,34 +178,51 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
         };
     }, [datosFiltrados, diccionarioEspecialidades]);
     
-    // 5. PERSONAL (Usando datosFiltrados y reemplazo de Lic.)
     const chartMedicos = useMemo(() => {
-        if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [], dataExtra: [] };
 
-        const conteo = datosFiltrados.reduce((acc, curr) => {
-            const matriculaLimpia = String(curr.matricula_medico || '').trim().replace('.0', '').replace(/\s/g, '');
-            const nombreOriginal = diccionarioMedicos[matriculaLimpia] || `Matr. ${curr.matricula_medico || 'Desconocida'}`;
+        const conteo = datos.reduce((acc, curr) => {
+            // 1. Limpiamos la matrícula y obtenemos el nombre del médico
+            const matricula = String(curr.matricula_medico || 'Sin Matrícula').trim().replace('.0', '');
+            const nombreMedico = diccionarioMedicos[matricula] || `Matr. ${matricula}`;
             
-            // Forzamos el prefijo Lic.
-            const nombreMedico = nombreOriginal.replace('Dr. ', 'Lic. ');
+            // 2. Extraemos y limpiamos la especialidad (vacuna contra "COD:")
+            let areaCruda = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área').trim().toUpperCase();
+            areaCruda = areaCruda.replace('COD:', '').replace('COD: ', '').replace('.0', '').trim();
+            
+            // 3. Traducimos usando el diccionario que recibimos por props
+            const nombreEspecialidad = diccionarioEspecialidades[areaCruda]?.nombre 
+                ? String(diccionarioEspecialidades[areaCruda].nombre).toUpperCase() 
+                : areaCruda;
 
-            if (!acc[nombreMedico]) acc[nombreMedico] = { total: 0, pv: 0, sub: 0 };
+            // 4. Agrupamos y guardamos la especialidad
+            if (!acc[nombreMedico]) {
+                acc[nombreMedico] = { total: 0, pv: 0, sub: 0, especialidad: nombreEspecialidad };
+            }
+
             acc[nombreMedico].total++;
+            
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
-            if (pvVal === '1' || pvVal === 'primera vez') acc[nombreMedico].pv++; else acc[nombreMedico].sub++;
+            if (pvVal === '1' || pvVal === 'primera vez') {
+                acc[nombreMedico].pv++; 
+            } else {
+                acc[nombreMedico].sub++;
+            }
+            
             return acc;
         }, {});
-
-        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
-        const top = ordenados.slice(0, 20);
+        
+        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total).slice(0, 20);
 
         return {
-            labels: top.map(item => item[0]),
-            datasets: [{ label: 'Atenciones', data: top.map(item => item[1].total), backgroundColor: '#10b981', borderRadius: 4 }],
-            dataPV: top.map(item => item[1].pv),
-            dataSub: top.map(item => item[1].sub)
+            labels: ordenados.map(item => item[0]),
+            datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1].total), backgroundColor: '#822626', borderRadius: 4 }],
+            dataPV: ordenados.map(item => item[1].pv),
+            dataSub: ordenados.map(item => item[1].sub),
+            // 5. ¡AQUÍ ESTÁ LA MAGIA! Creamos la lista extra para la tabla
+            dataExtra: ordenados.map(item => item[1].especialidad) 
         };
-    }, [datosFiltrados, diccionarioMedicos]);
+    }, [datos, diccionarioMedicos, diccionarioEspecialidades]);
 
     // 6. DIAGNÓSTICOS (Usando datosFiltrados)
     const chartDiagnosticos = useMemo(() => {
@@ -301,7 +318,22 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                                 <Bar data={chartMedicos} options={chartOptionsVertical} />
                             </div>
                         </div>
-                        {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Personal" titulo2="Atenciones" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} dataPV={chartMedicos.dataPV} dataSub={chartMedicos.dataSub} total={true} /></div>}
+                        {/*tabla del Top 20 de Médicos */}
+                        {mostrarTablas && (
+                            <div className="lg:col-span-2 h-[400px] overflow-hidden">
+                                <TablaDatos 
+                                    titulo1="Médico" 
+                                    tituloExtra="Especialidad"                 
+                                    dataExtra={chartMedicos.dataExtra}         
+                                    titulo2="Consultas" 
+                                    labels={chartMedicos.labels} 
+                                    data={chartMedicos.datasets[0].data} 
+                                    dataPV={chartMedicos.dataPV} 
+                                    dataSub={chartMedicos.dataSub} 
+                                    total={true} 
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 

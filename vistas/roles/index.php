@@ -190,31 +190,49 @@ session_start();
                 </div>
 
 
-                <!-- Sesión -->
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <?php if (isset($_SESSION['admin_name'])): ?>
+                // 
+               <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+    
+                    <?php if (isset($_SESSION['admin_name']) && isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white" href="../admin/admin.php"
-                                data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
                                 Ir a Panel de <?php echo $_SESSION['admin_name']; ?>
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="../admin/admin.php">
-                                        <i class="bi bi-speedometer2 me-1"></i>Volver al panel</a>
-                                </li>
+                            <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <hr class="dropdown-divider">
+                                    <a class="dropdown-item" href="../admin/admin.php">
+                                        <i class="bi bi-speedometer2 me-1"></i>Volver al panel
+                                    </a>
                                 </li>
-                                <li><a class="dropdown-item" href="../admin/logout.php">
-                                        <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión</a>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="../admin/logout.php">
+                                        <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión
+                                    </a>
                                 </li>
                             </ul>
                         </li>
+
+                    <?php elseif (isset($_SESSION['admin_name'])): ?>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1"></i> <?php echo $_SESSION['admin_name']; ?>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item text-danger" href="../admin/logout.php">
+                                        <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
                     <?php else: ?>
                         <div class="d-flex align-items-center gap-2">
                             <a class="btn btn-outline-light" href="../admin/login.php">Iniciar Sesión</a>
                         </div>
                     <?php endif; ?>
+
                 </ul>
             </div>
         </div>

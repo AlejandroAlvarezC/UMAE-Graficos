@@ -6,6 +6,13 @@ require_once '../../modelos/Normatividad.php';
 require_once '../../modelos/Especialidad_Ocasion.php';
 require_once '../../modelos/urgencia.php';
 
+// Verificamos si NO existe la variable rol, o si el rol NO es 'admin'
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
+    // Si es un 'viewer' (o cualquier otra cosa), lo expulsamos a la vista de usuario normal
+    header("Location: ../roles/index.php");
+    exit(); // Detenemos la ejecución para que no cargue el resto de la página
+}
+
 
 // Contar usuarios
 $totalUsuarios = Usuarios::contarUsuarios();
@@ -345,7 +352,7 @@ $totalManuales = Manual::contarManuales();
                             <p>Actualmente hay <strong class="text-dark"><?php echo $totalUsuarios; ?></strong>
                                 administrador
                                 registrado.</p>
-                            <a href="usuariosAdmin.php" class="btn btn-outline-dark w-50">Ver Administradores</a>
+                            <a href="/graficos/index.html?modulo=usuarios" class="btn btn-outline-dark w-50">Ver Usuarios</a>
                         </div>
                     </div>
                 </div>
