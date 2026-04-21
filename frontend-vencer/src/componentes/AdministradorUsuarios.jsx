@@ -88,8 +88,8 @@ const AdministradorUsuarios = () => {
                     Nuevo Usuario
                 </button>
             </div>
-
-            {/* TABLA DE USUARIOS (Igual a la que ya teníamos) */}
+ 
+ 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 {cargando ? (
                     <div className="p-8 text-center text-slate-500">Cargando usuarios...</div>
@@ -101,6 +101,8 @@ const AdministradorUsuarios = () => {
                                     <th className="p-4 font-semibold">Nombre</th>
                                     <th className="p-4 font-semibold">Usuario/Correo</th>
                                     <th className="p-4 font-semibold">Rol</th>
+                                    <th className="p-4 font-semibold">Acceso y Dispositivo</th>
+                                    <th className="p-4 font-semibold text-center">Visitas</th>
                                     <th className="p-4 font-semibold">Estado</th>
                                     <th className="p-4 font-semibold text-right">Acciones</th>
                                 </tr>
@@ -117,14 +119,45 @@ const AdministradorUsuarios = () => {
                                                 {user.rol === 'admin' ? 'Administrador' : 'Visualización'}
                                             </span>
                                         </td>
+                                        
+                                        {/* NUEVA COLUMNA: ÚLTIMO ACCESO Y NAVEGADOR */}
+                                        <td className="p-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-700">
+                                                    {user.ultimo_acceso !== 'Sin registros' 
+                                                        ? new Date(user.ultimo_acceso).toLocaleString() 
+                                                        : 'Nunca'}
+                                                </span>
+                                                <span 
+                                                    className="text-[10px] text-blue-500 truncate max-w-[180px] font-medium" 
+                                                    title={user.navegador}
+                                                >
+                                                    {user.navegador || 'Desconocido'}
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        {/* NUEVA COLUMNA: CONTADOR DE VISITAS */}
+                                        <td className="p-4 text-center">
+                                            <span className="font-black text-[#822626] bg-red-50 px-3 py-1 rounded-lg">
+                                                {user.visitas || 0}
+                                            </span>
+                                        </td>
+
                                         <td className="p-4">
                                             <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
                                                 {user.estado}
                                             </span>
                                         </td>
                                         <td className="p-4 flex gap-2 justify-end">
-                                            <button onClick={() => handleEliminar(user.id)} className="text-red-600 hover:bg-red-50 p-2 rounded">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            <button 
+                                                onClick={() => handleEliminar(user.id)} 
+                                                className="text-red-600 hover:bg-red-50 p-2 rounded transition-colors"
+                                                title="Eliminar usuario"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
                                             </button>
                                         </td>
                                     </tr>

@@ -26,7 +26,12 @@ try {
     // - Tu columna 'Names' se enviará a React como 'nombre'
     // - Tu columna 'Email' se enviará a React como 'correo'
     // - Inventamos 'Activo' as estado para que los puntitos verdes en React funcionen
-    $sql = "SELECT Id as id, Names as nombre, Email as correo, rol, 'Activo' as estado FROM admi";
+// Cambia tu consulta SQL por esta:
+    $sql = "SELECT Id as id, Names as nombre, Email as correo, rol, 
+            IFNULL(last_login, 'Sin registros') as ultimo_acceso, 
+            login_count as visitas,
+            user_agent as navegador
+            FROM admi";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     
