@@ -73,7 +73,9 @@ if (!isset($_SESSION['admin_id'])) {
           </div>
 
           <div class="col-md d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
-              <a href="/graficos/index.html?modulo=vencer" id="btnNuevoDashboard" class="btn btn-urgencia shadow-sm">
+              <a href="/graficos/index.html?modulo=vencer" 
+                id="btnNuevoDashboard" 
+                class="btn btn-urgencia shadow-sm d-flex align-items-center">
                   📊 Ver Dashboard
               </a>
           </div>

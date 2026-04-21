@@ -3,8 +3,8 @@ import axios from 'axios';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Activity, AlertOctagon, ShieldAlert, Siren, Lock, Unlock, ChevronDown, ChevronUp, Settings, Filter, Download} from 'lucide-react';
-import Sidebar from './componentes/Sidebar';
-import DashboardProductividad from './componentes/dashboardProductividad.jsx';
+import Sidebar from './Sidebar.jsx';
+import DashboardProductividad from './dashboardProductividad.jsx';
 // import AdministradorUsuarios from './AdministradorUsuarios'
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
