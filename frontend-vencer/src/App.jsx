@@ -1,26 +1,32 @@
 import React from 'react';
-// 1. Importamos tu nuevo componente 
+// Importamos los componentes desde la carpeta componentes
 import DashboardVencer from './componentes/dashboardVencer'; 
+import DashboardProductividad from './componentes/dashboardProductividad';
 import AdministradorUsuarios from './componentes/AdministradorUsuarios';
-// Importa aquí tu Dashboard de Productividad si lo tienes aparte
 
 function App() {
   const queryParams = new URLSearchParams(window.location.search);
   const modulo = queryParams.get("modulo");
 
-  // 2. El "Semáforo" de rutas
+  // 1. Ruta para el Control de Usuarios
   if (modulo === "usuarios") {
     return <AdministradorUsuarios />;
   }
   
-  // AQUÍ ESTÁ EL ARREGLO PARA VENCER:
+  // 2. Ruta para el módulo Vencer
   if (modulo === "vencer") {
     return <DashboardVencer />;
   }
 
-  // 3. Ruta por defecto (Si no hay nada, o si es 'productividad')
-  // Asegúrate de que no haya un "else" que siempre mande a productividad
-  return <div className="p-10 text-center">Selecciona un módulo válido</div>;
+  // 3. Ruta para el módulo de Productividad
+  if (modulo === "productividad") {
+    return <DashboardProductividad />;
+  }
+
+  // 4. Ruta por defecto: 
+  // Si no hay módulo en la URL o no coincide, cargamos Productividad por defecto
+  // para que la página nunca se vea vacía.
+  return <DashboardProductividad />;
 }
 
 export default App;
