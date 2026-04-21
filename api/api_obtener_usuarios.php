@@ -11,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
-// 3. Tus credenciales exactas de InfinityFree
 $host = 'sql112.infinityfree.com';
 $dbname = 'if0_41125231_vencer'; 
 $username = 'if0_41125231';

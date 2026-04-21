@@ -7,6 +7,9 @@ const AdministradorUsuarios = () => {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
 
+    const [editandoUser, setEditandoUser] = useState(null); // Usuario que se está editando
+    const [formEdit, setFormEdit] = useState({ nombre: '', correo: '', rol: '', password: '' });
+
     // 2. Estados del Formulario
     const [mostrarModal, setMostrarModal] = useState(false);
     const [guardando, setGuardando] = useState(false);
@@ -66,11 +69,55 @@ const AdministradorUsuarios = () => {
         setGuardando(false);
     };
 
+    // Función para abrir el modal con los datos del usuario seleccionado
+    const abrirEditar = (user) => {
+        // 1. Metemos TODOS los datos al formulario (incluyendo el ID)
+        setFormEdit({
+            id: user.id,
+            nombre: user.nombre,
+            correo: user.correo,
+            rol: user.rol,
+            password: '' 
+        });
+        
+        // 2. Si usas 'editandoUser' para algo más, lo guardamos
+        if (typeof setEditandoUser === 'function') {
+            setEditandoUser(user);
+        }
+
+        // 3. ¡IMPORTANTE! Abrimos el modal
+        setMostrarModal(true); 
+    };
+
+        // Función para enviar la actualización a PHP
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('https://vencer.infinityfree.me/tu_ruta/api_editar_usuario.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formEdit)
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert("Usuario actualizado con éxito");
+                setMostrarModal(false);
+                fetchUsuarios(); // Función que ya tienes para recargar la tabla
+            } else {
+                alert("Error: " + data.error);
+            }
+        } catch (error) {
+            console.error("Error al actualizar:", error);
+        }
+    };
+
     const handleEliminar = (id) => {
         if(window.confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
             alert("Aquí conectaremos el PHP para eliminar después.");
         }
     };
+
+
 
     return (
         <div className="p-6 bg-slate-50 min-h-screen font-sans">
@@ -89,7 +136,7 @@ const AdministradorUsuarios = () => {
                 </button>
             </div>
  
- 
+
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 {cargando ? (
                     <div className="p-8 text-center text-slate-500">Cargando usuarios...</div>
@@ -150,6 +197,16 @@ const AdministradorUsuarios = () => {
                                             </span>
                                         </td>
                                         <td className="p-4 flex gap-2 justify-end">
+                                            {/* BOTÓN EDITAR */}
+                                            <button 
+                                                type="button"
+                                                onClick={() => abrirEditar(user)} 
+                                                className="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </button>
                                             <button 
                                                 onClick={() => handleEliminar(user.id)} 
                                                 className="text-red-600 hover:bg-red-50 p-2 rounded transition-colors"
@@ -220,7 +277,86 @@ const AdministradorUsuarios = () => {
 
                     </div>
                 </div>
+            )} 
+
+            {/* MODAL DE EDICIÓN */}
+            {mostrarModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="bg-[#822626] p-6 text-white flex justify-between items-center">
+                            <h3 className="text-xl font-black">Editar Usuario</h3>
+                            <button onClick={() => setMostrarModal(false)} className="hover:rotate-90 transition-transform">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleUpdate} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Nombre Completo</label>
+                                <input 
+                                    type="text" required
+                                    value={formEdit.nombre}
+                                    onChange={(e) => setFormEdit({...formEdit, nombre: e.target.value})}
+                                    className="w-full border border-slate-200 rounded-lg p-3 text-slate-700 focus:ring-2 focus:ring-red-100 focus:border-[#822626] outline-none transition-all"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Correo Electrónico</label>
+                                <input 
+                                    type="email" required
+                                    value={formEdit.correo}
+                                    onChange={(e) => setFormEdit({...formEdit, correo: e.target.value})}
+                                    className="w-full border border-slate-200 rounded-lg p-3 text-slate-700 focus:ring-2 focus:ring-red-100 focus:border-[#822626] outline-none transition-all"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Rol de Usuario</label>
+                                <select 
+                                    value={formEdit.rol}
+                                    onChange={(e) => setFormEdit({...formEdit, rol: e.target.value})}
+                                    className="w-full border border-slate-200 rounded-lg p-3 text-slate-700 focus:ring-2 focus:ring-red-100 focus:border-[#822626] outline-none transition-all appearance-none"
+                                >
+                                    <option value="admin">Administrador</option>
+                                    <option value="viewer">Visualización</option>
+                                </select>
+                            </div>
+
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <label className="block text-xs font-black text-[#822626] uppercase tracking-widest mb-1">Cambiar Contraseña</label>
+                                <input 
+                                    type="password"
+                                    placeholder="Dejar en blanco para no cambiar"
+                                    value={formEdit.password}
+                                    onChange={(e) => setFormEdit({...formEdit, password: e.target.value})}
+                                    className="w-full border border-slate-200 rounded-lg p-3 text-slate-700 focus:ring-2 focus:ring-red-100 focus:border-[#822626] outline-none transition-all"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-2 italic font-medium">
+                                    *Solo escribe si deseas asignar una nueva contraseña.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setMostrarModal(false)}
+                                    className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit"
+                                    className="flex-1 px-4 py-3 bg-[#822626] text-white font-bold rounded-xl shadow-lg shadow-red-100 hover:scale-105 active:scale-95 transition-all"
+                                >
+                                    Guardar Cambios
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
+            
         </div>
     );
 };
