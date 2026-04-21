@@ -6,7 +6,11 @@ import AdministradorUsuarios from './componentes/AdministradorUsuarios';
 
 function App() {
   const queryParams = new URLSearchParams(window.location.search);
+  const rol = queryParams.get("rol");
+  const esAdmin = (rol === 'admin');
   const modulo = queryParams.get("modulo");
+
+
 
   // 1. Ruta para el Control de Usuarios
   if (modulo === "usuarios") {
@@ -19,14 +23,14 @@ function App() {
   }
 
   // 3. Ruta para el módulo de Productividad
-  if (modulo === "productividad") {
-    return <DashboardProductividad />;
+    if (modulo === "productividad") {
+    return <DashboardProductividad isAdmin={esAdmin} />;
   }
 
   // 4. Ruta por defecto: 
   // Si no hay módulo en la URL o no coincide, cargamos Productividad por defecto
   // para que la página nunca se vea vacía.
-  return <DashboardProductividad />;
+  return <DashboardProductividad isAdmin={esAdmin}/>;
 }
 
 export default App;
