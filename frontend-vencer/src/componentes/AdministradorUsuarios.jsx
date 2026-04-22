@@ -93,16 +93,17 @@ const AdministradorUsuarios = () => {
     const handleUpdate = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('https://vencer.infinityfree.me/tu_ruta/api_editar_usuario.php', {
+            const response = await fetch('https://vencer.infinityfree.me/api/api_editar_usuario.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formEdit)
             });
+            
             const data = await response.json();
             if (data.success) {
                 alert("Usuario actualizado con éxito");
                 setMostrarModal(false);
-                fetchUsuarios(); // Función que ya tienes para recargar la tabla
+                fetchUsuarios(); 
             } else {
                 alert("Error: " + data.error);
             }

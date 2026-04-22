@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Activity, HeartPulse, Users, CalendarCheck, Clock } from 'lucide-react';
+import { Activity, HeartPulse, Users, CalendarCheck, Clock, MapPin} from 'lucide-react';
 import { Doughnut, Bar } from 'react-chartjs-2';
 
 // ==========================================
@@ -168,41 +168,81 @@ const chartMedicos = useMemo(() => {
         };
     }, [datos, diccionarioMedicos, diccionarioEspecialidades]);
 
-    // ==========================================
-    // MOTOR DE DIAGNÓSTICOS (Top 10)
-    // ==========================================
     const chartDiagnosticos = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [] };
+        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
 
         const conteo = datos.reduce((acc, curr) => {
-            // Extraemos el diagnóstico, lo limpiamos y lo pasamos a mayúsculas
-            let diag = String(curr.diagnostico_principal || curr.DIAG_PRINCIPAL || 'SIN DIAGNÓSTICO').trim().toUpperCase();
-            if (diag === '') diag = 'SIN DIAGNÓSTICO';
+            // 1. Identificamos el CÓDIGO (Ej: 'A09') que viene en el registro de Urgencias
+            // Nota: Asegúrate de que el nombre de la propiedad coincida con tu BD (id_diagnostico, diagnostico, etc.)
+            const codigoCIE = String(curr.diagnostico_principal || curr.diagnostico || '').trim().toUpperCase();
 
-            if (!acc[diag]) acc[diag] = 0;
-            acc[diag]++;
+            // 2. BUSCAMOS EN EL CATÁLOGO: 
+            // Aquí es donde "jalamos" la descripción de la tabla que ya tienes en la BD
+            const descripcionBD = diccionarioCIE[codigoCIE] || `Código: ${codigoCIE}`;
+
+            if (!acc[descripcionBD]) acc[descripcionBD] = { total: 0, pv: 0, sub: 0 };
             
+            acc[descripcionBD].total++;
+            
+            // Desglose para la tabla descriptiva
+            if (curr.primera_vez === 'Primera Vez' || curr.PRIMERA_VEZ === 'Primera Vez') {
+                acc[descripcionBD].pv++;
+            } else {
+                acc[descripcionBD].sub++;
+            }
             return acc;
         }, {});
-
-        // Ordenamos de mayor a menor y sacamos el Top 10
+        
         const ordenados = Object.entries(conteo)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10); 
+            .sort((a, b) => b[1].total - a[1].total)
+            .slice(0, 20);
 
         return {
             labels: ordenados.map(item => item[0]),
-            datasets: [{
-                label: 'Casos',
-                data: ordenados.map(item => item[1]),
-                backgroundColor: '#b45309', // Color ámbar/naranja para que resalte
-                borderRadius: 4
-            }]
+            datasets: [{ 
+                label: 'Frecuencia', 
+                data: ordenados.map(item => item[1].total), 
+                backgroundColor: '#1e293b', 
+                borderRadius: 4 
+            }],
+            dataPV: ordenados.map(item => item[1].pv),
+            dataSub: ordenados.map(item => item[1].sub)
         };
-    }, [datos]);
+    }, [datos, diccionarioCIE]); 
 
 
     const chartOptionsVertical = { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } };
+
+    const chartConsultorios = useMemo(() => {
+    if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+
+    const conteo = datos.reduce((acc, curr) => {
+        const cons = (curr.consultorio || curr.CONSULTORIO || "SIN ESPECIFICAR").toString().trim().toUpperCase();
+        if (!acc[cons]) acc[cons] = { total: 0, pv: 0, sub: 0 };
+        
+        acc[cons].total++;
+        if (curr.primera_vez === 'Primera Vez' || curr.PRIMERA_VEZ === 'Primera Vez') {
+            acc[cons].pv++;
+        } else {
+            acc[cons].sub++;
+        }
+        return acc;
+    }, {});
+
+    const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
+
+    return {
+        labels: ordenados.map(item => item[0]),
+        datasets: [{ 
+            label: 'Consultas', 
+            data: ordenados.map(item => item[1].total), 
+            backgroundColor: '#10b981', 
+            borderRadius: 4 
+        }],
+        dataPV: ordenados.map(item => item[1].pv),
+        dataSub: ordenados.map(item => item[1].sub)
+    };
+}, [datos]);
 
     return (
         <div className="w-full animate-in fade-in duration-500">
@@ -292,10 +332,56 @@ const chartMedicos = useMemo(() => {
                                     tituloExtra="Especialidad"                 /* Activa la columna central */
                                     dataExtra={chartMedicos.dataExtra}         /* Pasa los nombres traducidos */
                                     titulo2="Consultas" 
-                                    labels={chartMedicos.labels} 
-                                    data={chartMedicos.datasets[0].data} 
-                                    dataPV={chartMedicos.dataPV} 
-                                    dataSub={chartMedicos.dataSub} 
+                                    labels={chartDiagnosticos.labels} 
+                                    data={chartDiagnosticos.datasets[0].data} 
+                                    dataPV={chartDiagnosticos.dataPV} 
+                                    dataSub={chartDiagnosticos.dataSub} 
+                                    total={true} 
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                                {/* GRÁFICO DE CONSULTORIOS + TABLA */}
+                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col mt-6">
+                    <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600">
+                                <MapPin size={20} />
+                            </div>
+                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide">Productividad por Consultorio</h3>
+                        </div>
+                    </div>
+
+                    <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
+                        {/* Lado del Gráfico */}
+                        <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
+                            <div style={{ width: `max(100%, ${chartConsultorios.labels.length * 50}px)`, height: '100%' }}>
+                                <Bar 
+                                    data={chartConsultorios} 
+                                    options={{
+                                        maintainAspectRatio: false,
+                                        plugins: { legend: { display: false } },
+                                        scales: {
+                                            x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } },
+                                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
+                                        }
+                                    }} 
+                                />
+                            </div>
+                        </div>
+
+                        {/* Lado de la Tabla descriptiva */}
+                        {mostrarTablas && (
+                            <div className="lg:col-span-2 h-[400px] overflow-hidden">
+                                <TablaDatos 
+                                    titulo1="Consultorio" 
+                                    titulo2="Consultas" 
+                                    labels={chartConsultorios.labels} 
+                                    data={chartConsultorios.datasets[0].data} 
+                                    dataPV={chartConsultorios.dataPV} 
+                                    dataSub={chartConsultorios.dataSub} 
                                     total={true} 
                                 />
                             </div>

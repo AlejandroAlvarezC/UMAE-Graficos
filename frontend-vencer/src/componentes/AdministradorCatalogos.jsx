@@ -15,24 +15,22 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
     // ==========================================
     const [listaDiagnosticos, setListaDiagnosticos] = useState([]);
     const [listaEspecialidades, setListaEspecialidades] = useState([]);
+    const [listaConsultorios, setListaConsultorios] = useState([]); 
     const [cargando, setCargando] = useState(false);
 
     useEffect(() => {
         if (seccionCatalogo === 'diagnosticos') cargarListaDiagnosticos();
         if (seccionCatalogo === 'especialidades') cargarListaEspecialidades();
+        if (seccionCatalogo === 'consultorios') cargarListaConsultorios();
     }, [seccionCatalogo]);
 
     const cargarListaDiagnosticos = async () => {
         setCargando(true);
         try {
-            const urlFiel = `/api/api_cie.php?t=${new Date().getTime()}`;
-            const res = await axios.get(urlFiel);
+            const res = await axios.get(`/api/api_cie.php?t=${new Date().getTime()}`);
             if (Array.isArray(res.data)) setListaDiagnosticos(res.data);
-        } catch (error) {
-            console.error("Error CIE-10:", error);
-        } finally {
-            setCargando(false);
-        }
+        } catch (error) { console.error("Error CIE-10:", error); } 
+        finally { setCargando(false); }
     };
 
     const cargarListaEspecialidades = async () => {
@@ -40,27 +38,34 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
         try {
             const res = await axios.get(`/api/api_crud_especialidades.php?t=${new Date().getTime()}`);
             if (Array.isArray(res.data)) setListaEspecialidades(res.data);
-        } catch (error) {
-            console.error("Error Especialidades:", error);
-        } finally {
-            setCargando(false);
-        }
+        } catch (error) { console.error("Error Especialidades:", error); } 
+        finally { setCargando(false); }
+    };
+
+    const cargarListaConsultorios = async () => {
+        setCargando(true);
+        try {
+            const res = await axios.get(`/api/api_consultorios.php?t=${new Date().getTime()}`);
+            if (Array.isArray(res.data)) setListaConsultorios(res.data);
+        } catch (error) { console.error("Error Consultorios:", error); } 
+        finally { setCargando(false); }
     };
 
     // ==========================================
-    // LÓGICA DE CRUD GLOBAL (VENTANA MODAL)
+    // LÓGICA DE CRUD GLOBAL
     // ==========================================
     const [modalAbierto, setModalAbierto] = useState(false);
     const [modoEdicion, setModoEdicion] = useState(false);
     const [guardando, setGuardando] = useState(false);
     
-    // Formularios independientes
     const [formCIE, setFormCIE] = useState({ codigo: '', descripcion: '' });
     const [formEspecialidad, setFormEspecialidad] = useState({ clave: '', nombre: '', division: '' });
+    const [formConsultorio, setFormConsultorio] = useState({ id: '', nombre_consultorio: '' });
 
     const handleAbrirNuevo = () => {
         if (seccionCatalogo === 'diagnosticos') setFormCIE({ codigo: '', descripcion: '' });
         if (seccionCatalogo === 'especialidades') setFormEspecialidad({ clave: '', nombre: '', division: '' });
+        if (seccionCatalogo === 'consultorios') setFormConsultorio({ id: '', nombre_consultorio: '' });
         
         setModoEdicion(false);
         setModalAbierto(true);
@@ -69,6 +74,7 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
     const handleEditar = (item) => {
         if (seccionCatalogo === 'diagnosticos') setFormCIE({ codigo: item.codigo, descripcion: item.descripcion });
         if (seccionCatalogo === 'especialidades') setFormEspecialidad({ clave: item.clave, nombre: item.nombre, division: item.division });
+        if (seccionCatalogo === 'consultorios') setFormConsultorio({ id: item.id, nombre_consultorio: item.nombre_consultorio });
         
         setModoEdicion(true);
         setModalAbierto(true);
@@ -83,6 +89,8 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                 res = await axios.delete(`/api/api_crud_cie.php?codigo=${identificador}`);
             } else if (seccionCatalogo === 'especialidades') {
                 res = await axios.delete(`/api/api_crud_especialidades.php?clave=${identificador}`);
+            } else if (seccionCatalogo === 'consultorios') {
+                res = await axios.delete(`/api/api_consultorios.php?id=${identificador}`);
             }
 
             if (res.data.success) {
@@ -91,14 +99,11 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                     cargarListaDiagnosticos();
                 } else if (seccionCatalogo === 'especialidades') {
                     cargarListaEspecialidades();
+                } else if (seccionCatalogo === 'consultorios') {
+                    cargarListaConsultorios();
                 }
-            } else {
-                alert("Error: " + res.data.error);
-            }
-        } catch (error) {
-            console.error("Error al borrar:", error);
-            alert("Error de conexión al intentar borrar.");
-        }
+            } else { alert("Error: " + res.data.error); }
+        } catch (error) { alert("Error de conexión al intentar borrar."); }
     };
 
     const handleGuardar = async (e) => {
@@ -108,12 +113,14 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
         try {
             let res;
             if (seccionCatalogo === 'diagnosticos') {
-                if (!formCIE.codigo || !formCIE.descripcion) { alert("Llena todos los campos."); setGuardando(false); return; }
                 res = modoEdicion ? await axios.put('/api/api_crud_cie.php', formCIE) : await axios.post('/api/api_crud_cie.php', formCIE);
             } 
             else if (seccionCatalogo === 'especialidades') {
-                if (!formEspecialidad.clave || !formEspecialidad.nombre || !formEspecialidad.division) { alert("Llena todos los campos."); setGuardando(false); return; }
                 res = modoEdicion ? await axios.put('/api/api_crud_especialidades.php', formEspecialidad) : await axios.post('/api/api_crud_especialidades.php', formEspecialidad);
+            }
+            else if (seccionCatalogo === 'consultorios') {
+                if (!formConsultorio.nombre_consultorio) { alert("Llena el nombre."); setGuardando(false); return; }
+                res = modoEdicion ? await axios.put('/api/api_consultorios.php', formConsultorio) : await axios.post('/api/api_consultorios.php', formConsultorio);
             }
 
             if (res.data.success) {
@@ -123,16 +130,12 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                     cargarListaDiagnosticos();
                 } else if (seccionCatalogo === 'especialidades') {
                     cargarListaEspecialidades();
+                } else if (seccionCatalogo === 'consultorios') {
+                    cargarListaConsultorios();
                 }
-            } else {
-                alert("Error al guardar: " + res.data.error);
-            }
-        } catch (error) {
-            console.error("Error al guardar:", error);
-            alert("Error de conexión con el servidor.");
-        } finally {
-            setGuardando(false);
-        }
+            } else { alert("Error al guardar: " + res.data.error); }
+        } catch (error) { alert("Error de conexión con el servidor."); } 
+        finally { setGuardando(false); }
     };
 
     const opciones = [
@@ -155,23 +158,22 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                 </div>
                 <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto custom-scrollbar">
                     {opciones.map((opc) => (
-                        <button key={opc.id} onClick={() => setSeccionCatalogo(opc.id)} title={sidebarColapsado ? opc.nombre : ""} className={`w-full flex items-center p-3 rounded-xl transition-all duration-200 ${seccionCatalogo === opc.id ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200' : 'text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900'}`}>
-                            <span className={`${sidebarColapsado ? 'mx-auto' : 'mr-4'} flex-shrink-0`}>{opc.icon}</span>
-                            {!sidebarColapsado && <span className="font-bold whitespace-nowrap overflow-hidden text-ellipsis">{opc.nombre}</span>}
+                        <button key={opc.id} onClick={() => setSeccionCatalogo(opc.id)} className={`w-full flex items-center p-3 rounded-xl transition-all duration-200 ${seccionCatalogo === opc.id ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200' : 'text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900'}`}>
+                            <span className={`${sidebarColapsado ? 'mx-auto' : 'mr-4'}`}>{opc.icon}</span>
+                            {!sidebarColapsado && <span className="font-bold">{opc.nombre}</span>}
                         </button>
                     ))}
                 </nav>
                 <div className="p-4 border-t border-emerald-100 bg-white/50">
-                    <button onClick={() => setVistaActiva('menu')} title={sidebarColapsado ? "Volver al Menú" : ""} className="w-full flex items-center p-3 text-emerald-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all font-bold group">
+                    <button onClick={() => setVistaActiva('menu')} className="w-full flex items-center p-3 text-emerald-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all font-bold group">
                         <span className={`${sidebarColapsado ? 'mx-auto' : 'mr-4'} transition-transform group-hover:-translate-x-1`}>←</span>
-                        {!sidebarColapsado && <span className="whitespace-nowrap">Menú Principal</span>}
+                        {!sidebarColapsado && <span>Menú Principal</span>}
                     </button>
                 </div>
             </aside>
 
-            {/* CONTENIDO PRINCIPAL */}
             <main className="flex-1 p-8 overflow-y-auto h-screen relative">
-                <header className="mb-8 animate-in slide-in-from-top-4 duration-500">
+                <header className="mb-8">
                     <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3">
                         <span className="text-emerald-600 bg-emerald-100 p-2 rounded-xl">{seccionActiva?.icon}</span>
                         Catálogo de {seccionActiva?.nombre}
@@ -179,7 +181,7 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                     <p className="text-slate-500 font-medium mt-2">Gestiona la base de datos de {seccionCatalogo} de la unidad médica.</p>
                 </header>
 
-                <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8 min-h-[600px] flex flex-col">
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 min-h-[600px] flex flex-col">
                     
                     {/* 1. MÓDULO DE MÉDICOS (En pausa) */}
                     {seccionCatalogo === 'medicos' && (
@@ -188,167 +190,186 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                         </div>
                     )}
 
-                    {/* 2. MÓDULO DE ESPECIALIDADES (ACTUALIZADO) */}
+                    {/* 2. MÓDULO DE ESPECIALIDADES */}
                     {seccionCatalogo === 'especialidades' && (
                         <div className="animate-in fade-in duration-300 flex-1 flex flex-col h-full">
                             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
                                 <h3 className="text-xl font-bold text-slate-700">Listado de Especialidades</h3>
                                 <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-bold">Total: {listaEspecialidades.length}</span>
                             </div>
-
-                            <div className="flex-1 overflow-auto border border-slate-200 rounded-2xl shadow-sm mb-6 max-h-[500px] custom-scrollbar">
+                            <div className="flex-1 overflow-auto border border-slate-200 rounded-2xl shadow-sm mb-6 max-h-[500px]">
                                 {cargando ? (
-                                    <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-slate-400"><Loader2 className="animate-spin mb-2" size={32} /><p>Cargando catálogo...</p></div>
+                                    <div className="h-full flex items-center justify-center text-slate-400"><Loader2 className="animate-spin mr-2" /> Cargando...</div>
                                 ) : (
                                     <table className="w-full text-left border-collapse">
                                         <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                                             <tr>
-                                                <th className="p-4 text-slate-500 font-bold border-b border-slate-200 w-32">Clave</th>
-                                                <th className="p-4 text-slate-500 font-bold border-b border-slate-200">Especialidad</th>
-                                                <th className="p-4 text-slate-500 font-bold border-b border-slate-200">División</th>
-                                                <th className="p-4 text-slate-500 font-bold border-b border-slate-200 text-center w-32">Acciones</th>
+                                                <th className="p-4 text-slate-500 font-bold border-b w-32">Clave</th>
+                                                <th className="p-4 text-slate-500 font-bold border-b">Especialidad</th>
+                                                <th className="p-4 text-slate-500 font-bold border-b">División</th>
+                                                <th className="p-4 text-center w-32 border-b">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {listaEspecialidades.length === 0 ? (
-                                                <tr><td colSpan="4" className="text-center p-8 text-slate-400 italic">No hay registros.</td></tr>
-                                            ) : (
-                                                listaEspecialidades.map((esp) => (
-                                                    <tr key={esp.clave} className="hover:bg-slate-50 border-b border-slate-100 transition-colors group">
-                                                        <td className="p-4 font-black text-slate-400">{esp.clave}</td>
-                                                        <td className="p-4 text-slate-700 font-black">{esp.nombre}</td>
-                                                        <td className="p-4 text-slate-500 font-medium">{esp.division}</td>
-                                                        <td className="p-4">
-                                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={() => handleEditar(esp)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Pencil size={18} /></button>
-                                                                <button onClick={() => handleBorrar(esp.clave)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"><Trash2 size={18} /></button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
+                                            {listaEspecialidades.map((esp) => (
+                                                <tr key={esp.clave} className="hover:bg-slate-50 border-b group transition-colors">
+                                                    <td className="p-4 font-black text-slate-400">{esp.clave}</td>
+                                                    <td className="p-4 text-slate-700 font-black">{esp.nombre}</td>
+                                                    <td className="p-4 text-slate-500 font-medium">{esp.division}</td>
+                                                    <td className="p-4 text-center">
+                                                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => handleEditar(esp)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"><Pencil size={18} /></button>
+                                                            <button onClick={() => handleBorrar(esp.clave)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18} /></button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 )}
                             </div>
                             <div className="flex justify-start">
-                                <button onClick={handleAbrirNuevo} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center gap-2"><Plus size={20} /> Agregar Especialidad</button>
+                                <button onClick={handleAbrirNuevo} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"><Plus size={20} /> Agregar Especialidad</button>
                             </div>
                         </div>
                     )}
 
-                    {/* 3. MÓDULO DE DIAGNÓSTICOS */}
+                    {/* 3. MÓDULO DE CONSULTORIOS */}
+                    {seccionCatalogo === 'consultorios' && (
+                        <div className="animate-in fade-in duration-300 flex-1 flex flex-col h-full">
+                            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+                                <h3 className="text-xl font-bold text-slate-700">Listado de Consultorios</h3>
+                                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-bold">Total: {listaConsultorios.length}</span>
+                            </div>
+                            <div className="flex-1 overflow-auto border border-slate-200 rounded-2xl shadow-sm mb-6 max-h-[500px]">
+                                {cargando ? (
+                                    <div className="h-full flex items-center justify-center text-slate-400"><Loader2 className="animate-spin mr-2" /> Cargando...</div>
+                                ) : (
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                                            <tr>
+                                                <th className="p-4 text-slate-500 font-bold border-b w-24">ID</th>
+                                                <th className="p-4 text-slate-500 font-bold border-b">Nombre del Consultorio</th>
+                                                <th className="p-4 text-center w-32 border-b">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {listaConsultorios.map((con) => (
+                                                <tr key={con.id} className="hover:bg-slate-50 border-b group transition-colors">
+                                                    <td className="p-4 font-black text-slate-400">{con.id}</td>
+                                                    <td className="p-4 text-slate-700 font-black">{con.nombre_consultorio}</td>
+                                                    <td className="p-4 text-center">
+                                                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => handleEditar(con)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"><Pencil size={18} /></button>
+                                                            <button onClick={() => handleBorrar(con.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18} /></button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                            <div className="flex justify-start">
+                                <button onClick={handleAbrirNuevo} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"><Plus size={20} /> Agregar Consultorio</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 4. MÓDULO DE DIAGNÓSTICOS */}
                     {seccionCatalogo === 'diagnosticos' && (
                         <div className="animate-in fade-in duration-300 flex-1 flex flex-col h-full">
                             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
                                 <h3 className="text-xl font-bold text-slate-700">Listado de Códigos CIE-10</h3>
                                 <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-bold">Total: {listaDiagnosticos.length}</span>
                             </div>
-
-                            <div className="flex-1 overflow-auto border border-slate-200 rounded-2xl shadow-sm mb-6 max-h-[500px] custom-scrollbar">
+                            <div className="flex-1 overflow-auto border border-slate-200 rounded-2xl shadow-sm mb-6 max-h-[500px]">
                                 {cargando ? (
-                                    <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-slate-400"><Loader2 className="animate-spin mb-2" size={32} /><p>Cargando catálogo...</p></div>
+                                    <div className="h-full flex items-center justify-center text-slate-400"><Loader2 className="animate-spin mr-2" /> Cargando...</div>
                                 ) : (
                                     <table className="w-full text-left border-collapse">
                                         <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                                             <tr>
-                                                <th className="p-4 text-slate-500 font-bold border-b border-slate-200 w-32">Código</th>
-                                                <th className="p-4 text-slate-500 font-bold border-b border-slate-200">Descripción de la Enfermedad</th>
-                                                <th className="p-4 text-slate-500 font-bold border-b border-slate-200 text-center w-32">Acciones</th>
+                                                <th className="p-4 text-slate-500 font-bold border-b w-32">Código</th>
+                                                <th className="p-4 text-slate-500 font-bold border-b">Descripción</th>
+                                                <th className="p-4 text-center w-32 border-b">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {listaDiagnosticos.length === 0 ? (
-                                                <tr><td colSpan="3" className="text-center p-8 text-slate-400 italic">No hay registros.</td></tr>
-                                            ) : (
-                                                listaDiagnosticos.map((diag) => (
-                                                    <tr key={diag.codigo} className="hover:bg-slate-50 border-b border-slate-100 transition-colors group">
-                                                        <td className="p-4 font-black text-slate-700">{diag.codigo}</td>
-                                                        <td className="p-4 text-slate-600 font-medium">{diag.descripcion}</td>
-                                                        <td className="p-4">
-                                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={() => handleEditar(diag)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Pencil size={18} /></button>
-                                                                <button onClick={() => handleBorrar(diag.codigo)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"><Trash2 size={18} /></button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
+                                            {listaDiagnosticos.map((diag) => (
+                                                <tr key={diag.codigo} className="hover:bg-slate-50 border-b group transition-colors">
+                                                    <td className="p-4 font-black text-slate-700">{diag.codigo}</td>
+                                                    <td className="p-4 text-slate-600 font-medium">{diag.descripcion}</td>
+                                                    <td className="p-4 text-center">
+                                                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => handleEditar(diag)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"><Pencil size={18} /></button>
+                                                            <button onClick={() => handleBorrar(diag.codigo)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18} /></button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 )}
                             </div>
                             <div className="flex justify-start">
-                                <button onClick={handleAbrirNuevo} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center gap-2"><Plus size={20} /> Agregar Diagnóstico</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 4. PLACEHOLDER (Para Consultorios) */}
-                    {seccionCatalogo === 'consultorios' && (
-                        <div className="flex-1 flex items-center justify-center animate-in fade-in duration-300">
-                            <div className="text-center text-slate-400">
-                                <MapPin size={64} className="mx-auto mb-4 opacity-50" />
-                                <p className="text-xl font-medium">Módulo de Consultorios en desarrollo</p>
+                                <button onClick={handleAbrirNuevo} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"><Plus size={20} /> Agregar Diagnóstico</button>
                             </div>
                         </div>
                     )}
                 </div>
             </main>
 
-            {/* ========================================== */}
-            {/* VENTANA MODAL DINÁMICA                     */}
-            {/* ========================================== */}
+            {/* MODAL DINÁMICO */}
             {modalAbierto && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-300">
-                        
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-2xl font-black text-slate-800">
-                                {modoEdicion ? 'Editar Registro' : 'Nuevo Registro'}
-                            </h3>
-                            <button onClick={() => setModalAbierto(false)} className="text-slate-400 hover:bg-slate-100 hover:text-slate-600 p-2 rounded-xl transition-colors"><X size={24} /></button>
+                            <h3 className="text-2xl font-black text-slate-800">{modoEdicion ? 'Editar Registro' : 'Nuevo Registro'}</h3>
+                            <button onClick={() => setModalAbierto(false)} className="text-slate-400 hover:bg-slate-100 p-2 rounded-xl"><X size={24} /></button>
                         </div>
 
                         <form onSubmit={handleGuardar} className="space-y-5">
-                            
-                            {/* FORMULARIO PARA CIE-10 */}
                             {seccionCatalogo === 'diagnosticos' && (
                                 <>
                                     <div>
                                         <label className="block text-sm font-bold text-slate-600 mb-2">Código CIE-10</label>
-                                        <input type="text" value={formCIE.codigo} onChange={(e) => setFormCIE({...formCIE, codigo: e.target.value})} disabled={modoEdicion} placeholder="Ej. J00X" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50" />
-                                        {modoEdicion && <p className="text-xs text-slate-400 mt-1">El código no se puede modificar una vez creado.</p>}
+                                        <input type="text" value={formCIE.codigo} onChange={(e) => setFormCIE({...formCIE, codigo: e.target.value})} disabled={modoEdicion} placeholder="Ej. J00X" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 uppercase focus:ring-2 focus:ring-emerald-500 outline-none disabled:opacity-50" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-slate-600 mb-2">Descripción Oficial</label>
-                                        <textarea value={formCIE.descripcion} onChange={(e) => setFormCIE({...formCIE, descripcion: e.target.value})} placeholder="Descripción..." rows="3" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
+                                        <textarea value={formCIE.descripcion} onChange={(e) => setFormCIE({...formCIE, descripcion: e.target.value})} placeholder="Descripción..." rows="3" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none resize-none" />
                                     </div>
                                 </>
                             )}
 
-                            {/* FORMULARIO PARA ESPECIALIDADES (ACTUALIZADO CON 3 CAMPOS) */}
                             {seccionCatalogo === 'especialidades' && (
                                 <>
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-600 mb-2">Clave de Especialidad</label>
-                                        <input type="text" value={formEspecialidad.clave} onChange={(e) => setFormEspecialidad({...formEspecialidad, clave: e.target.value})} disabled={modoEdicion} placeholder="Ej. CAR-01" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-black text-slate-700 uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50" />
-                                        {modoEdicion && <p className="text-xs text-slate-400 mt-1">La clave no se puede modificar una vez creada.</p>}
+                                        <label className="block text-sm font-bold text-slate-600 mb-2">Clave</label>
+                                        <input type="text" value={formEspecialidad.clave} onChange={(e) => setFormEspecialidad({...formEspecialidad, clave: e.target.value})} disabled={modoEdicion} placeholder="Clave..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-black text-slate-700 uppercase focus:ring-2 focus:ring-emerald-500 outline-none disabled:opacity-50" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-600 mb-2">Nombre de la Especialidad</label>
-                                        <input type="text" value={formEspecialidad.nombre} onChange={(e) => setFormEspecialidad({...formEspecialidad, nombre: e.target.value})} placeholder="Ej. CARDIOLOGÍA" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-black text-slate-700 uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                                        <label className="block text-sm font-bold text-slate-600 mb-2">Nombre</label>
+                                        <input type="text" value={formEspecialidad.nombre} onChange={(e) => setFormEspecialidad({...formEspecialidad, nombre: e.target.value})} placeholder="Nombre..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-black text-slate-700 uppercase focus:ring-2 focus:ring-emerald-500 outline-none" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-slate-600 mb-2">División</label>
-                                        <input type="text" value={formEspecialidad.division} onChange={(e) => setFormEspecialidad({...formEspecialidad, division: e.target.value})} placeholder="Ej. MEDICINA INTERNA" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-black text-slate-700 uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                                        <input type="text" value={formEspecialidad.division} onChange={(e) => setFormEspecialidad({...formEspecialidad, division: e.target.value})} placeholder="División..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-black text-slate-700 uppercase focus:ring-2 focus:ring-emerald-500 outline-none" />
                                     </div>
                                 </>
+                            )}
+
+                            {seccionCatalogo === 'consultorios' && (
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-600 mb-2">Nombre del Consultorio</label>
+                                    <input type="text" required value={formConsultorio.nombre_consultorio} onChange={(e) => setFormConsultorio({...formConsultorio, nombre_consultorio: e.target.value})} placeholder="Ej. Consultorio 05" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700 uppercase focus:ring-2 focus:ring-emerald-500 outline-none" />
+                                </div>
                             )}
 
                             <div className="flex gap-3 pt-4">
                                 <button type="button" onClick={() => setModalAbierto(false)} className="flex-1 px-4 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-xl transition-colors">Cancelar</button>
-                                <button type="submit" disabled={guardando} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-200 transition-all flex justify-center items-center gap-2 active:scale-95 disabled:opacity-70">
+                                <button type="submit" disabled={guardando} className="flex-1 bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-200 flex justify-center items-center gap-2 transition-all active:scale-95 disabled:opacity-70">
                                     {guardando ? <Loader2 size={20} className="animate-spin" /> : (modoEdicion ? 'Actualizar' : 'Guardar')}
                                 </button>
                             </div>

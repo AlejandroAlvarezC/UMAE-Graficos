@@ -789,6 +789,48 @@ export default function DashboardProductividad({ isAdmin }) {
         };
     }, [datosFiltrados, diccionarioCIE]);
 
+    const chartConsultorios = useMemo(() => {
+        // 1. Si no hay datos, devolvemos el objeto vacío con la estructura correcta
+        if (!datosFiltrados || datosFiltrados.length === 0) {
+            return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+        }
+
+        // 2. Reducimos los datos para contar totales, PV y Sub por Consultorio
+        const conteo = datosFiltrados.reduce((acc, curr) => {
+            // Normalizamos el nombre del consultorio (manejamos mayúsculas/minúsculas)
+            const cons = (curr.consultorio || curr.CONSULTORIO || "SIN ESPECIFICAR").toString().trim().toUpperCase();
+
+            if (!acc[cons]) acc[cons] = { total: 0, pv: 0, sub: 0 };
+            
+            acc[cons].total++;
+            
+            // Lógica de Primera Vez vs Subsecuente
+            if (curr.primera_vez === 'Primera Vez' || curr.PRIMERA_VEZ === 'Primera Vez') {
+                acc[cons].pv++;
+            } else {
+                acc[cons].sub++;
+            }
+            
+            return acc;
+        }, {});
+
+        // 3. Ordenamos de mayor a menor según el total de consultas
+        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
+
+        // 4. Retornamos la estructura lista para el gráfico
+        return {
+            labels: ordenados.map(item => item[0]),
+            datasets: [{ 
+                label: 'Consultas por Consultorio', 
+                data: ordenados.map(item => item[1].total), 
+                backgroundColor: '#10b981', // Verde esmeralda para diferenciarlo de especialidades
+                borderRadius: 4 
+            }],
+            dataPV: ordenados.map(item => item[1].pv),
+            dataSub: ordenados.map(item => item[1].sub)
+        };
+    }, [datosFiltrados]); // Solo se recalcula si cambian los datos filtrados
+
     const anchoDinamico = (cantidadItems) => `max(100%, ${cantidadItems * 40}px)`; 
     
     const chartOptionsVertical = {
@@ -1113,6 +1155,41 @@ export default function DashboardProductividad({ isAdmin }) {
                                                 {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Diagnóstico" titulo2="Frecuencia" labels={chartDiagnosticos.labels} data={chartDiagnosticos.datasets[0].data} dataPV={chartDiagnosticos.dataPV} dataSub={chartDiagnosticos.dataSub} total={false} /></div>}
                                             </div>
                                         </div>
+                                                                                {/* CARD DE CONSULTORIOS CON TABLA INTEGRADA */}
+                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">
+                                                Distribución por Consultorio
+                                            </h3>
+                                            
+                                            <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
+                                                
+                                                {/* LADO A: EL GRÁFICO */}
+                                                <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
+                                                    <div style={{ width: anchoDinamico(chartConsultorios.labels.length), height: '100%' }}>
+                                                        <Bar 
+                                                            data={chartConsultorios} 
+                                                            options={chartOptionsVertical} 
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* LADO B: LA TABLA (Esta es la lógica que faltaba) */}
+                                                {mostrarTablas && (
+                                                    <div className="lg:col-span-2 h-[400px] overflow-hidden">
+                                                        <TablaDatos 
+                                                            titulo1="Consultorio" 
+                                                            titulo2="Consultas" 
+                                                            labels={chartConsultorios.labels} 
+                                                            data={chartConsultorios.datasets[0].data} 
+                                                            dataPV={chartConsultorios.dataPV} 
+                                                            dataSub={chartConsultorios.dataSub} 
+                                                            total={true} 
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>        
+                                       
                                     </div>
                                 </div>
                             )}

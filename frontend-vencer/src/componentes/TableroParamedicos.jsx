@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Activity, Stethoscope, Users, CalendarCheck, Clock } from 'lucide-react';
+import { Activity, Stethoscope, Users, CalendarCheck, Clock, MapPin} from 'lucide-react';
 import { Doughnut, Bar } from 'react-chartjs-2';
 
 // ==========================================
@@ -249,6 +249,37 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
 
     const chartOptionsVertical = { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } };
 
+    const chartConsultorios = useMemo(() => {
+        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+
+        const conteo = datos.reduce((acc, curr) => {
+            const cons = (curr.consultorio || curr.CONSULTORIO || "SIN ESPECIFICAR").toString().trim().toUpperCase();
+            if (!acc[cons]) acc[cons] = { total: 0, pv: 0, sub: 0 };
+            
+            acc[cons].total++;
+            if (curr.primera_vez === 'Primera Vez' || curr.PRIMERA_VEZ === 'Primera Vez') {
+                acc[cons].pv++;
+            } else {
+                acc[cons].sub++;
+            }
+            return acc;
+        }, {});
+
+        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
+
+        return {
+            labels: ordenados.map(item => item[0]),
+            datasets: [{ 
+                label: 'Consultas', 
+                data: ordenados.map(item => item[1].total), 
+                backgroundColor: '#10b981', 
+                borderRadius: 4 
+            }],
+            dataPV: ordenados.map(item => item[1].pv),
+            dataSub: ordenados.map(item => item[1].sub)
+        };
+    }, [datos]);
+
     return (
         <div className="w-full animate-in fade-in duration-500">
             {/* ENCABEZADO */}
@@ -346,6 +377,51 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                             </div>
                         </div>
                         {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Diagnóstico" titulo2="Frecuencia" labels={chartDiagnosticos.labels} data={chartDiagnosticos.datasets[0].data} dataPV={chartDiagnosticos.dataPV} dataSub={chartDiagnosticos.dataSub} total={false} /></div>}
+                    </div>
+                </div>
+                                {/* GRÁFICO DE CONSULTORIOS + TABLA */}
+                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col mt-6">
+                    <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600">
+                                <MapPin size={20} />
+                            </div>
+                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide">Productividad por Consultorio</h3>
+                        </div>
+                    </div>
+
+                    <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
+                        {/* Lado del Gráfico */}
+                        <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
+                            <div style={{ width: `max(100%, ${chartConsultorios.labels.length * 50}px)`, height: '100%' }}>
+                                <Bar 
+                                    data={chartConsultorios} 
+                                    options={{
+                                        maintainAspectRatio: false,
+                                        plugins: { legend: { display: false } },
+                                        scales: {
+                                            x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } },
+                                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
+                                        }
+                                    }} 
+                                />
+                            </div>
+                        </div>
+
+                        {/* Lado de la Tabla descriptiva */}
+                        {mostrarTablas && (
+                            <div className="lg:col-span-2 h-[400px] overflow-hidden">
+                                <TablaDatos 
+                                    titulo1="Consultorio" 
+                                    titulo2="Consultas" 
+                                    labels={chartConsultorios.labels} 
+                                    data={chartConsultorios.datasets[0].data} 
+                                    dataPV={chartConsultorios.dataPV} 
+                                    dataSub={chartConsultorios.dataSub} 
+                                    total={true} 
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
