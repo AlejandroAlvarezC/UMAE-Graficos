@@ -3,7 +3,7 @@ import axios from 'axios';
 import localforage from 'localforage';
 import { 
     Users, Stethoscope, MapPin, ClipboardList, 
-    ChevronLeft, Menu, Pencil, Trash2, Plus, Loader2, X
+    ChevronLeft, Menu, Pencil, Trash2, Plus, Loader2, X, UploadCloud
 } from 'lucide-react';
 
 export default function AdministradorCatalogos({ setVistaActiva }) {
@@ -16,12 +16,17 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
     const [listaDiagnosticos, setListaDiagnosticos] = useState([]);
     const [listaEspecialidades, setListaEspecialidades] = useState([]);
     const [listaConsultorios, setListaConsultorios] = useState([]); 
+    const [listaMedicos, setListaMedicos] = useState([]);
     const [cargando, setCargando] = useState(false);
+    const [modalMedico, setModalMedico] = useState(false);
+    const [medicoSeleccionado, setMedicoSeleccionado] = useState({ matricula: '', nombre: '' });
+    const [esEdicion, setEsEdicion] = useState(false);
 
     useEffect(() => {
         if (seccionCatalogo === 'diagnosticos') cargarListaDiagnosticos();
         if (seccionCatalogo === 'especialidades') cargarListaEspecialidades();
         if (seccionCatalogo === 'consultorios') cargarListaConsultorios();
+        if (seccionCatalogo === 'medicos') cargarListaMedicos();
     }, [seccionCatalogo]);
 
     const cargarListaDiagnosticos = async () => {
@@ -50,6 +55,20 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
         } catch (error) { console.error("Error Consultorios:", error); } 
         finally { setCargando(false); }
     };
+
+    const cargarListaMedicos = async () => {
+    setCargando(true);
+    try {
+        const res = await axios.get(`/api/api_medicos.php?t=${new Date().getTime()}`);
+        if (Array.isArray(res.data)) {
+            setListaMedicos(res.data);
+        }
+    } catch (error) {
+        console.error("Error al cargar Médicos:", error);
+    } finally {
+        setCargando(false);
+    }
+};
 
     // ==========================================
     // LÓGICA DE CRUD GLOBAL
@@ -146,6 +165,73 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
     ];
     const seccionActiva = opciones.find(o => o.id === seccionCatalogo);
 
+        // Abrir el modal para editar
+    const handleEditarMedico = (medico) => {
+        // Quitamos el "Dr. " temporalmente para que el usuario edite solo el nombre
+        const nombreSinPrefijo = medico.nombre.replace('Dr. ', '').replace('Lic. ', '');
+        setMedicoSeleccionado({ matricula: medico.matricula, nombre: nombreSinPrefijo });
+        setEsEdicion(true);
+        setModalMedico(true);
+    };
+
+    // Abrir el modal para uno nuevo
+    const handleAbrirNuevoMedico = () => {
+        setMedicoSeleccionado({ matricula: '', nombre: '' });
+        setEsEdicion(false);
+        setModalMedico(true);
+    };
+
+    // Guardar (Insertar o Actualizar)
+    const handleGuardarMedico = async () => {
+        if (!medicoSeleccionado.matricula || !medicoSeleccionado.nombre) {
+            alert("Por favor llena todos los campos");
+            return;
+        }
+
+        try {
+            if (esEdicion) {
+                // Actualizar (PUT)
+                await axios.put('/api/api_medicos.php', medicoSeleccionado);
+            } else {
+                // Crear (POST)
+                await axios.post('/api/api_medicos.php', medicoSeleccionado);
+            }
+            
+            setModalMedico(false);
+            cargarListaMedicos(); // Refrescar la tabla
+        } catch (error) {
+            console.error("Error al guardar:", error);
+            alert("Hubo un error al procesar la solicitud");
+        }
+    };
+
+    const handleSubidaMasivaMedicos = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!window.confirm(`¿Seguro que quieres importar los datos de este archivo?`)) return;
+
+        const formData = new FormData();
+        formData.append('archivo_medicos', file);
+
+        setCargando(true);
+        try {
+            const res = await axios.post('/api/api_medicos.php', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (res.data.success) {
+                alert("¡Importación exitosa!");
+                cargarListaMedicos(); // Refrescamos la tabla
+            } else {
+                alert("Error: " + res.data.error);
+            }
+        } catch (error) {
+            alert("Error al subir el archivo.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
     return (
         <div className="flex min-h-screen bg-slate-50 font-sans animate-in fade-in duration-500">
             {/* SIDEBAR */}
@@ -183,12 +269,61 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
 
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 min-h-[600px] flex flex-col">
                     
-                    {/* 1. MÓDULO DE MÉDICOS (En pausa) */}
-                    {seccionCatalogo === 'medicos' && (
-                        <div className="flex-1 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center bg-slate-50/50">
-                            <div className="text-center"><Users size={48} className="mx-auto text-slate-300 mb-4" /><p className="text-slate-500 font-medium text-lg">Próximo CRUD a desarrollar.</p></div>
+                {/* MÓDULO DE MÉDICOS (ACTUALIZADO CON CARGA MASIVA) */}
+                {seccionCatalogo === 'medicos' && (
+                    <div className="animate-in fade-in duration-300 flex-1 flex flex-col h-full">
+                        <div className="flex justify-between items-center mb-6 pb-4 border-b">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-700">Listado de Médicos</h3>
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Gestiona el personal o importa desde CSV</p>
+                            </div>
+                            <div className="flex gap-2">
+                                {/* Botón de Carga Masiva */}
+                                <label className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all">
+                                    <UploadCloud size={16} />
+                                    Subir Excel (CSV)
+                                    <input type="file" accept=".csv" className="hidden" onChange={(e) => handleSubidaMasivaMedicos(e)} />
+                                </label>
+                                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-bold flex items-center">
+                                    Total: {listaMedicos.length}
+                                </span>
+                            </div>
                         </div>
-                    )}
+
+                        <div className="flex-1 overflow-auto border border-slate-200 rounded-2xl shadow-sm mb-6 max-h-[500px]">
+                            {cargando ? (
+                                <div className="h-full flex items-center justify-center text-slate-400"><Loader2 className="animate-spin mr-2" /> Cargando plantilla...</div>
+                            ) : (
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 sticky top-0 z-10">
+                                        <tr>
+                                            <th className="p-4 text-slate-500 font-bold border-b w-32">Matrícula</th>
+                                            <th className="p-4 text-slate-500 font-bold border-b">Nombre del Médico</th>
+                                            <th className="p-4 text-center w-32 border-b">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {listaMedicos.map((med) => (
+                                            <tr key={med.matricula} className="hover:bg-slate-50 border-b group">
+                                                <td className="p-4 font-black text-slate-400">{med.matricula}</td>
+                                                <td className="p-4 text-slate-700 font-black uppercase">{med.nombre}</td>
+                                                <td className="p-4">
+                                                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => handleEditarMedico(med)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"><Pencil size={18} /></button>
+                                                        <button onClick={() => handleBorrar(med.matricula)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={18} /></button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                        <button onClick={handleAbrirNuevo} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 w-fit">
+                            <Plus size={20} /> Agregar Médico Manual
+                        </button>
+                    </div>
+                )}
 
                     {/* 2. MÓDULO DE ESPECIALIDADES */}
                     {seccionCatalogo === 'especialidades' && (
@@ -374,6 +509,57 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* MODAL DE MÉDICOS */}
+            {modalMedico && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in duration-200">
+                        <div className="bg-slate-800 p-6 text-white flex justify-between items-center">
+                            <h3 className="text-xl font-black">{esEdicion ? 'Editar Médico' : 'Nuevo Médico'}</h3>
+                            <button onClick={() => setModalMedico(false)} className="hover:bg-white/10 p-1 rounded-full"><X size={24} /></button>
+                        </div>
+                        
+                        <div className="p-8 space-y-6">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Matrícula (No editable)</label>
+                                <input 
+                                    type="text" 
+                                    disabled={esEdicion}
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl font-black text-slate-700 outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
+                                    value={medicoSeleccionado.matricula}
+                                    onChange={(e) => setMedicoSeleccionado({...medicoSeleccionado, matricula: e.target.value})}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Nombre Completo</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Apellido Paterno/Materno/Nombre"
+                                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-emerald-500 transition-all"
+                                    value={medicoSeleccionado.nombre}
+                                    onChange={(e) => setMedicoSeleccionado({...medicoSeleccionado, nombre: e.target.value})}
+                                />
+                                <p className="text-[10px] text-slate-400 mt-2">Usa barras (/) para separar apellidos si quieres que el sistema los limpie automáticamente.</p>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button 
+                                    onClick={() => setModalMedico(false)}
+                                    className="flex-1 py-3 border border-slate-200 text-slate-500 font-bold rounded-xl hover:bg-slate-50 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={handleGuardarMedico}
+                                    className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 shadow-lg shadow-emerald-200 transition-all"
+                                >
+                                    {esEdicion ? 'Guardar Cambios' : 'Crear Registro'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

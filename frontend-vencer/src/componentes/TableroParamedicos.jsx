@@ -215,11 +215,11 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total).slice(0, 20);
 
         return {
-            labels: ordenados.map(item => item[0]),
+            labels: ordenados.map(item => item[0].replace('Dr. ', 'Lic. ')),
             datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1].total), backgroundColor: '#822626', borderRadius: 4 }],
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub),
-            // 5. ¡AQUÍ ESTÁ LA MAGIA! Creamos la lista extra para la tabla
+            // 5.Creamos la lista extra para la tabla
             dataExtra: ordenados.map(item => item[1].especialidad) 
         };
     }, [datos, diccionarioMedicos, diccionarioEspecialidades]);
