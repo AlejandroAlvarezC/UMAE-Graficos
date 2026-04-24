@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Activity, Stethoscope, Users, CalendarCheck, Clock, MapPin} from 'lucide-react';
+import React, { useMemo, useEffect } from 'react';
+import { Activity, Stethoscope, Users, CalendarCheck, Clock, MapPin } from 'lucide-react';
 import { Doughnut, Bar } from 'react-chartjs-2';
 
 // ==========================================
@@ -35,7 +35,6 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
                             return (
                                 <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                                     <td className="py-2 px-3">
-                                        {/* Reemplazo de Dr. a Lic. en la tabla */}
                                         {label.toString().replace('Dr. ', 'Lic. ')}
                                     </td>
                                     {dataExtra && <td className="py-2 px-3 text-xs font-bold text-slate-400">{dataExtra[index]}</td>}
@@ -54,7 +53,9 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
                                 {dataExtra && <td className="py-2 px-3"></td>}
                                 {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-black">{totalPV.toLocaleString()}</td>}
                                 {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-black">{totalSub.toLocaleString()}</td>}
-                                {mostrarDesglose && <td className="py-2 px-3 text-center text-slate-600 font-black bg-slate-100/50">{totalPV > 0 ? (totalSub / totalPV).toFixed(2) : '0.00'}</td>}
+                                {mostrarDesglose && <td className="py-2 px-3 text-center text-slate-600 font-black bg-slate-100/50">
+                                    {totalPV > 0 ? (totalSub / totalPV).toFixed(2) : '0.00'}
+                                </td>}
                                 <td className="py-2 px-3 text-right rounded-r-lg text-slate-800 font-black">{totalGeneral.toLocaleString()}</td>
                             </tr>
                         </tfoot>
@@ -73,7 +74,14 @@ const CRITERIOS_PARAMEDICOS = ['6300', '6600', '6900', 'NUTRICION', 'NUTRICIÓN'
 // ==========================================
 // COMPONENTE PRINCIPAL: TABLERO PARAMÉDICOS
 // ==========================================
-export default function TableroParamedicos({ datos, diccionarioMedicos = {}, diccionarioCIE = {}, diccionarioEspecialidades = {}, mostrarTablas = false }) {
+export default function TableroParamedicos({ 
+    datos, 
+    diccionarioMedicos = {}, 
+    diccionarioCIE = {}, 
+    diccionarioEspecialidades = {}, 
+    mostrarTablas = false, 
+    setExportData 
+}) {
 
     // 1. FILTRO DE RAÍZ: Aislamos solo los datos de paramédicos
     const datosFiltrados = useMemo(() => {
@@ -84,7 +92,15 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
         });
     }, [datos]);
 
-    // 2. KPIs (Usando datosFiltrados)
+    // Dentro de TableroParamedicos.jsx
+    useEffect(() => {
+        if (datosFiltrados && datosFiltrados.length > 0) {
+            console.log("Enviando datos de Paramédicos al padre...");
+            setExportData(datosFiltrados);
+        }
+    }, [datosFiltrados, setExportData]);
+
+    // 3. KPIs
     const kpis = useMemo(() => {
         let citados = 0; let primeraVez = 0;
         if (datosFiltrados.length === 0) return { total: 0, citados: 0, espontaneos: 0, primeraVez: 0, subsecuentes: 0 };
@@ -106,7 +122,7 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
         };
     }, [datosFiltrados]);
 
-    // 3. TURNOS (Usando datosFiltrados)
+    // 4. TURNOS
     const chartTurnos = useMemo(() => {
         if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         const conteo = datosFiltrados.reduce((acc, curr) => {
@@ -126,16 +142,12 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
         };
     }, [datosFiltrados]);
 
-// 4. ESPECIALIDADES (Áreas Paramédicas)
+    // 5. ESPECIALIDADES (Áreas Paramédicas)
     const chartEspecialidades = useMemo(() => {
         if (!datosFiltrados || datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            // 1. Extraemos el texto crudo original
             let areaCruda = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área').trim().toUpperCase();
-            
-            // 2. ¡EL EXTERMINADOR DE BUGS! 
-            // Le arrancamos la palabra "COD:" y los ".0" si vienen pegados en los datos del paciente
             areaCruda = areaCruda.replace('COD:', '').replace('COD: ', '').replace('.0', '').trim();
 
             const respaldo = {
@@ -144,32 +156,23 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                 '6900': 'NUTRICIÓN Y DIETETICA'
             };
 
-            // 3. Ahora sí, hacemos el match con el diccionario limpio
             let areaTraducida = areaCruda;
-            
-            if (diccionarioEspecialidades[areaCruda] && diccionarioEspecialidades[areaCruda].nombre) {
+            if (diccionarioEspecialidades[areaCruda]?.nombre) {
                 areaTraducida = String(diccionarioEspecialidades[areaCruda].nombre).toUpperCase();
-            } 
-            else if (respaldo[areaCruda]) {
+            } else if (respaldo[areaCruda]) {
                 areaTraducida = respaldo[areaCruda];
             }
 
-            // 4. Agrupamos y contamos
             if (!acc[areaTraducida]) acc[areaTraducida] = { total: 0, pv: 0, sub: 0 };
             acc[areaTraducida].total++;
             
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
-            if (pvVal === '1' || pvVal === 'primera vez') {
-                acc[areaTraducida].pv++; 
-            } else {
-                acc[areaTraducida].sub++;
-            }
+            if (pvVal === '1' || pvVal === 'primera vez') acc[areaTraducida].pv++; else acc[areaTraducida].sub++;
             
             return acc;
         }, {});
 
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
-        
         return {
             labels: ordenados.map(item => item[0]),
             datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1].total), backgroundColor: '#059669', borderRadius: 4 }],
@@ -178,36 +181,28 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
         };
     }, [datosFiltrados, diccionarioEspecialidades]);
     
+    // 6. MÉDICOS / PERSONAL
     const chartMedicos = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [], dataExtra: [] };
+        if (!datosFiltrados || datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [], dataExtra: [] };
 
-        const conteo = datos.reduce((acc, curr) => {
-            // 1. Limpiamos la matrícula y obtenemos el nombre del médico
+        const conteo = datosFiltrados.reduce((acc, curr) => {
             const matricula = String(curr.matricula_medico || 'Sin Matrícula').trim().replace('.0', '');
             const nombreMedico = diccionarioMedicos[matricula] || `Matr. ${matricula}`;
             
-            // 2. Extraemos y limpiamos la especialidad (vacuna contra "COD:")
             let areaCruda = String(curr.especialidad || curr.ESPECIALIDAD || 'Sin Área').trim().toUpperCase();
             areaCruda = areaCruda.replace('COD:', '').replace('COD: ', '').replace('.0', '').trim();
             
-            // 3. Traducimos usando el diccionario que recibimos por props
             const nombreEspecialidad = diccionarioEspecialidades[areaCruda]?.nombre 
                 ? String(diccionarioEspecialidades[areaCruda].nombre).toUpperCase() 
                 : areaCruda;
 
-            // 4. Agrupamos y guardamos la especialidad
             if (!acc[nombreMedico]) {
                 acc[nombreMedico] = { total: 0, pv: 0, sub: 0, especialidad: nombreEspecialidad };
             }
-
             acc[nombreMedico].total++;
             
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
-            if (pvVal === '1' || pvVal === 'primera vez') {
-                acc[nombreMedico].pv++; 
-            } else {
-                acc[nombreMedico].sub++;
-            }
+            if (pvVal === '1' || pvVal === 'primera vez') acc[nombreMedico].pv++; else acc[nombreMedico].sub++;
             
             return acc;
         }, {});
@@ -219,70 +214,61 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
             datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1].total), backgroundColor: '#822626', borderRadius: 4 }],
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub),
-            // 5.Creamos la lista extra para la tabla
             dataExtra: ordenados.map(item => item[1].especialidad) 
         };
-    }, [datos, diccionarioMedicos, diccionarioEspecialidades]);
+    }, [datosFiltrados, diccionarioMedicos, diccionarioEspecialidades]);
 
-    // 6. DIAGNÓSTICOS (Usando datosFiltrados)
+    // 7. DIAGNÓSTICOS
     const chartDiagnosticos = useMemo(() => {
         if (datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
         const conteo = datosFiltrados.reduce((acc, curr) => {
-            const codigoRaw = curr.diagnostico || curr.DIAGNOSTICO || curr.cie_10 || curr.CIE_10 || curr.diagnostico_principal || curr.DIAGNOSTICO_PRINCIPAL || 'Sin Diagnóstico';
+            const codigoRaw = curr.diagnostico_principal || curr.DIAGNOSTICO_PRINCIPAL || 'Sin Diagnóstico';
             const codigoLimpio = String(codigoRaw).trim().toUpperCase();
             const nombreDiagnostico = diccionarioCIE[codigoLimpio] || codigoLimpio;
+
             if (!acc[nombreDiagnostico]) acc[nombreDiagnostico] = { total: 0, pv: 0, sub: 0 };
             acc[nombreDiagnostico].total++;
             const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
             if (pvVal === '1' || pvVal === 'primera vez') acc[nombreDiagnostico].pv++; else acc[nombreDiagnostico].sub++;
             return acc;
         }, {});
-        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
-        const top = ordenados.slice(0, 20);
+        const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total).slice(0, 20);
         return {
-            labels: top.map(item => item[0]),
-            datasets: [{ label: 'Frecuencia', data: top.map(item => item[1].total), backgroundColor: '#047857', borderRadius: 4 }],
-            dataPV: top.map(item => item[1].pv),
-            dataSub: top.map(item => item[1].sub)
+            labels: ordenados.map(item => item[0]),
+            datasets: [{ label: 'Frecuencia', data: ordenados.map(item => item[1].total), backgroundColor: '#047857', borderRadius: 4 }],
+            dataPV: ordenados.map(item => item[1].pv),
+            dataSub: ordenados.map(item => item[1].sub)
         };
     }, [datosFiltrados, diccionarioCIE]);
 
-    const chartOptionsVertical = { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } };
-
+    // 8. CONSULTORIOS
     const chartConsultorios = useMemo(() => {
-        if (!datos || datos.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
+        if (!datosFiltrados || datosFiltrados.length === 0) return { labels: [], datasets: [], dataPV: [], dataSub: [] };
 
-        const conteo = datos.reduce((acc, curr) => {
+        const conteo = datosFiltrados.reduce((acc, curr) => {
             const cons = (curr.consultorio || curr.CONSULTORIO || "SIN ESPECIFICAR").toString().trim().toUpperCase();
             if (!acc[cons]) acc[cons] = { total: 0, pv: 0, sub: 0 };
             
             acc[cons].total++;
-            if (curr.primera_vez === 'Primera Vez' || curr.PRIMERA_VEZ === 'Primera Vez') {
-                acc[cons].pv++;
-            } else {
-                acc[cons].sub++;
-            }
+            const pvVal = String(curr.primera_vez || curr.PRIMERA_VEZ || '0').trim().toLowerCase().replace('.0', '');
+            if (pvVal === '1' || pvVal === 'primera vez') acc[cons].pv++; else acc[cons].sub++;
             return acc;
         }, {});
 
         const ordenados = Object.entries(conteo).sort((a, b) => b[1].total - a[1].total);
-
         return {
             labels: ordenados.map(item => item[0]),
-            datasets: [{ 
-                label: 'Consultas', 
-                data: ordenados.map(item => item[1].total), 
-                backgroundColor: '#10b981', 
-                borderRadius: 4 
-            }],
+            datasets: [{ label: 'Consultas', data: ordenados.map(item => item[1].total), backgroundColor: '#10b981', borderRadius: 4 }],
             dataPV: ordenados.map(item => item[1].pv),
             dataSub: ordenados.map(item => item[1].sub)
         };
-    }, [datos]);
+    }, [datosFiltrados]);
+
+    const chartOptionsVertical = { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } };
 
     return (
-        <div className="w-full animate-in fade-in duration-500">
-            {/* ENCABEZADO */}
+        <div id="seccion-paramedicos-completa" className="w-full animate-in fade-in duration-500">
+            {/* 1. ENCABEZADO */}
             <div className="mb-8">
                 <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3">
                     <span className="text-emerald-600 bg-emerald-100 p-2 rounded-xl"><Stethoscope size={28} /></span>
@@ -290,7 +276,7 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                 </h2>
             </div>
 
-            {/* KPIs */}
+            {/* 2. KPIs (Se mantienen igual) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-emerald-500">
                     <div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3></div>
@@ -308,9 +294,11 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                 </div>
             </div>
 
-            {/* GRÁFICAS Y TABLAS */}
+            {/* 3. BLOQUE: TURNOS Y ÁREAS (Grid) */}
             <div className={`grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-2' : ''} gap-6 mb-6 items-start`}>
-                <div className={`bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px] ${mostrarTablas ? '' : 'w-full lg:w-1/2 mx-auto'}`}>
+                
+                {/* GRÁFICA 1: TURNOS */}
+                <div id="graficoP_1" className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px]">
                     <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Consultas por Turno</h3>
                     <div className="relative flex-1 min-h-[220px]">
                         <Doughnut data={chartTurnos} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
@@ -318,30 +306,33 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                     {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Consultas" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} dataPV={chartTurnos.dataPV} dataSub={chartTurnos.dataSub} />}
                 </div>
 
-                {mostrarTablas && (
-                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px]">
-                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Área Paramédica</h3>
-                        <div className="relative flex-1 min-h-[220px]">
-                            <Bar data={chartEspecialidades} options={chartOptionsVertical} />
-                        </div>
-                        <TablaDatos titulo1="Área" titulo2="Consultas" labels={chartEspecialidades.labels} data={chartEspecialidades.datasets[0].data} dataPV={chartEspecialidades.dataPV} dataSub={chartEspecialidades.dataSub} />
+                {/* GRÁFICA 2: ÁREAS (Versión Grid) */}
+                <div id="graficoP_2" className={`bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px] ${!mostrarTablas ? 'hidden lg:flex' : ''}`}>
+                    <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Área Paramédica</h3>
+                    <div className="relative flex-1 min-h-[220px]">
+                        <Bar data={chartEspecialidades} options={chartOptionsVertical} />
                     </div>
-                )}
+                    {mostrarTablas && <TablaDatos titulo1="Área" titulo2="Consultas" labels={chartEspecialidades.labels} data={chartEspecialidades.datasets[0].data} dataPV={chartEspecialidades.dataPV} dataSub={chartEspecialidades.dataSub} />}
+                </div>
             </div>
 
             <div className="flex flex-col gap-6">
-                {!mostrarTablas && (
+                
+                {/* GRÁFICA 3: ESPECIALIDADES (Versión Ancha) */}
+                {/* Usamos un div contenedor con el ID para que siempre sea detectable */}
+                <div id="graficoP_3" className={mostrarTablas ? 'hidden' : 'block'}>
                     <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col mb-6">
-                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Área Paramédica</h3>
+                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Área Paramédica (Detalle)</h3>
                         <div className="relative w-full overflow-x-auto custom-scrollbar pb-4" style={{ height: '400px' }}>
                             <div style={{ minWidth: anchoDinamico(chartEspecialidades.labels.length), height: '100%' }}>
                                 <Bar data={chartEspecialidades} options={chartOptionsVertical} />
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
 
-                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                {/* GRÁFICA 4: PERSONAL */}
+                <div id="graficoP_4" className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
                     <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Productividad por Personal</h3>
                     <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
                         <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
@@ -349,26 +340,25 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                                 <Bar data={chartMedicos} options={chartOptionsVertical} />
                             </div>
                         </div>
-                        {/*tabla del Top 20 de Médicos */}
                         {mostrarTablas && (
                             <div className="lg:col-span-2 h-[400px] overflow-hidden">
                                 <TablaDatos 
-                                    titulo1="Médico" 
-                                    tituloExtra="Especialidad"                 
-                                    dataExtra={chartMedicos.dataExtra}         
+                                    titulo1="Licenciado" 
+                                    tituloExtra="Especialidad" 
+                                    dataExtra={chartMedicos.dataExtra} 
                                     titulo2="Consultas" 
                                     labels={chartMedicos.labels} 
                                     data={chartMedicos.datasets[0].data} 
                                     dataPV={chartMedicos.dataPV} 
                                     dataSub={chartMedicos.dataSub} 
-                                    total={true} 
                                 />
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                {/* GRÁFICA 5: DIAGNÓSTICOS */}
+                <div id="graficoP_5" className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
                     <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Diagnósticos Principales</h3>
                     <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
                         <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
@@ -379,47 +369,24 @@ export default function TableroParamedicos({ datos, diccionarioMedicos = {}, dic
                         {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Diagnóstico" titulo2="Frecuencia" labels={chartDiagnosticos.labels} data={chartDiagnosticos.datasets[0].data} dataPV={chartDiagnosticos.dataPV} dataSub={chartDiagnosticos.dataSub} total={false} /></div>}
                     </div>
                 </div>
-                                {/* GRÁFICO DE CONSULTORIOS + TABLA */}
-                <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col mt-6">
+
+                {/* GRÁFICA 6: CONSULTORIOS */}
+                <div id="graficoP_6" className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col mt-6">
                     <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                         <div className="flex items-center gap-3">
-                            <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600">
-                                <MapPin size={20} />
-                            </div>
+                            <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600"><MapPin size={20} /></div>
                             <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide">Productividad por Consultorio</h3>
                         </div>
                     </div>
-
                     <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
-                        {/* Lado del Gráfico */}
                         <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
                             <div style={{ width: `max(100%, ${chartConsultorios.labels.length * 50}px)`, height: '100%' }}>
-                                <Bar 
-                                    data={chartConsultorios} 
-                                    options={{
-                                        maintainAspectRatio: false,
-                                        plugins: { legend: { display: false } },
-                                        scales: {
-                                            x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } },
-                                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
-                                        }
-                                    }} 
-                                />
+                                <Bar data={chartConsultorios} options={chartOptionsVertical} />
                             </div>
                         </div>
-
-                        {/* Lado de la Tabla descriptiva */}
                         {mostrarTablas && (
                             <div className="lg:col-span-2 h-[400px] overflow-hidden">
-                                <TablaDatos 
-                                    titulo1="Consultorio" 
-                                    titulo2="Consultas" 
-                                    labels={chartConsultorios.labels} 
-                                    data={chartConsultorios.datasets[0].data} 
-                                    dataPV={chartConsultorios.dataPV} 
-                                    dataSub={chartConsultorios.dataSub} 
-                                    total={true} 
-                                />
+                                <TablaDatos titulo1="Consultorio" titulo2="Consultas" labels={chartConsultorios.labels} data={chartConsultorios.datasets[0].data} dataPV={chartConsultorios.dataPV} dataSub={chartConsultorios.dataSub} />
                             </div>
                         )}
                     </div>

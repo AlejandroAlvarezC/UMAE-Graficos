@@ -9,10 +9,12 @@ $username = 'if0_41125231';
 $password = 'DEtK59bqZzA';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    // Usamos utf8mb4 y forzamos el set names para Ñ y acentos
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->exec("SET NAMES utf8mb4");
 
-    // 2. Cargar el Diccionario de Especialidades (CON EL ORDEN CORREGIDO)
+    // 2. Cargar el Diccionario de Especialidades
     $diccionario = [];
     $nombreArchivoDiccionario = "divisionesEsp.csv"; 
 
@@ -20,11 +22,10 @@ try {
         $linea1_dic = fgets($cat);
         $delim_dic = strpos($linea1_dic, ';') !== false ? ';' : ',';
         rewind($cat); 
-        fgetcsv($cat, 1000, $delim_dic); // Saltar encabezados
+        fgetcsv($cat, 1000, $delim_dic); 
         
         while (($row = fgetcsv($cat, 1000, $delim_dic)) !== FALSE) {
             if(count($row) >= 3) {
-                // [0] Division, [1] Cve Especialidad, [2] Descripcion
                 $clave = preg_replace('/[^0-9]/', '', $row[1]); 
                 if($clave !== '') {
                     $diccionario[$clave] = [
@@ -41,11 +42,12 @@ try {
     $mapCitado = ['1' => 'Citado', '0' => 'Espontáneo / Unifila'];
     $mapPrimeraVez = ['1' => 'Primera Vez', '0' => 'Subsecuente'];
 
-    // 4. Procesamiento
+    // 4. Procesamiento de Archivo
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
         $fileTmpPath = $_FILES['archivo_csv']['tmp_name'];
         
         if (($handle = fopen($fileTmpPath, "r")) !== FALSE) {
+            // Detección automática de delimitador
             $linea1 = fgets($handle);
             $delimitador = strpos($linea1, ';') !== false ? ';' : ',';
             rewind($handle); 
@@ -57,7 +59,8 @@ try {
             }, $headers);
             $colMap = array_flip($headers);
 
-            $columnasRequeridas = ['FECHA_ATENCION', 'ESPECIALIDAD', 'MATRIC_MEDICO', 'CONSULTORIO', 'CITADO', 'PRIMERA_VEZ', 'DIAG_PRINCIPAL', 'CVE_PRESUP_ADSCR', 'TURNO', 'anio', 'mes'];
+            // Verificación de columnas (Asegúrate de que 'anio' y 'mes' existan en el CSV o se extraigan de la fecha)
+            $columnasRequeridas = ['FECHA_ATENCION', 'ESPECIALIDAD', 'MATRIC_MEDICO', 'CONSULTORIO', 'CITADO', 'PRIMERA_VEZ', 'DIAG_PRINCIPAL', 'CVE_PRESUP_ADSCR', 'TURNO'];
             foreach ($columnasRequeridas as $req) {
                 if (!isset($colMap[$req])) {
                     echo json_encode(['success' => false, 'message' => "Falta la columna: $req"]);
@@ -65,53 +68,98 @@ try {
                 }
             }
 
+            // INSERT IGNORE es clave para el índice UNIQUE
+            $stmt = $pdo->prepare("INSERT IGNORE INTO productividad_externa 
+                (division, especialidad, matricula_medico, consultorio, fecha_atencion, dia, mes, anio, turno, citado, primera_vez, diagnostico_principal, clave_presupuestal) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
             $registrosInsertados = 0;
-            $stmt = $pdo->prepare("INSERT INTO productividad_externa 
-                (division, especialidad, matricula_medico, consultorio, fecha_atencion, mes, anio, turno, citado, primera_vez, diagnostico_principal, clave_presupuestal) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $duplicadosSaltados = 0;
 
             while (($data = fgetcsv($handle, 10000, $delimitador)) !== FALSE) {
-                if(count($data) < 5) continue; 
+                if(count($data) < 5 || empty(trim($data[0]))) continue; 
 
-                $fechaBruta = $data[$colMap['FECHA_ATENCION']];
-                $claveEspecialidad = preg_replace('/[^0-9]/', '', $data[$colMap['ESPECIALIDAD']]);
-                $matricula = trim($data[$colMap['MATRIC_MEDICO']]);
+                // --- PROCESAMIENTO ROBUSTO DE FECHA ---
+                $fechaBruta = trim($data[$colMap['FECHA_ATENCION']]);
+                $fechaSola = explode(' ', $fechaBruta)[0]; 
                 
-                $fechaSola = explode(' ', trim($fechaBruta))[0]; 
-                $fechaMysql = null;
-                if (strpos($fechaSola, '-') !== false) {
-                    $fechaMysql = $fechaSola; 
+                // Intentar crear fecha desde formato d/m/Y (15/01/2026)
+                $f = date_create_from_format('d/m/Y', $fechaSola);
+                
+                if ($f) {
+                    $fechaMysql = $f->format('Y-m-d');
+                    $dia = (int)$f->format('d');
+                    $mes = (int)$f->format('m');
+                    $anio = (int)$f->format('Y');
                 } else {
-                    $f = date_create_from_format('d/m/Y', $fechaSola);
-                    if ($f) $fechaMysql = $f->format('Y-m-d');
+                    // Si falla, intentar formato Y-m-d
+                    $f = date_create_from_format('Y-m-d', $fechaSola);
+                    if ($f) {
+                        $fechaMysql = $f->format('Y-m-d');
+                        $dia = (int)$f->format('d');
+                        $mes = (int)$f->format('m');
+                        $anio = (int)$f->format('Y');
+                    } else {
+                        // Fecha inválida: saltar registro o usar default
+                        continue;
+                    }
                 }
-                if (!$fechaMysql) $fechaMysql = '2000-01-01';
 
-                $division = isset($diccionario[$claveEspecialidad]) ? $diccionario[$claveEspecialidad]['division'] : "Sin Asignar";
-                $especialidad = isset($diccionario[$claveEspecialidad]) ? $diccionario[$claveEspecialidad]['especialidad'] : $claveEspecialidad;
+                // --- LIMPIEZA DE CARACTERES ESPECIALES ---
+                // Convertimos entidades HTML (&Ntilde;) a caracteres reales (Ñ)
+                $diagnosticoRaw = html_entity_decode(trim($data[$colMap['DIAG_PRINCIPAL']]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 
-                $turnoFinal = isset($mapTurno[trim($data[$colMap['TURNO']])]) ? $mapTurno[trim($data[$colMap['TURNO']])] : "Otro";
-                $citadoFinal = isset($mapCitado[trim($data[$colMap['CITADO']])]) ? $mapCitado[trim($data[$colMap['CITADO']])] : "Dato Raro";
-                $primVezFinal = isset($mapPrimeraVez[trim($data[$colMap['PRIMERA_VEZ']])]) ? $mapPrimeraVez[trim($data[$colMap['PRIMERA_VEZ']])] : "Dato Raro";
+                // Si el archivo viene de Excel (Windows-1252), forzamos a UTF-8
+                if (!mb_check_encoding($diagnosticoRaw, 'UTF-8')) {
+                    $diagnosticoRaw = mb_convert_encoding($diagnosticoRaw, 'UTF-8', 'Windows-1252');
+                }
 
-                $stmt->execute([$division, $especialidad, $matricula, trim($data[$colMap['CONSULTORIO']]), $fechaMysql, (int)$data[$colMap['mes']], (int)$data[$colMap['anio']], $turnoFinal, $citadoFinal, $primVezFinal, trim($data[$colMap['DIAG_PRINCIPAL']]), trim($data[$colMap['CVE_PRESUP_ADSCR']])]);
-                $registrosInsertados++;
+                $claveEspecialidad = preg_replace('/[^0-9]/', '', $data[$colMap['ESPECIALIDAD']]);
+                $division = $diccionario[$claveEspecialidad]['division'] ?? "Sin Asignar";
+                $especialidad = $diccionario[$claveEspecialidad]['especialidad'] ?? $claveEspecialidad;
+                
+                $turnoFinal = $mapTurno[trim($data[$colMap['TURNO']])] ?? "Otro";
+                $citadoFinal = $mapCitado[trim($data[$colMap['CITADO']])] ?? "Dato Raro";
+                $primVezFinal = $mapPrimeraVez[trim($data[$colMap['PRIMERA_VEZ']])] ?? "Dato Raro";
+
+                // Ejecución con los datos extraídos de la fecha para garantizar consistencia en el INDEX UNIQUE
+                $stmt->execute([
+                    $division, 
+                    $especialidad, 
+                    trim($data[$colMap['MATRIC_MEDICO']]), 
+                    trim($data[$colMap['CONSULTORIO']]), 
+                    $fechaMysql, 
+                    $dia, 
+                    $mes, 
+                    $anio, 
+                    $turnoFinal, 
+                    $citadoFinal, 
+                    $primVezFinal, 
+                    $diagnosticoRaw, 
+                    trim($data[$colMap['CVE_PRESUP_ADSCR']])
+                ]);
+
+                if ($stmt->rowCount() > 0) {
+                    $registrosInsertados++;
+                } else {
+                    $duplicadosSaltados++;
+                }
             }
             fclose($handle);
             
-            $conteoDic = count($diccionario);
-            // Registramos la fecha y hora exacta (timestamp) de esta subida
             file_put_contents('ultima_actualizacion.txt', time());
-            echo json_encode(['success' => true, 'message' => "Se insertaron $registrosInsertados registros. (Catálogo cargado: $conteoDic especialidades)."]);
+            echo json_encode([
+                'success' => true, 
+                'message' => "¡Carga Exitosa! Nuevos: $registrosInsertados, Duplicados omitidos: $duplicadosSaltados."
+            ]);
         } else {
-            echo json_encode(['success' => false, 'message' => "Error al intentar leer el archivo subido."]);
+            echo json_encode(['success' => false, 'message' => "Error al abrir el archivo temporal."]);
         }
     } else {
-        //  AQUÍ ESTÁ LA NUEVA RESPUESTA DE ERROR 
-        echo json_encode(['success' => false, 'message' => 'El servidor conectó, pero no recibió ningún archivo llamado "archivo_csv". Verifica tu código de React.']);
+        echo json_encode(['success' => false, 'message' => 'No se recibió el archivo "archivo_csv".']);
     }
 
 } catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Error BD: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Error Crítico BD: ' . $e->getMessage()]);
 }
 ?>

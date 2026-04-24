@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import localforage from 'localforage';
-import { UploadCloud, Activity, Users, CalendarCheck, Clock, ArrowLeft, BarChart2, Database, TableProperties, Stethoscope, Ambulance, Bed, Syringe, Siren, ChevronLeft, ChevronRight, Download, Filter, Menu, Award, Target, BookOpen, MapPin, ClipboardList} from 'lucide-react';
+import { UploadCloud, Activity, Users, CalendarCheck, Clock, ArrowLeft, BarChart2, Database, TableProperties, Stethoscope, Ambulance, Bed, Syringe, Siren, ChevronLeft, ChevronRight, Download, Filter, Menu, Award, Target, BookOpen, MapPin, ClipboardList, FileSpreadsheet} from 'lucide-react';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import AdministradorCatalogos from './AdministradorCatalogos';
@@ -9,7 +9,7 @@ import MenuPrincipal from './MenuPrincipal';
 import ModuloCarga from './ModuloCarga'; 
 import TableroParamedicos from './TableroParamedicos';
 import TableroUrgencias from './TableroUrgencias';
-
+import { exportarReporteCompleto } from './exportarReporteCompleto';
 // Registrar componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement);
 
@@ -180,6 +180,11 @@ export default function DashboardProductividad({ isAdmin }) {
     const [diccionarioMedicos, setDiccionarioMedicos] = useState({});
     const [diccionarioCIE, setDiccionarioCIE] = useState({});
     const [diccionarioEspecialidades, setDiccionarioEspecialidades] = useState({});
+
+    // Datos para descargar Excel 
+    const [datosExterna, setDatosExterna] = useState([]);
+    const [datosParamedicos, setDatosParamedicos] = useState([]);
+    const [datosUrgencias, setDatosUrgencias] = useState([]);
 
     // ==========================================
     // CARGA DE DATOS 
@@ -842,6 +847,38 @@ export default function DashboardProductividad({ isAdmin }) {
         }
     };
 
+        // Esta función es la que llamará al archivo exportarReporteCompleto.js 
+    const handleDescargarTodo = async () => {
+        // Verificamos que al menos algo tenga datos
+        if (dataExterna.length === 0 && dataParamedicos.length === 0 && dataUrgencias.length === 0) {
+            alert("Navega por las pestañas para cargar los datos antes de exportar.");
+            return;
+        }
+        
+        await exportarReporteCompleto(dataExterna, dataParamedicos, dataUrgencias);
+    };
+
+    // Busca tu función handleDescargarExcel y reemplázala por esta:
+    const handleDescargarExcel = async () => {
+        try {
+            console.log("Exportando datos:", { 
+                externa: datosFiltrados.length, 
+                param: datosParamedicos.length, 
+                urg: datosUrgencias.length 
+            });
+
+            // IMPORTANTE: Usamos los nombres de tus estados (líneas 126-128)
+            await exportarReporteCompleto(
+                datosFiltrados,     // Tus datos de consulta externa filtrados
+                datosParamedicos,   // Lo que capturó el TableroParamedicos
+                datosUrgencias      // Lo que capturó el TableroUrgencias
+            );
+        } catch (error) {
+            console.error("Error en la exportación:", error);
+            alert("Hubo un error al generar el Excel.");
+        }
+    };
+
     if (vistaActiva === 'menu') {
         return <MenuPrincipal setVistaActiva={setVistaActiva} isAdmin={isAdmin} setMensaje={setMensaje} />;
     }
@@ -854,7 +891,7 @@ export default function DashboardProductividad({ isAdmin }) {
         return <AdministradorCatalogos setVistaActiva={setVistaActiva} />;
     }
     
-    return (
+return (
         <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
             
             {/* PANEL LATERAL */}
@@ -885,8 +922,28 @@ export default function DashboardProductividad({ isAdmin }) {
                     <button onClick={() => setMostrarTablas(!mostrarTablas)} className={`w-full flex items-center rounded-xl transition-all ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'} ${mostrarTablas ? 'bg-[#5e1919] text-white shadow-inner' : 'hover:bg-[#962e2e] text-red-100'}`}>
                         <TableProperties size={20} className="shrink-0" /> {!sidebarCollapsed && <span className="whitespace-nowrap font-bold text-sm">{mostrarTablas ? 'Ocultar Tablas' : 'Mostrar Tablas'}</span>}
                     </button>
-                    <button className={`w-full flex items-center rounded-xl transition-all ${sidebarCollapsed ? 'justify-center p-3 bg-emerald-600 hover:bg-emerald-500' : 'px-4 py-3 gap-3 bg-emerald-600 hover:bg-emerald-500'} text-white font-bold shadow-md`}>
-                        <Download size={20} className="shrink-0 text-white" /> {!sidebarCollapsed && <span className="whitespace-nowrap text-sm">Descargar Excel</span>}
+                    <button
+                        onClick={handleDescargarExcel}
+                        className={`
+                            flex items-center group mb-4 transition-all duration-300 ease-in-out
+                            bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md
+                            ${!sidebarCollapsed 
+                            ? 'mx-4 px-4 h-10 w-[calc(100%-2rem)]' 
+                            : 'mx-auto w-12 h-10 justify-center' 
+                            }
+                        `}
+                        title="Descargar Reporte"
+                    >
+                        <Download 
+                            size={20} 
+                            className={`flex-shrink-0 ${!sidebarCollapsed ? 'mr-3' : 'mr-0'}`} 
+                        />
+                        <span className={`
+                            font-bold text-sm whitespace-nowrap overflow-hidden transition-all duration-300
+                            ${!sidebarCollapsed ? 'opacity-100 w-auto' : 'opacity-0 w-0'}
+                        `}>
+                            Descargar Reporte
+                        </span>
                     </button>
                     <button onClick={() => setVistaActiva('menu')} className={`w-full flex items-center bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-colors font-bold text-sm mt-2 ${sidebarCollapsed ? 'justify-center p-3' : 'justify-center gap-2 p-3'}`}>
                         <ArrowLeft size={16} className="shrink-0" /> {!sidebarCollapsed && <span className="whitespace-nowrap">Volver al Inicio</span>}
@@ -902,14 +959,14 @@ export default function DashboardProductividad({ isAdmin }) {
                             <Menu size={20} />
                         </button>
                         <div>
-                            <h1 className="text-xl md:text-2xl font-black text-slate-800 capitalize">{areaSidebar.replace('_', ' ')}</h1>                        </div>
+                            <h1 className="text-xl md:text-2xl font-black text-slate-800 capitalize">{areaSidebar.replace('_', ' ')}</h1>
+                        </div>
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
                         {(areaSidebar === 'consulta_externa' || areaSidebar === 'paramedicos' || areaSidebar === 'urgencias') && datos.length > 0 && !cargandoDatos && !error && (
                             <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5 border border-slate-200 shadow-inner flex-wrap w-full xl:w-auto">
                                 <Filter size={14} className="text-[#822626] ml-2 hidden sm:block"/>
-                                
                                 <span className="font-bold text-slate-500 text-[10px] uppercase ml-1">Año:</span>
                                 <select className="bg-transparent font-bold text-[#822626] text-sm outline-none cursor-pointer pr-1" value={anioSeleccionado} onChange={e=>setAnioSeleccionado(e.target.value)}>
                                     <option value="todos">Todos</option>
@@ -948,281 +1005,173 @@ export default function DashboardProductividad({ isAdmin }) {
 
                                 <div className="w-px h-4 bg-slate-300 mx-1"></div>
                                 <span className="font-bold text-slate-500 text-[10px] uppercase">Especialidad:</span>
-                                    <select 
-                                        className="bg-transparent font-bold text-[#822626] text-sm outline-none cursor-pointer pr-1 max-w-[100px] sm:max-w-[150px] truncate" 
-                                        value={especialidadSeleccionada} 
-                                        onChange={e => setEspecialidadSeleccionada(e.target.value)}
-                                    >
-                                        <option value="todas">Todas</option>
-                                        {especialidadesParaMostrar.map(e => (
-                                            <option key={e} value={e}>{e}</option>
-                                        ))}
-                                    </select>
+                                <select 
+                                    className="bg-transparent font-bold text-[#822626] text-sm outline-none cursor-pointer pr-1 max-w-[100px] sm:max-w-[150px] truncate" 
+                                    value={especialidadSeleccionada} 
+                                    onChange={e => setEspecialidadSeleccionada(e.target.value)}
+                                >
+                                    <option value="todas">Todas</option>
+                                    {especialidadesParaMostrar.map(e => (
+                                        <option key={e} value={e}>{e}</option>
+                                    ))}
+                                </select>
                             </div>
                         )}
                     </div>
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar bg-slate-50">
-                    {areaSidebar === 'consulta_externa' && (
-                        <>
-                            {cargandoDatos ? (
-                                <div className="flex justify-center items-center py-20 text-[#822626] font-bold"><Activity className="animate-spin mr-3"/> Calculando estadísticas...</div>
-                            ) : error ? (
-                                <div className="text-red-600 font-bold text-center py-20">{error}</div>
-                            ) : datosFiltrados.length === 0 ? (
-                                <div className="text-center p-16 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 mt-10">
-                                    <Activity size={48} className="mx-auto mb-4 opacity-50" />
-                                    <p className="font-bold text-lg">No hay datos para esta selección</p>
-                                    <p className="text-sm">Intenta cambiando el filtro de fecha o eligiendo otra área.</p>
+                    
+                    {/* SECCIÓN 1: CONSULTA EXTERNA (ASEGURADA EN DOM) */}
+                    <div style={{ 
+                        display: areaSidebar === 'consulta_externa' ? 'block' : 'none',
+                        visibility: areaSidebar === 'consulta_externa' ? 'visible' : 'hidden',
+                        position: areaSidebar === 'consulta_externa' ? 'relative' : 'absolute',
+                        left: areaSidebar === 'consulta_externa' ? '0' : '-9999px',
+                        width: '100%'
+                    }}>
+                        {cargandoDatos ? (
+                            <div className="flex justify-center items-center py-20 text-[#822626] font-bold"><Activity className="animate-spin mr-3"/> Calculando estadísticas...</div>
+                        ) : error ? (
+                            <div className="text-red-600 font-bold text-center py-20">{error}</div>
+                        ) : datosFiltrados.length === 0 ? (
+                            <div className="text-center p-16 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 mt-10">
+                                <Activity size={48} className="mx-auto mb-4 opacity-50" />
+                                <p className="font-bold text-lg">No hay datos para esta selección</p>
+                                <p className="text-sm">Intenta cambiando el filtro de fecha o eligiendo otra área.</p>
+                            </div>
+                        ) : (
+                            <div className="max-w-[1600px] mx-auto w-full pb-8">
+                                <div className="flex justify-end mb-4">
+                                    <p className="text-sm font-bold text-slate-500 bg-white shadow-sm px-4 py-2 rounded-lg border border-slate-200 inline-flex items-center gap-2">
+                                        <Activity size={16} className="text-[#822626]" />
+                                        Actualizado hasta: <span className="text-[#822626] font-black">{ultimaFechaBD}</span>
+                                    </p>
                                 </div>
-                            ) : (
-                                <div className="max-w-[1600px] mx-auto w-full pb-8">
-
-                                    <div className="flex justify-end mb-4">
-                                        <p className="text-sm font-bold text-slate-500 bg-white shadow-sm px-4 py-2 rounded-lg border border-slate-200 inline-flex items-center gap-2 animate-in fade-in duration-500">
-                                            <Activity size={16} className="text-[#822626]" />
-                                            Actualizado hasta: <span className="text-[#822626] font-black">{ultimaFechaBD}</span>
-                                        </p>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-[#822626]">
+                                        <div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3></div>
+                                        <p className="text-4xl font-black text-[#822626]">{kpis.total.toLocaleString()}</p>
                                     </div>
-                                    
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-[#822626]">
-                                            <div className="flex items-center gap-3 text-slate-500 mb-2"><Users size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Total Consultas</h3></div>
-                                            <p className="text-4xl font-black text-[#822626]">{kpis.total.toLocaleString()}</p>
-                                        </div>
-
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                                            <div className="flex items-center gap-3 text-slate-500 mb-2"><CalendarCheck size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Citados</h3></div>
-                                            <p className="text-4xl font-black text-slate-700">{kpis.citados.toLocaleString()}</p>
-                                            <div className="flex flex-col mt-5 pt-4 border-t border-slate-100">
-                                                <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Espontáneos</span>
-                                                <p className="text-4xl font-black text-[#822626]">{kpis.espontaneos.toLocaleString()}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                                            <div className="flex items-center gap-3 text-slate-500 mb-2"><Clock size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Primera Vez</h3></div>
-                                            <p className="text-4xl font-black text-[#c2410c]">{kpis.primeraVez.toLocaleString()}</p>
-                                            <div className="flex flex-col mt-5 pt-4 border-t border-slate-100">
-                                                <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Subsecuentes</span>
-                                                <p className="text-4xl font-black text-[#822626]">{kpis.subsecuentes.toLocaleString()}</p>
-                                            </div>
+                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                                        <div className="flex items-center gap-3 text-slate-500 mb-2"><CalendarCheck size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Citados</h3></div>
+                                        <p className="text-4xl font-black text-slate-700">{kpis.citados.toLocaleString()}</p>
+                                        <div className="flex flex-col mt-5 pt-4 border-t border-slate-100">
+                                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Espontáneos</span>
+                                            <p className="text-4xl font-black text-[#822626]">{kpis.espontaneos.toLocaleString()}</p>
                                         </div>
                                     </div>
-
-                                    {/* GRÁFICO DE METAS SEMANALES */}
-                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
-                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-blue-50 p-2 rounded-lg"><Target size={24} className="text-blue-700"/></div>
-                                                <div>
-                                                    <h3 className="font-bold text-slate-800 uppercase tracking-wide">Cumplimiento de Meta de Citas (Por Semana)</h3>
-                                                    <p className="text-xs text-slate-500">Visualiza las citas otorgadas contra el objetivo directivo del mes.</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 border border-slate-200">
-                                                <select className="bg-transparent font-bold text-slate-700 text-sm outline-none cursor-pointer" value={mesGraficoMeta} onChange={e => setMesGraficoMeta(Number(e.target.value))}>
-                                                    {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                                                </select>
-                                                <div className="w-px h-4 bg-slate-300"></div>
-                                                <select className="bg-transparent font-bold text-slate-700 text-sm outline-none cursor-pointer" value={anioGraficoMeta} onChange={e => setAnioGraficoMeta(Number(e.target.value))}>
-                                                    {aniosDisponibles.map(a => <option key={a} value={a}>{a}</option>)}
-                                                    {!aniosDisponibles.includes('2025') && <option value="2025">2025</option>}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div className="relative min-h-[300px] w-full">
-                                            <Line data={chartMetas} options={chartOptionsLine} />
+                                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                                        <div className="flex items-center gap-3 text-slate-500 mb-2"><Clock size={18}/><h3 className="text-xs font-bold uppercase tracking-widest">Primera Vez</h3></div>
+                                        <p className="text-4xl font-black text-[#c2410c]">{kpis.primeraVez.toLocaleString()}</p>
+                                        <div className="flex flex-col mt-5 pt-4 border-t border-slate-100">
+                                            <span className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Subsecuentes</span>
+                                            <p className="text-4xl font-black text-[#822626]">{kpis.subsecuentes.toLocaleString()}</p>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl shadow-lg border border-slate-700 flex flex-col justify-center text-white relative overflow-hidden min-h-[220px]">
-                                            <div className="absolute -bottom-4 -right-4 p-4 opacity-5 transform rotate-12"><Award size={180} /></div>
-                                            <div className="relative z-10 flex flex-col items-start h-full justify-between">
-                                                <div className="flex items-center gap-3 text-slate-300 w-full border-b border-slate-700/50 pb-3 mb-4">
-                                                    <div className="bg-amber-400/20 p-2 rounded-lg"><Award size={20} className="text-amber-400"/></div>
-                                                    <h3 className="text-sm font-bold uppercase tracking-widest truncate w-full" title={divisionSeleccionada === 'todas' ? 'Panorama de Divisiones' : divisionSeleccionada}>
-                                                        {divisionSeleccionada === 'todas' ? 'Panorama de Divisiones' : divisionSeleccionada}
-                                                    </h3>
-                                                </div>
-                                                <div className="mb-4">
-                                                    <p className="text-sm text-slate-400 font-bold mb-1">{divisionSeleccionada === 'todas' ? 'Divisiones Activas' : 'Total Consultas en División'}</p>
-                                                    <p className="text-5xl font-black text-white drop-shadow-md">{divisionSeleccionada === 'todas' ? rankingDivisiones.length : (rankingDivisiones.find(r => r[0] === divisionSeleccionada)?.[1] || 0).toLocaleString()}</p>
-                                                </div>
-                                                <div className="inline-block bg-slate-950/50 border border-slate-700 px-4 py-2 rounded-xl mt-auto w-full">
-                                                    <p className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                                                        <Activity size={16} />{divisionSeleccionada === 'todas' ? 'Mostrando todas las áreas' : `Ranking: #${rankingDivisiones.findIndex(r => r[0] === divisionSeleccionada) + 1} de ${rankingDivisiones.length} divisiones`}
-                                                    </p>
-                                                </div>
+                                <div id="graficoE_1" className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-blue-50 p-2 rounded-lg"><Target size={24} className="text-blue-700"/></div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-800 uppercase tracking-wide">Cumplimiento de Meta (Semanal)</h3>
+                                                <p className="text-xs text-slate-500">Objetivo directivo vs consultas otorgadas.</p>
                                             </div>
                                         </div>
-
-                                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl shadow-lg border border-slate-700 flex flex-col justify-center text-white relative overflow-hidden min-h-[220px]">
-                                            <div className="absolute -bottom-4 -right-4 p-4 opacity-5 transform rotate-12"><Stethoscope size={180} /></div>
-                                            <div className="relative z-10 flex flex-col items-start h-full justify-between">
-                                                <div className="flex items-center gap-3 text-slate-300 w-full border-b border-slate-700/50 pb-3 mb-4">
-                                                    <div className="bg-emerald-400/20 p-2 rounded-lg"><Stethoscope size={20} className="text-emerald-400"/></div>
-                                                    <h3 className="text-sm font-bold uppercase tracking-widest truncate w-full" title={especialidadSeleccionada === 'todas' ? 'Panorama de Especialidades' : especialidadSeleccionada}>
-                                                        {especialidadSeleccionada === 'todas' ? 'Panorama de Especialidades' : especialidadSeleccionada}
-                                                    </h3>
-                                                </div>
-                                                <div className="mb-4">
-                                                    <p className="text-sm text-slate-400 font-bold mb-1">{especialidadSeleccionada === 'todas' ? 'Especialidades en la vista' : 'Total Consultas en Especialidad'}</p>
-                                                    <p className="text-5xl font-black text-white drop-shadow-md">{especialidadSeleccionada === 'todas' ? especialidadesParaMostrar.length : (infoEspecialidades.ranking.find(r => r[0] === especialidadSeleccionada)?.[1] || 0).toLocaleString()}</p>
-                                                </div>
-                                                <div className="inline-block bg-slate-950/50 border border-slate-700 px-4 py-2 rounded-xl mt-auto w-full">
-                                                    <p className="text-sm font-bold text-emerald-400 flex flex-col gap-1">
-                                                        <span className="flex items-center gap-2"><Activity size={16} />{especialidadSeleccionada === 'todas' ? 'Mostrando todas las especialidades' : `Global: #${infoEspecialidades.ranking.findIndex(r => r[0] === especialidadSeleccionada) + 1} de ${infoEspecialidades.ranking.length} especialidades`}</span>
-                                                        {especialidadSeleccionada !== 'todas' && (<span className="text-xs text-slate-400 font-normal">Pertenece a: {infoEspecialidades.divMap[especialidadSeleccionada]}</span>)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className={`grid grid-cols-1 ${divisionSeleccionada === 'todas' ? 'lg:grid-cols-2' : ''} gap-6 mb-6 items-start`}>
-                                        {divisionSeleccionada === 'todas' && (
-                                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px]">
-                                                <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por División</h3>
-                                                <div className="relative flex-1 min-h-[220px]">
-                                                    <Bar data={chartDivisiones} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }} />
-                                                </div>
-                                                {mostrarTablas && <TablaDatos titulo1="División" titulo2="Consultas" labels={chartDivisiones.labels} data={chartDivisiones.datasets[0].data} dataPV={chartDivisiones.dataPV} dataSub={chartDivisiones.dataSub} />}
-                                            </div>
-                                        )}
-                                        <div className={`bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[300px] ${divisionSeleccionada !== 'todas' ? 'w-full lg:w-1/2 mx-auto' : ''}`}>
-                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Consultas por Turno</h3>
-                                            <div className="relative flex-1 min-h-[220px]">
-                                                <Doughnut data={chartTurnos} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
-                                            </div>
-                                            {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Consultas" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} dataPV={chartTurnos.dataPV} dataSub={chartTurnos.dataSub} />}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-6">
-                                        {especialidadSeleccionada === 'todas' && (
-                                            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                                <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Distribución por Especialidades</h3>
-                                                <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
-                                                    <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
-                                                        <div style={{ width: anchoDinamico(chartEspecialidades.labels.length), height: '100%' }}>
-                                                            <Bar data={chartEspecialidades} options={chartOptionsVertical} />
-                                                        </div>
-                                                    </div>
-                                                    {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Especialidad" titulo2="Consultas" labels={chartEspecialidades.labels} data={chartEspecialidades.datasets[0].data} dataPV={chartEspecialidades.dataPV} dataSub={chartEspecialidades.dataSub} total={true} /></div>}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Productividad por Médico</h3>
-                                            <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
-                                                <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
-                                                    <div style={{ width: anchoDinamico(chartMedicos.labels.length), height: '100%' }}>
-                                                        <Bar data={chartMedicos} options={chartOptionsVertical} />
-                                                    </div>
-                                                </div>
-                                                {mostrarTablas && (
-                                                    <div className="lg:col-span-2 h-[400px] overflow-hidden">
-                                                        <TablaDatos 
-                                                            titulo1="Médico" 
-                                                            tituloExtra="Especialidad" 
-                                                            dataExtra={chartMedicos.dataExtra} 
-                                                            titulo2="Consultas" 
-                                                            labels={chartMedicos.labels} 
-                                                            data={chartMedicos.datasets[0].data} 
-                                                            dataPV={chartMedicos.dataPV} 
-                                                            dataSub={chartMedicos.dataSub} 
-                                                            total={true} 
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Top 20 Diagnósticos Principales</h3>
-                                            <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
-                                                <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
-                                                    <div style={{ width: anchoDinamico(chartDiagnosticos.labels.length), height: '100%' }}>
-                                                        <Bar data={chartDiagnosticos} options={chartOptionsVertical} />
-                                                    </div>
-                                                </div>
-                                                {mostrarTablas && <div className="lg:col-span-2 h-[400px] overflow-hidden"><TablaDatos titulo1="Diagnóstico" titulo2="Frecuencia" labels={chartDiagnosticos.labels} data={chartDiagnosticos.datasets[0].data} dataPV={chartDiagnosticos.dataPV} dataSub={chartDiagnosticos.dataSub} total={false} /></div>}
-                                            </div>
-                                        </div>
-                                                                                {/* CARD DE CONSULTORIOS CON TABLA INTEGRADA */}
-                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">
-                                                Distribución por Consultorio
-                                            </h3>
+                                        
+                                        {/* CONTENEDOR DE FILTROS CORREGIDO (MES Y AÑO) */}
+                                        <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 border border-slate-200">
+                                            <select className="bg-transparent font-bold text-slate-700 text-sm outline-none cursor-pointer" value={mesGraficoMeta} onChange={e => setMesGraficoMeta(Number(e.target.value))}>
+                                                {MESES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                                            </select>
                                             
-                                            <div className={`flex-1 grid grid-cols-1 ${mostrarTablas ? 'lg:grid-cols-5 gap-6' : 'lg:grid-cols-1'}`}>
-                                                
-                                                {/* LADO A: EL GRÁFICO */}
-                                                <div className={`relative overflow-x-auto custom-scrollbar pb-4 ${mostrarTablas ? 'lg:col-span-3' : 'lg:col-span-1'}`} style={{ height: '400px' }}>
-                                                    <div style={{ width: anchoDinamico(chartConsultorios.labels.length), height: '100%' }}>
-                                                        <Bar 
-                                                            data={chartConsultorios} 
-                                                            options={chartOptionsVertical} 
-                                                        />
-                                                    </div>
-                                                </div>
+                                            <div className="w-px h-4 bg-slate-300"></div>
+                                            
+                                            <select className="bg-transparent font-bold text-slate-700 text-sm outline-none cursor-pointer" value={anioGraficoMeta} onChange={e => setAnioGraficoMeta(Number(e.target.value))}>
+                                                {aniosDisponibles.map(a => <option key={a} value={a}>{a}</option>)}
+                                                {!aniosDisponibles.includes('2025') && <option value="2025">2025</option>}
+                                            </select>
+                                        </div>
+                                        {/* FIN DE FILTROS */}
 
-                                                {/* LADO B: LA TABLA (Esta es la lógica que faltaba) */}
-                                                {mostrarTablas && (
-                                                    <div className="lg:col-span-2 h-[400px] overflow-hidden">
-                                                        <TablaDatos 
-                                                            titulo1="Consultorio" 
-                                                            titulo2="Consultas" 
-                                                            labels={chartConsultorios.labels} 
-                                                            data={chartConsultorios.datasets[0].data} 
-                                                            dataPV={chartConsultorios.dataPV} 
-                                                            dataSub={chartConsultorios.dataSub} 
-                                                            total={true} 
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>        
-                                       
+                                    </div>
+                                    <div className="relative min-h-[300px] w-full"><Line data={chartMetas} options={chartOptionsLine} /></div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div id="graficoE_2" className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col h-full min-h-[300px]">
+                                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4">Distribución por División</h3>
+                                        <div className="relative flex-1 min-h-[220px]"><Bar data={chartDivisiones} options={{ maintainAspectRatio: false }} /></div>
+                                        {mostrarTablas && <TablaDatos titulo1="División" titulo2="Consultas" labels={chartDivisiones.labels} data={chartDivisiones.datasets[0].data} dataPV={chartDivisiones.dataPV} dataSub={chartDivisiones.dataSub} />}
+                                    </div>
+                                    <div id="graficoE_3" className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col h-full min-h-[300px]">
+                                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4">Consultas por Turno</h3>
+                                        <div className="relative flex-1 min-h-[220px]"><Doughnut data={chartTurnos} options={{ maintainAspectRatio: false }} /></div>
+                                        {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Consultas" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} dataPV={chartTurnos.dataPV} dataSub={chartTurnos.dataSub} />}
                                     </div>
                                 </div>
-                            )}
-                        </>
-                    )}
 
-                                    {/* MÓDULO PARAMÉDICOS INCRUSTADO */}
-                    {areaSidebar === 'paramedicos' && (
-                        <div className="max-w-[1600px] mx-auto w-full pb-8">
-                            <TableroParamedicos 
-                                datos={paramedicosParaTablero} 
-                                diccionarioMedicos={diccionarioMedicos} 
-                                diccionarioCIE={diccionarioCIE} 
-                                diccionarioEspecialidades={diccionarioEspecialidades} /* <--- AQUÍ LO MANDAMOS */
-                                mostrarTablas={mostrarTablas} 
-                            />
-                        </div>
-                    )}
+                                <div id="graficoE_4" className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col mb-6">
+                                    <h3 className="font-bold text-slate-700 text-sm uppercase mb-4">Top 20 Productividad por Médico</h3>
+                                    <div className="h-[400px] overflow-x-auto"><div style={{ minWidth: anchoDinamico(chartMedicos.labels.length), height: '100%' }}><Bar data={chartMedicos} options={chartOptionsVertical} /></div></div>
+                                    {mostrarTablas && <TablaDatos titulo1="Médico" titulo2="Consultas" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} dataPV={chartMedicos.dataPV} dataSub={chartMedicos.dataSub} />}
+                                </div>
 
-                    {/* MÓDULO URGENCIAS INCRUSTADO */}
-                    {areaSidebar === 'urgencias' && (
-                        <div className="max-w-[1600px] mx-auto w-full pb-8 animate-in fade-in duration-500">
-                            <TableroUrgencias 
-                                datos={urgenciasParaTablero} 
-                                diccionarioMedicos={diccionarioMedicos} 
-                                diccionarioCIE={diccionarioCIE}
-                                diccionarioEspecialidades={diccionarioEspecialidades} 
-                                mostrarTablas={mostrarTablas} 
-                            />
-                        </div>
-                    )}
+                                <div id="graficoE_5" className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col mb-6">
+                                    <h3 className="font-bold text-slate-700 text-sm uppercase mb-4">Top 20 Diagnósticos Principales</h3>
+                                    <div className="h-[400px] overflow-x-auto"><div style={{ minWidth: anchoDinamico(chartDiagnosticos.labels.length), height: '100%' }}><Bar data={chartDiagnosticos} options={chartOptionsVertical} /></div></div>
+                                    {mostrarTablas && <TablaDatos titulo1="Diagnóstico" titulo2="Frecuencia" labels={chartDiagnosticos.labels} data={chartDiagnosticos.datasets[0].data} dataPV={chartDiagnosticos.dataPV} dataSub={chartDiagnosticos.dataSub} />}
+                                </div>
 
-                    {/* MENSAJE DE EN CONSTRUCCIÓN (OCULTO PARA PARAMÉDICOS Y URGENCIAS) */}
+                                <div id="graficoE_6" className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col">
+                                    <h3 className="font-bold text-slate-700 text-sm uppercase mb-4">Distribución por Consultorio</h3>
+                                    <div className="h-[400px] overflow-x-auto"><div style={{ minWidth: anchoDinamico(chartConsultorios.labels.length), height: '100%' }}><Bar data={chartConsultorios} options={chartOptionsVertical} /></div></div>
+                                    {mostrarTablas && <TablaDatos titulo1="Consultorio" titulo2="Consultas" labels={chartConsultorios.labels} data={chartConsultorios.datasets[0].data} dataPV={chartConsultorios.dataPV} dataSub={chartConsultorios.dataSub} />}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* SECCIÓN 2: PARAMÉDICOS */}
+                    <div style={{ 
+                        display: areaSidebar === 'paramedicos' ? 'block' : 'none',
+                        visibility: areaSidebar === 'paramedicos' ? 'visible' : 'hidden',
+                        position: areaSidebar === 'paramedicos' ? 'relative' : 'absolute',
+                        left: areaSidebar === 'paramedicos' ? '0' : '-9999px',
+                        width: '100%'
+                    }}>
+                        <TableroParamedicos 
+                            datos={paramedicosParaTablero} 
+                            diccionarioMedicos={diccionarioMedicos} 
+                            diccionarioCIE={diccionarioCIE} 
+                            diccionarioEspecialidades={diccionarioEspecialidades} 
+                            mostrarTablas={mostrarTablas} 
+                            setExportData={setDatosParamedicos}
+                        />
+                    </div>
+
+                    {/* SECCIÓN 3: URGENCIAS */}
+                    <div style={{ 
+                        display: areaSidebar === 'urgencias' ? 'block' : 'none',
+                        visibility: areaSidebar === 'urgencias' ? 'visible' : 'hidden',
+                        position: areaSidebar === 'urgencias' ? 'relative' : 'absolute',
+                        left: areaSidebar === 'urgencias' ? '0' : '-9999px',
+                        width: '100%'
+                    }}>
+                        <TableroUrgencias 
+                            datos={urgenciasParaTablero} 
+                            diccionarioMedicos={diccionarioMedicos} 
+                            diccionarioCIE={diccionarioCIE}
+                            diccionarioEspecialidades={diccionarioEspecialidades} 
+                            mostrarTablas={mostrarTablas} 
+                            setExportData={setDatosUrgencias}
+                        />
+                    </div>
+
+                    {/* MENSAJE DE EN CONSTRUCCIÓN */}
                     {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && areaSidebar !== 'urgencias' && (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 p-16 border-2 border-dashed border-slate-300 rounded-3xl bg-slate-100/50">
                             <Activity size={64} className="mb-6 opacity-40 text-[#822626]" />
