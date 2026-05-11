@@ -9,7 +9,7 @@ import MenuPrincipal from './MenuPrincipal';
 import ModuloCarga from './ModuloCarga'; 
 import TableroParamedicos from './TableroParamedicos';
 import TableroUrgencias from './TableroUrgencias';
-import { exportarReporteCompleto } from './exportarReporteCompleto';
+import { exportarReporteCompleto, obtenerResumenAgregado } from './exportarReporteCompleto';
 // Registrar componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement);
 
@@ -117,7 +117,9 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
 
                             return (
                                 <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                    <td className="py-2 px-3">{String(label).replace('Dr. ', 'Lic. ')}</td>
+                                    {/* AQUÍ ESTÁ LA CELDA CORREGIDA */}
+                                    <td className="py-2 px-3">{label}</td>
+                                    
                                     {dataExtra && <td className="py-2 px-3 text-xs font-bold text-slate-400">{dataExtra[index]}</td>}
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-[#c2410c] font-medium">{dataPV[index].toLocaleString()}</td>}
                                     {mostrarDesglose && <td className="py-2 px-3 text-center text-[#822626] font-medium">{dataSub[index].toLocaleString()}</td>}
@@ -230,6 +232,7 @@ export default function DashboardProductividad({ isAdmin }) {
     const cargarDiccionario = async () => {
         try {
             const res = await axios.get('/api/api_medicos.php'); 
+            console.log("CATÁLOGO DE MÉDICOS RECIBIDO:", res.data);
             if (Array.isArray(res.data) && res.data.length > 0) {
                 const dicc = res.data.reduce((acc, medico) => {
                     let mat = String(medico.matricula || '').trim().replace('.0', '').replace(/\s/g, '');
@@ -391,7 +394,7 @@ export default function DashboardProductividad({ isAdmin }) {
             const espTraducida = nivelarTexto(traducirEspecialidad(espCruda));
             
             // Si el nombre o el código pertenece a otra área, lo ignoramos de Consulta Externa
-            const ignorar = ['TOCO', 'PRIMER CONTACTO', '5001', '6300', '6600', '6900', 'NUTRICION', 'INHALOTERAPIA', 'FONIATRIA', 'TRABAJO SOCIAL', 'PSICOLOGIA', 'REHABILITACION', 'URGENCIAS', 'ADMISION CONTINUA', 'OBSERVACION', 'CHOQUE'];
+            const ignorar = ['TOCO', 'PRIMER CONTACTO', '5001', '6300', '6600', '6900', 'NUTRICION', , 'TRABAJO SOCIAL', 'PSICOLOGIA','URGENCIAS', 'ADMISION CONTINUA'];
             
             return !ignorar.some(ignorada => espNivelada.includes(ignorada) || espTraducida.includes(ignorada));
         });
@@ -415,17 +418,46 @@ export default function DashboardProductividad({ isAdmin }) {
     }, [datos]);
 
     // FILTRO DE FECHAS
+  
     const aplicarFiltroFecha = (listaDatos) => {
         return listaDatos.filter(item => {
+            // 1. Intenta tomar el mes y año calculados 
             let a = item.anio || item.Anio || item.ANIO || item.año || item.Año || item.AÑO;
             let m = item.mes || item.Mes || item.MES;
 
+            // 2. Si no vienen listos de la BD, extrae la fecha cruda Y APLICA EL CORTE
             if (!a || !m) {
                 const f = encontrarFecha(item);
                 if (f) {
                     const parts = f.includes('-') ? f.split('-') : f.split('/');
-                    if (parts[0].length === 4) { a = a || parts[0]; m = m || parts[1]; }
-                    else { a = a || parts[2]; m = m || parts[1]; }
+                    let anioCrudo, mesCrudo, diaCrudo;
+                    
+                    // Separamos Día, Mes y Año según el formato (YYYY-MM-DD o DD/MM/YYYY)
+                    if (parts[0].length === 4) { 
+                        anioCrudo = parseInt(parts[0], 10); 
+                        mesCrudo = parseInt(parts[1], 10); 
+                        diaCrudo = parseInt(parts[2], 10);
+                    } else { 
+                        anioCrudo = parseInt(parts[2], 10); 
+                        mesCrudo = parseInt(parts[1], 10); 
+                        diaCrudo = parseInt(parts[0], 10);
+                    }
+
+                    // ==========================================
+                    // LÓGICA DE CORTE HOSPITALARIO EN FRONTEND
+                    // ==========================================
+                    if (diaCrudo >= 26) {
+                        mesCrudo++; // Lo mandamos al mes siguiente
+                        
+                        // Si brinca de diciembre, pasa a enero del próximo año
+                        if (mesCrudo > 12) {
+                            mesCrudo = 1;
+                            anioCrudo++;
+                        }
+                    }
+
+                    a = a || String(anioCrudo);
+                    m = m || String(mesCrudo);
                 }
             }
 
@@ -527,32 +559,20 @@ export default function DashboardProductividad({ isAdmin }) {
         });
     }, [datosFiltradosDivision, especialidadSeleccionada, diccionarioEspecialidades]);
 
-   const especialidadesParaMostrar = useMemo(() => {
+    const especialidadesParaMostrar = useMemo(() => {
         const setEsp = new Set();
         
-        // 1. Recorremos TODA tu base de datos (catálogo) en lugar de leer el Excel
-        Object.values(diccionarioEspecialidades).forEach(item => {
-            if (item && item.nombre) {
-                // Si el usuario eligió una División, solo metemos a la lista las especialidades de esa división
-                if (divisionSeleccionada !== 'todas') {
-                    const divItem = String(item.division || '').trim();
-                    if (divItem !== divisionSeleccionada) return; 
-                }
-
-                // Limpiamos el nombre para que el menú se vea impecable
-                const nombreLimpio = String(item.nombre).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        // 1. Extraemos las especialidades directamente de los datos reales que sobrevivieron al filtro de división
+        datosFiltradosDivision.forEach(d => {
+            const espTraducida = traducirEspecialidad(d.especialidad || d.ESPECIALIDAD);
+            
+            // Nivelamos el texto para que no haya nombres duplicados en el menú (ej. "Cardio" y "CARDIO")
+            const nombreLimpio = String(espTraducida).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            
+            if (nombreLimpio && nombreLimpio !== 'SIN ESPECIALIDAD') {
                 setEsp.add(nombreLimpio);
             }
         });
-
-        // Seguro de vida: Si la BD tarda en responder, forzamos la aparición de estas
-        if (Object.keys(diccionarioEspecialidades).length === 0) {
-            if (areaSidebar === 'paramedicos') {
-                ['TRABAJO SOCIAL', 'PSICOLOGIA', 'NUTRICION', 'REHABILITACION'].forEach(e => setEsp.add(e));
-            } else if (areaSidebar === 'urgencias') {
-                ['CONSULTAS EN PRIMER CONTACTO', 'URGENCIAS TOCOCIRUGIA'].forEach(e => setEsp.add(e));
-            }
-        }
 
         let listaCompleta = [...setEsp].sort();
 
@@ -568,10 +588,10 @@ export default function DashboardProductividad({ isAdmin }) {
         }
 
         // Si es consulta externa, limpiamos el menú ocultando lo que es de paramédicos o urgencias
-        const ignorar = ['TRABAJO SOCIAL', 'NUTRICION', 'PSICOLOGIA', 'URGENCIAS TOCOCIRUGIA','CONSULTAS EN PRIMER CONTACTO'];
+        const ignorar = ['TRABAJO SOCIAL', 'NUTRICION', 'PSICOLOGIA', 'URGENCIAS TOCOCIRUGIA', 'CONSULTAS EN PRIMER CONTACTO'];
         return listaCompleta.filter(esp => !ignorar.some(ignorada => esp.includes(ignorada)));
 
-    }, [diccionarioEspecialidades, areaSidebar, divisionSeleccionada]);
+    }, [datosFiltradosDivision, areaSidebar, diccionarioEspecialidades]);
 
     // ==========================================
     // MOTORES DE FILTRO SECUNDARIOS (USANDO EL TRADUCTOR)
@@ -592,7 +612,7 @@ export default function DashboardProductividad({ isAdmin }) {
         });
     }, [datosUrgenciasFiltrados, especialidadSeleccionada, diccionarioEspecialidades]);
 
-// ==========================================
+    // ==========================================
     // GRÁFICA DE METAS CON CALENDARIO DINÁMICO HISTÓRICO
     // ==========================================
     const chartMetas = useMemo(() => {
@@ -858,24 +878,41 @@ export default function DashboardProductividad({ isAdmin }) {
         await exportarReporteCompleto(dataExterna, dataParamedicos, dataUrgencias);
     };
 
-    // Busca tu función handleDescargarExcel y reemplázala por esta:
     const handleDescargarExcel = async () => {
         try {
-            console.log("Exportando datos:", { 
-                externa: datosFiltrados.length, 
-                param: datosParamedicos.length, 
-                urg: datosUrgencias.length 
+            // VALIDACIÓN PREVIA: ¿Están cargados los diccionarios?
+            const numMedicos = Object.keys(diccionarioMedicos || {}).length;
+            console.log(`Validando: Tenemos ${numMedicos} médicos en el diccionario.`);
+
+            if (numMedicos === 0) {
+                alert("Atención: El diccionario de médicos está vacío. Reintenta en unos segundos.");
+                return;
+            }
+
+            const datosTraducidos = datosFiltrados.map(d => {
+                const matCruda = d.matricula_medico || d.MATRICULA_MEDICO || '';
+                const matLimpia = String(matCruda).trim().replace('.0', '').replace(/\s/g, '');
+                
+                // BUSCAMOS EL NOMBRE
+                const nombreEncontrado = diccionarioMedicos[matLimpia];
+
+                return {
+                    ...d,
+                    // FORZAMOS LA LLAVE: Si no lo encuentra, pondrá un aviso visual
+                    medico_real: nombreEncontrado || `No encontrado (${matLimpia})`,
+                    diagnostico_real: diccionarioCIE[String(d.diagnostico_principal).trim().toUpperCase()] || d.diagnostico_principal || 'SIN DIAGNOSTICO',
+                    especialidad_real: traducirEspecialidad(d.especialidad || d.ESPECIALIDAD)
+                };
             });
 
-            // IMPORTANTE: Usamos los nombres de tus estados (líneas 126-128)
-            await exportarReporteCompleto(
-                datosFiltrados,     // Tus datos de consulta externa filtrados
-                datosParamedicos,   // Lo que capturó el TableroParamedicos
-                datosUrgencias      // Lo que capturó el TableroUrgencias
-            );
+            // REVISIÓN FINAL EN CONSOLA
+            console.log("Dato original:", datosFiltrados[0].matricula_medico);
+            console.log("Dato traducido:", datosTraducidos[0].medico_real);
+
+            await exportarReporteCompleto(datosTraducidos, datosParamedicos, datosUrgencias);
+
         } catch (error) {
-            console.error("Error en la exportación:", error);
-            alert("Hubo un error al generar el Excel.");
+            console.error("Error crítico:", error);
         }
     };
 

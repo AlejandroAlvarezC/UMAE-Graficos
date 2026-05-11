@@ -229,6 +229,39 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
             alert("Error al subir el archivo.");
         } finally {
             setCargando(false);
+            e.target.value = null;
+        }
+    };
+
+    const handleSubidaMasivaDiagnosticos = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!window.confirm(`¿Seguro que quieres importar los diagnósticos desde este archivo CSV?`)) return;
+
+        const formData = new FormData();
+        formData.append('archivo_cie', file); 
+
+        setCargando(true);
+        try {
+            const res = await axios.post('/api/api_upload_cie.php', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            if (res.data.success) {
+                alert(`¡Importación exitosa! Se procesaron ${res.data.registros || 'varios'} registros.`);
+                // Borramos caché local y recargamos tabla
+                await localforage.removeItem('cache_cie_vencer');
+                cargarListaDiagnosticos(); 
+            } else {
+                alert("Error: " + (res.data.message || res.data.error));
+            }
+        } catch (error) {
+            console.error("Error al subir CIE-10:", error);
+            alert("Error al subir el archivo.");
+        } finally {
+            setCargando(false);
+            e.target.value = null; 
         }
     };
 
@@ -415,8 +448,22 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                     {seccionCatalogo === 'diagnosticos' && (
                         <div className="animate-in fade-in duration-300 flex-1 flex flex-col h-full">
                             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
-                                <h3 className="text-xl font-bold text-slate-700">Listado de Códigos CIE-10</h3>
-                                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-bold">Total: {listaDiagnosticos.length}</span>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-700">Listado de Códigos CIE-10</h3>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Gestiona el catálogo o importa desde CSV</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    {/* Botón de Carga Masiva CIE-10 */}
+                                    <label className="cursor-pointer bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all">
+                                        <UploadCloud size={16} />
+                                        Subir Excel (CSV)
+                                        <input type="file" accept=".csv" className="hidden" onChange={(e) => handleSubidaMasivaDiagnosticos(e)} />
+                                    </label>
+                                    
+                                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-sm font-bold flex items-center">
+                                        Total: {listaDiagnosticos.length}
+                                    </span>
+                                </div>
                             </div>
                             <div className="flex-1 overflow-auto border border-slate-200 rounded-2xl shadow-sm mb-6 max-h-[500px]">
                                 {cargando ? (
@@ -448,7 +495,7 @@ export default function AdministradorCatalogos({ setVistaActiva }) {
                                 )}
                             </div>
                             <div className="flex justify-start">
-                                <button onClick={handleAbrirNuevo} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"><Plus size={20} /> Agregar Diagnóstico</button>
+                                <button onClick={handleAbrirNuevo} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"><Plus size={20} /> Agregar Diagnóstico Manual</button>
                             </div>
                         </div>
                     )}
