@@ -125,6 +125,73 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
                     </div>
                 </div>
 
+                <style>
+                    .text-esmeralda {
+                        color: #0d9488 !important; /* Verde azulado */
+                    }
+                    .btn-outline-esmeralda {
+                        color: #0d9488;
+                        border-color: #0d9488;
+                        background-color: transparent;
+                        transition: all 0.3s ease;
+                    }
+                    .btn-outline-esmeralda:hover {
+                        background-color: #0d9488;
+                        color: #ffffff;
+                    }
+                </style>
+
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fas fa-chart-line fa-2x text-esmeralda mb-3"></i>
+                            <h5 class="fw-bold">Indicadores</h5>
+                            <p class="small text-muted">HOSP, Semanales, Mensual y Mensual Acumulado.</p>
+                                <a href="/graficos/index.html?modulo=indicadores&rol=admin" class="btn btn-outline-esmeralda w-100 mt-2">
+                                    Ir a Tableros
+                                </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100 border-0">
+                        <div class="card-body text-center p-4">
+                            <i class="fas fa-shield-virus text-danger"></i>
+                            <h5 class="fw-bold">VENCER</h5>
+                            <p class="small text-muted">Monitoreo de eventos críticos y registros de seguridad del paciente.</p>
+                            <a href="../productividad/vencer.php" class="btn btn-outline-danger w-100 mt-2">Registros Vencer</a>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .text-indigo {
+                        color: #4f46e5 !important; /* Azul Índigo */
+                    }
+                    .btn-outline-indigo {
+                        color: #4f46e5;
+                        border-color: #4f46e5;
+                        background-color: transparent;
+                        transition: all 0.3s ease;
+                    }
+                    .btn-outline-indigo:hover {
+                        background-color: #4f46e5;
+                        color: #ffffff;
+                    }
+                </style>
+
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fas fa-boxes fa-2x text-indigo mb-3"></i>
+                            <h5 class="fw-bold">Inventario IFU</h5>
+                            <p class="small text-muted">Gestión, control de existencias y seguimiento de entradas/salidas.</p>
+                        <a href="/IFU/index.php?rol=<?php echo $_SESSION['rol']; ?>"> Ir a Inventario IFU</a>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-md-4">
                     <div class="card shadow-sm h-100">
                         <div class="card-body text-center p-4">
@@ -143,17 +210,6 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
                             <h5 class="fw-bold">Usuarios</h5>
                             <p class="small text-muted">Gestión de cuentas, perfiles de acceso y permisos del personal.</p>
                             <a href="/graficos/index.html?modulo=usuarios" class="btn btn-outline-dark w-100 mt-2">Administrar Cuentas</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card shadow-sm h-100 border-0">
-                        <div class="card-body text-center p-4">
-                            <i class="fas fa-shield-virus text-danger"></i>
-                            <h5 class="fw-bold">VENCER</h5>
-                            <p class="small text-muted">Monitoreo de eventos críticos y registros de seguridad del paciente.</p>
-                            <a href="../productividad/vencer.php" class="btn btn-outline-danger w-100 mt-2">Registros Vencer</a>
                         </div>
                     </div>
                 </div>

@@ -10,8 +10,16 @@ import ModuloCarga from './ModuloCarga';
 import TableroParamedicos from './TableroParamedicos';
 import TableroUrgencias from './TableroUrgencias';
 import { exportarReporteCompleto, obtenerResumenAgregado } from './exportarReporteCompleto';
+import TableroCirugias from './TableroCirugias';
+
 // Registrar componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement);
+
+// ==========================================
+// CONFIGURACIÓN GLOBAL DE GRÁFICAS (FUENTE)
+// ==========================================
+ChartJS.defaults.font.family = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+ChartJS.defaults.color = '#475569'; // Color slate-600 para unificar con el diseño
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
@@ -117,7 +125,6 @@ const TablaDatos = ({ titulo1, titulo2, labels, data, dataPV, dataSub, tituloExt
 
                             return (
                                 <tr key={index} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                    {/* AQUÍ ESTÁ LA CELDA CORREGIDA */}
                                     <td className="py-2 px-3">{label}</td>
                                     
                                     {dataExtra && <td className="py-2 px-3 text-xs font-bold text-slate-400">{dataExtra[index]}</td>}
@@ -187,6 +194,9 @@ export default function DashboardProductividad({ isAdmin }) {
     const [datosExterna, setDatosExterna] = useState([]);
     const [datosParamedicos, setDatosParamedicos] = useState([]);
     const [datosUrgencias, setDatosUrgencias] = useState([]);
+
+    // Datos Modulo Cirugia
+    const [datosCirugias, setDatosCirugias] = useState([]);
 
     // ==========================================
     // CARGA DE DATOS 
@@ -905,10 +915,6 @@ export default function DashboardProductividad({ isAdmin }) {
                 };
             });
 
-            // REVISIÓN FINAL EN CONSOLA
-            console.log("Dato original:", datosFiltrados[0].matricula_medico);
-            console.log("Dato traducido:", datosTraducidos[0].medico_real);
-
             await exportarReporteCompleto(datosTraducidos, datosParamedicos, datosUrgencias);
 
         } catch (error) {
@@ -945,7 +951,7 @@ return (
                     <button onClick={() => setAreaSidebar('paramedicos')} className={`w-full flex items-center rounded-xl transition-all ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'} ${areaSidebar === 'paramedicos' ? 'bg-[#6b1f1f] text-white font-bold shadow-md border-l-4 border-white' : 'hover:bg-[#962e2e] text-red-100 border-l-4 border-transparent'}`}>
                         <Ambulance size={20} className="shrink-0" /> {!sidebarCollapsed && <span className="whitespace-nowrap">Paramédicos</span>}
                     </button>
-                    <button onClick={() => setAreaSidebar('cirugia')} className={`w-full flex items-center rounded-xl transition-all ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'} ${areaSidebar === 'cirugia' ? 'bg-[#6b1f1f] text-white font-bold shadow-md border-l-4 border-white' : 'hover:bg-[#962e2e] text-red-100 border-l-4 border-transparent'}`}>
+                    <button onClick={() => setAreaSidebar('cirugias')} className={`w-full flex items-center rounded-xl transition-all ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'} ${areaSidebar === 'cirugias' ? 'bg-[#6b1f1f] text-white font-bold shadow-md border-l-4 border-white' : 'hover:bg-[#962e2e] text-red-100 border-l-4 border-transparent'}`}>
                         <Syringe size={20} className="shrink-0" /> {!sidebarCollapsed && <span className="whitespace-nowrap">Cirugía</span>}
                     </button>
                     <button onClick={() => setAreaSidebar('hospitalizacion')} className={`w-full flex items-center rounded-xl transition-all ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'} ${areaSidebar === 'hospitalizacion' ? 'bg-[#6b1f1f] text-white font-bold shadow-md border-l-4 border-white' : 'hover:bg-[#962e2e] text-red-100 border-l-4 border-transparent'}`}>
@@ -1145,16 +1151,84 @@ return (
                                         {mostrarTablas && <TablaDatos titulo1="División" titulo2="Consultas" labels={chartDivisiones.labels} data={chartDivisiones.datasets[0].data} dataPV={chartDivisiones.dataPV} dataSub={chartDivisiones.dataSub} />}
                                     </div>
                                     <div id="graficoE_3" className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col h-full min-h-[300px]">
-                                        <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4">Consultas por Turno</h3>
-                                        <div className="relative flex-1 min-h-[220px]"><Doughnut data={chartTurnos} options={{ maintainAspectRatio: false }} /></div>
-                                        {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Consultas" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} dataPV={chartTurnos.dataPV} dataSub={chartTurnos.dataSub} />}
-                                    </div>
+                                            <h3 className="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4">Consultas por Turno</h3>
+                                            <div className="relative flex-1 min-h-[220px]"><Doughnut data={chartTurnos} options={{ maintainAspectRatio: false }} /></div>
+                                            {mostrarTablas && <TablaDatos titulo1="Turno" titulo2="Consultas" labels={chartTurnos.labels} data={chartTurnos.datasets[0].data} dataPV={chartTurnos.dataPV} dataSub={chartTurnos.dataSub} />}
+                                        </div>
                                 </div>
 
-                                <div id="graficoE_4" className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col mb-6">
-                                    <h3 className="font-bold text-slate-700 text-sm uppercase mb-4">Top 20 Productividad por Médico</h3>
-                                    <div className="h-[400px] overflow-x-auto"><div style={{ minWidth: anchoDinamico(chartMedicos.labels.length), height: '100%' }}><Bar data={chartMedicos} options={chartOptionsVertical} /></div></div>
-                                    {mostrarTablas && <TablaDatos titulo1="Médico" titulo2="Consultas" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} dataPV={chartMedicos.dataPV} dataSub={chartMedicos.dataSub} />}
+                                <div className="flex flex-col gap-6 mb-6">
+                                    {/* CARD: ESPECIALIDADES (AHORA ANCHO COMPLETO) */}
+                                    <div id="graficoE_especialidades" className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="bg-sky-50 p-2 rounded-lg">
+                                                <BarChart2 size={24} className="text-sky-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-800 text-lg">Productividad por Especialidad</h3>
+                                                <p className="text-xs font-medium text-slate-500">Volumen total capturado en el periodo operativo seleccionado</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full overflow-x-auto custom-scrollbar pb-4" style={{ height: '300px' }}>
+                                            <div style={{ minWidth: `${Math.max(500, chartEspecialidades.labels.length * 40)}px`, height: '100%' }}>
+                                                <Bar 
+                                                    data={chartEspecialidades} 
+                                                    options={{ 
+                                                        responsive: true, 
+                                                        maintainAspectRatio: false, 
+                                                        indexAxis: 'x', 
+                                                        plugins: { 
+                                                            legend: { display: false },
+                                                            tooltip: { backgroundColor: '#1e293b', padding: 12, cornerRadius: 8 }
+                                                        },
+                                                        scales: { 
+                                                            y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10, weight: 'bold' }, color: '#475569' } },
+                                                            x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#475569', maxRotation: 45, minRotation: 45 } }
+                                                        } 
+                                                    }} 
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {mostrarTablas && <TablaDatos titulo1="Especialidad" titulo2="Consultas" labels={chartEspecialidades.labels} data={chartEspecialidades.datasets[0].data} dataPV={chartEspecialidades.dataPV} dataSub={chartEspecialidades.dataSub} />}
+                                    </div>
+
+                                    {/* CARD: TOP 20 MÉDICOS (AHORA ANCHO COMPLETO) */}
+                                    <div id="graficoE_4" className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="bg-red-50 p-2 rounded-lg">
+                                                <Users size={24} className="text-red-800" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-800 text-lg uppercase">Top 20 Productividad por Médico</h3>
+                                                <p className="text-xs font-medium text-slate-500">Doctores con mayor volumen de consultas</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full overflow-x-auto custom-scrollbar pb-4" style={{ height: '300px' }}>
+                                            <div style={{ minWidth: `${Math.max(500, chartMedicos.labels.length * 40)}px`, height: '100%' }}>
+                                                <Bar 
+                                                    data={chartMedicos} 
+                                                    options={{ 
+                                                        responsive: true, 
+                                                        maintainAspectRatio: false, 
+                                                        indexAxis: 'x', 
+                                                        plugins: { 
+                                                            legend: { display: false },
+                                                            tooltip: { backgroundColor: '#1e293b', padding: 12, cornerRadius: 8 }
+                                                        },
+                                                        scales: { 
+                                                            y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10, weight: 'bold' }, color: '#475569' } },
+                                                            x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#475569', maxRotation: 45, minRotation: 45 } }
+                                                        } 
+                                                    }} 
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {mostrarTablas && <TablaDatos titulo1="Médico" titulo2="Consultas" labels={chartMedicos.labels} data={chartMedicos.datasets[0].data} dataPV={chartMedicos.dataPV} dataSub={chartMedicos.dataSub} />}
+                                    </div>
                                 </div>
 
                                 <div id="graficoE_5" className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col mb-6">
@@ -1208,8 +1282,23 @@ return (
                         />
                     </div>
 
+                    {/* SECCIÓN 4: CIRUGIAS */}
+                    <div style={{ 
+                        display: areaSidebar === 'cirugias' ? 'block' : 'none',
+                        visibility: areaSidebar === 'cirugias' ? 'visible' : 'hidden',
+                        position: areaSidebar === 'cirugias' ? 'relative' : 'absolute',
+                        left: areaSidebar === 'cirugias' ? '0' : '-9999px',
+                        width: '100%'
+                    }}>
+                        <TableroCirugias 
+                            datos={datosCirugias}
+                            mostrarTablas={mostrarTablas}
+                            setExportData={setDatosCirugias}
+                         />
+                    </div>
+
                     {/* MENSAJE DE EN CONSTRUCCIÓN */}
-                    {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && areaSidebar !== 'urgencias' && (
+                    {areaSidebar !== 'consulta_externa' && areaSidebar !== 'paramedicos' && areaSidebar !== 'urgencias' && areaSidebar !== 'cirugias' &&(
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 p-16 border-2 border-dashed border-slate-300 rounded-3xl bg-slate-100/50">
                             <Activity size={64} className="mb-6 opacity-40 text-[#822626]" />
                             <h2 className="text-2xl font-black text-slate-500 mb-2">Módulo en Construcción</h2>

@@ -156,29 +156,29 @@ session_start();
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
                     <!-- PRODUCTIVIDAD -->
-                        <a href="/graficos/index.html?modulo=productividad&rol=<?php echo $_SESSION['rol']; ?>">
+                        <a  class="nav-link text-white" href="/graficos/index.html?modulo=productividad&rol=<?php echo $_SESSION['rol']; ?>">
                             Productividad
                         </a>
 
-                    <!-- Organigrama -->
+                    <!-- Indicadores -->
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="../usuario/organigrama.php">Organigrama</a>
+                        <a class="nav-link text-white" href="/graficos/index.html?modulo=indicadores&rol=<?php echo $_SESSION['rol']; ?>">
+                            Indicadores
+                        </a>
                     </li>
 
                     <!-- Normatividad -->
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="../usuario/normatividad_user.php">Normatividad</a>
-                    </li>
 
                     <!-- Vencer -->
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/graficos/index.html?modulo=vencer">Vencer</a>
                     </li>
 
-                    <!-- Sitios de interés -->
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="../usuario/sitios_interes-user.php">Sitios de interés</a>
+                       <a class="nav-link text-white" href="/IFU/index.php?rol=<?php echo $_SESSION['rol']; ?>">  IFU </a>
                     </li>
+
+                    <!-- Sitios de interés -->
                 </ul>
 
 
@@ -190,7 +190,7 @@ session_start();
                 </div>
 
 
-                // 
+                
                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
     
                     <?php if (isset($_SESSION['admin_name']) && isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin'): ?>
