@@ -50,9 +50,8 @@ try {
         ]);
     }
 
-    // 3. Insertar el lote masivo completo
-    $query = "INSERT INTO indicadores_hosp (anio, indicador, mes, numerador, denominador, porcentaje) 
-              VALUES (:anio, :indicador, :mes, :numerador, :denominador, :porcentaje)";
+    $query = "INSERT INTO indicadores_hosp (anio, indicador, mes, numerador, denominador, auxiliar, porcentaje) 
+              VALUES (:anio, :indicador, :mes, :numerador, :denominador, :auxiliar, :porcentaje)";
     $stmtInsert = $conn->prepare($query);
 
     foreach ($datosBatch as $fila) {
@@ -62,6 +61,7 @@ try {
             ':mes' => $fila['mes'],
             ':numerador' => $fila['numerador'],
             ':denominador' => $fila['denominador'],
+            ':auxiliar' => isset($fila['auxiliar']) ? $fila['auxiliar'] : 0,
             ':porcentaje' => $fila['porcentaje']
         ]);
     }

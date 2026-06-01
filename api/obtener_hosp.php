@@ -20,8 +20,8 @@ try {
     $conn = new PDO("mysql:host={$host};dbname={$dbname};charset=utf8", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Filtrar estrictamente por año Y por el indicador activo
-    $stmt = $conn->prepare("SELECT mes, numerador, denominador, porcentaje FROM indicadores_hosp WHERE anio = :anio AND indicador = :indicador ORDER BY id ASC");
+    // CORRECCIÓN 1: Agregamos "auxiliar" a la consulta SQL
+    $stmt = $conn->prepare("SELECT mes, numerador, denominador, auxiliar, porcentaje FROM indicadores_hosp WHERE anio = :anio AND indicador = :indicador ORDER BY id ASC");
     $stmt->bindParam(':anio', $anio);
     $stmt->bindParam(':indicador', $indicador);
     $stmt->execute();
@@ -32,8 +32,11 @@ try {
         $datosFormateados = array_map(function($fila) {
             return [
                 "mes" => $fila['mes'],
-                "numerador" => (int)$fila['numerador'],
-                "denominador" => (int)$fila['denominador'],
+                "numerador" => (float)$fila['numerador'],
+                // CORRECCIÓN 2: Cambiamos a (float) para respetar decimales
+                "denominador" => (float)$fila['denominador'],
+                // CORRECCIÓN 3: Le pasamos la nueva variable a React
+                "auxiliar" => (float)$fila['auxiliar'],
                 "porcentaje" => (float)$fila['porcentaje']
             ];
         }, $resultados);
